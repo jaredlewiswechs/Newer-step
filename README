@@ -1,0 +1,26 @@
+# Newton Public API
+
+The free verification layer. `1 == 1`
+
+## Endpoints
+
+**POST /verify** - Verify text against constraints
+
+**GET /health** - Status check
+
+**GET /constraints** - List available constraints
+
+## Deploy
+
+Push to GitHub, connect to Render.com or Fly.io, deploy as Docker.
+
+## Local
+
+```bash
+pip install -r requirements.txt
+python newton_public.py
+```
+
+-----
+
+© 2025 Jared Lewis Conglomerate / parcRI Real Intelligence · Houston
