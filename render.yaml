@@ -6,10 +6,10 @@ services:
     name: newton-kernel
     runtime: python
     buildCommand: pip install -r requirements.txt
-    startCommand: cd /app && PYTHONPATH=/app python -m uvicorn newton_os_server:app --host 0.0.0.0 --port $PORT
+    startCommand: python -m uvicorn newton_os_server:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: PYTHONPATH
-        value: /app
+        value: /opt/render/project/src
       - key: PYTHONUNBUFFERED
         value: "1"
       - key: NEWTON_STORAGE
