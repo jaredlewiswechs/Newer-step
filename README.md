@@ -37,6 +37,17 @@
 
 ---
 
+## 🚀 Quick Start (Choose Your Path)
+
+| Experience Level | Time | Start Here |
+|-----------------|------|------------|
+| **Absolute Beginner** | 5 min | [QUICKSTART.md](QUICKSTART.md) ← Start here! |
+| **Know Python Basics** | 10 min | [Quick Install](#quick-install) ↓ |
+| **Ready to Learn** | 30 min | [GETTING_STARTED.md](GETTING_STARTED.md) |
+| **Want to Build** | 1 hour | [TINYTALK_PROGRAMMING_GUIDE.md](TINYTALK_PROGRAMMING_GUIDE.md) |
+
+---
+
 ## Quick Install
 
 ```bash
@@ -54,7 +65,7 @@ newton serve            # Start the server
 python test_full_system.py  # 10/10 tests should pass
 ```
 
-**New to Newton?** Start here → [GETTING_STARTED.md](GETTING_STARTED.md)
+**New to Newton?** → [🚀 QUICKSTART.md](QUICKSTART.md) (5 minutes) or [📚 GETTING_STARTED.md](GETTING_STARTED.md) (30 minutes)
 
 ---
 
@@ -111,11 +122,27 @@ See [docs/INTRO_COURSE.md](docs/INTRO_COURSE.md) for the complete tutorial.
 
 ## Documentation
 
+### 🚀 Getting Started
+
+| Document | Description | Time |
+|----------|-------------|------|
+| **[QUICKSTART.md](QUICKSTART.md)** | **5-minute setup guide** (absolute beginners) | 5 min |
+| **[GETTING_STARTED.md](GETTING_STARTED.md)** | **Complete tutorial with examples** | 30 min |
+| **[USER_JOURNEY.md](USER_JOURNEY.md)** | **Step-by-step learning path** | Overview |
+| **[ARCHITECTURE.md](ARCHITECTURE.md)** | **System architecture and design** | 20 min |
+
+### 📚 Programming Guides
+
 | Document | Description |
 |----------|-------------|
-| **[TINYTALK_PROGRAMMING_GUIDE.md](TINYTALK_PROGRAMMING_GUIDE.md)** | **Complete TinyTalk programming guide** (start here!) |
-| **[docs/INTRO_COURSE.md](docs/INTRO_COURSE.md)** | **Newton API Intro Course** - 5-level PDA app tutorial (NEW) |
-| **[RSTUDIO_QUICKSTART.md](RSTUDIO_QUICKSTART.md)** | R/RStudio integration guide (NEW) |
+| **[TINYTALK_PROGRAMMING_GUIDE.md](TINYTALK_PROGRAMMING_GUIDE.md)** | **Complete TinyTalk programming guide** |
+| **[docs/INTRO_COURSE.md](docs/INTRO_COURSE.md)** | **Newton API Intro Course** - 5-level PDA app tutorial |
+| **[RSTUDIO_QUICKSTART.md](RSTUDIO_QUICKSTART.md)** | R/RStudio integration guide |
+
+### 🏛️ Architecture & Philosophy
+
+| Document | Description |
+|----------|-------------|
 | **[WHITEPAPER.md](WHITEPAPER.md)** | Technical architecture and guarantees |
 | **[TINYTALK_BIBLE.md](TINYTALK_BIBLE.md)** | The "No-First" philosophy |
 | **[GLASS_BOX.md](GLASS_BOX.md)** | Policy, HITL, and Merkle proofs |

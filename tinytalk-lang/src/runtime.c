@@ -272,9 +272,117 @@ Value runtime_evaluate_expression(Runtime* rt, ASTNode* expr) {
             return value_null();
         }
         
+        case NODE_FIELD_ACCESS: {
+            // Evaluate field access (e.g., Screen.text)
+            const char* object_name = expr->as.field_access.object->as.identifier.name;
+            const char* field_name = expr->as.field_access.field;
+            
+            // Find the instance
+            for (size_t i = 0; i < rt->instance_count; i++) {
+                if (strcmp(rt->instances[i]->blueprint->name, object_name) == 0) {
+                    // Find the field
+                    for (size_t j = 0; j < rt->instances[i]->blueprint->field_count; j++) {
+                        if (strcmp(rt->instances[i]->blueprint->fields[j]->as.field.name, field_name) == 0) {
+                            return value_copy(&rt->instances[i]->field_values[j]);
+                        }
+                    }
+                }
+            }
+            return value_null();
+        }
+        
         case NODE_BINARY_OP: {
             Value left = runtime_evaluate_expression(rt, expr->as.binary_op.left);
             Value right = runtime_evaluate_expression(rt, expr->as.binary_op.right);
+            
+            // Comparison operators
+            if (expr->as.binary_op.op == TOKEN_IS) {
+                bool equal = false;
+                if (left.type == TYPE_NUMBER && right.type == TYPE_NUMBER) {
+                    equal = left.as.number == right.as.number;
+                } else if (left.type == TYPE_STRING && right.type == TYPE_STRING) {
+                    equal = strcmp(left.as.string, right.as.string) == 0;
+                } else if (left.type == TYPE_BOOLEAN && right.type == TYPE_BOOLEAN) {
+                    equal = left.as.boolean == right.as.boolean;
+                }
+                value_free(&left);
+                value_free(&right);
+                return value_boolean(equal);
+            } else if (expr->as.binary_op.op == TOKEN_ABOVE) {
+                bool result = false;
+                if (left.type == TYPE_NUMBER && right.type == TYPE_NUMBER) {
+                    result = left.as.number > right.as.number;
+                }
+                value_free(&left);
+                value_free(&right);
+                return value_boolean(result);
+            } else if (expr->as.binary_op.op == TOKEN_BELOW) {
+                bool result = false;
+                if (left.type == TYPE_NUMBER && right.type == TYPE_NUMBER) {
+                    result = left.as.number < right.as.number;
+                }
+                value_free(&left);
+                value_free(&right);
+                return value_boolean(result);
+            } else if (expr->as.binary_op.op == TOKEN_WITHIN) {
+                // For now, implement as a range check (requires special handling)
+                // This is a simplified implementation
+                bool result = false;
+                if (left.type == TYPE_NUMBER && right.type == TYPE_NUMBER) {
+                    result = left.as.number <= right.as.number;
+                }
+                value_free(&left);
+                value_free(&right);
+                return value_boolean(result);
+            } else if (expr->as.binary_op.op == TOKEN_IN) {
+                // Check if left is in right (array membership)
+                bool result = false;
+                if (right.type == TYPE_ARRAY) {
+                    for (size_t i = 0; i < right.as.array.count; i++) {
+                        if (left.type == right.as.array.items[i].type) {
+                            if (left.type == TYPE_STRING && 
+                                strcmp(left.as.string, right.as.array.items[i].as.string) == 0) {
+                                result = true;
+                                break;
+                            } else if (left.type == TYPE_NUMBER && 
+                                      left.as.number == right.as.array.items[i].as.number) {
+                                result = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+                value_free(&left);
+                value_free(&right);
+                return value_boolean(result);
+            } else if (expr->as.binary_op.op == TOKEN_HASH) {
+                // String interpolation: "text #var" or "#var"
+                // For now, implement as concatenation with conversion
+                char left_buf[512];
+                char right_buf[512];
+                const char* left_str = "";
+                const char* right_str = "";
+                
+                if (left.type == TYPE_STRING) {
+                    left_str = left.as.string;
+                } else if (left.type == TYPE_NUMBER) {
+                    snprintf(left_buf, sizeof(left_buf), "%g", left.as.number);
+                    left_str = left_buf;
+                }
+                
+                if (right.type == TYPE_STRING) {
+                    right_str = right.as.string;
+                } else if (right.type == TYPE_NUMBER) {
+                    snprintf(right_buf, sizeof(right_buf), "%g", right.as.number);
+                    right_str = right_buf;
+                }
+                
+                char result_buf[1024];
+                snprintf(result_buf, sizeof(result_buf), "%s%s", left_str, right_str);
+                value_free(&left);
+                value_free(&right);
+                return value_string(result_buf);
+            }
             
             // Smart operators
             if (expr->as.binary_op.op == TOKEN_PLUS_OP || expr->as.binary_op.op == TOKEN_PLUS) {
@@ -286,9 +394,17 @@ Value runtime_evaluate_expression(Runtime* rt, ASTNode* expr) {
                 } else if (left.type == TYPE_STRING || right.type == TYPE_STRING) {
                     // Join with space
                     char buffer[1024];
-                    snprintf(buffer, sizeof(buffer), "%s %s",
-                            left.type == TYPE_STRING ? left.as.string : "",
-                            right.type == TYPE_STRING ? right.as.string : "");
+                    const char* left_str = "";
+                    const char* right_str = "";
+                    
+                    if (left.type == TYPE_STRING) {
+                        left_str = left.as.string;
+                    }
+                    if (right.type == TYPE_STRING) {
+                        right_str = right.as.string;
+                    }
+                    
+                    snprintf(buffer, sizeof(buffer), "%s %s", left_str, right_str);
                     value_free(&left);
                     value_free(&right);
                     return value_string(buffer);
@@ -298,6 +414,23 @@ Value runtime_evaluate_expression(Runtime* rt, ASTNode* expr) {
                 if (left.type == TYPE_STRING && right.type == TYPE_STRING) {
                     char buffer[1024];
                     snprintf(buffer, sizeof(buffer), "%s%s", left.as.string, right.as.string);
+                    value_free(&left);
+                    value_free(&right);
+                    return value_string(buffer);
+                } else if (left.type == TYPE_STRING || right.type == TYPE_STRING) {
+                    // Handle string with non-string
+                    char buffer[1024];
+                    const char* left_str = "";
+                    const char* right_str = "";
+                    
+                    if (left.type == TYPE_STRING) {
+                        left_str = left.as.string;
+                    }
+                    if (right.type == TYPE_STRING) {
+                        right_str = right.as.string;
+                    }
+                    
+                    snprintf(buffer, sizeof(buffer), "%s%s", left_str, right_str);
                     value_free(&left);
                     value_free(&right);
                     return value_string(buffer);
@@ -387,32 +520,234 @@ Result runtime_execute_when(Runtime* rt, Instance* inst, const char* when_name, 
             // Begin transaction for ACID semantics
             runtime_begin_transaction(inst);
             
-            // Execute actions
-            for (size_t j = 0; j < when->as.when.action_count; j++) {
-                ASTNode* action = when->as.when.actions[j];
+            bool should_rollback = false;
+            char* rollback_message = NULL;
+            
+            // Set the current instance context for field lookups
+            Runtime* runtime_ctx = rt;
+            Instance* current_inst = inst;
+            
+            // Temporarily set variables for fields from current instance
+            for (size_t k = 0; k < current_inst->blueprint->field_count; k++) {
+                runtime_set_variable(runtime_ctx, 
+                                   current_inst->blueprint->fields[k]->as.field.name,
+                                   value_copy(&current_inst->field_values[k]));
+            }
+            
+            // Check conditions (block and must statements)
+            for (size_t j = 0; j < when->as.when.condition_count; j++) {
+                ASTNode* condition = when->as.when.conditions[j];
                 
-                if (action->type == NODE_ACTION_SET) {
-                    Value new_value = runtime_evaluate_expression(rt, action->as.action_set.value);
-                    
-                    // Find the field and set it
-                    for (size_t k = 0; k < inst->blueprint->field_count; k++) {
-                        if (strcmp(inst->blueprint->fields[k]->as.field.name, action->as.action_set.field) == 0) {
-                            value_free(&inst->field_values[k]);
-                            inst->field_values[k] = new_value;
-                            break;
+                if (condition->type == NODE_BLOCK) {
+                    // block if condition - halt if condition is true
+                    bool cond_result = runtime_evaluate_condition(runtime_ctx, condition->as.block.condition);
+                    if (cond_result) {
+                        should_rollback = true;
+                        rollback_message = strdup("Blocked by condition");
+                        break;
+                    }
+                } else if (condition->type == NODE_MUST) {
+                    // must condition - rollback if condition is false
+                    bool cond_result = runtime_evaluate_condition(runtime_ctx, condition->as.must.condition);
+                    if (!cond_result) {
+                        should_rollback = true;
+                        if (condition->as.must.error_message) {
+                            rollback_message = strdup(condition->as.must.error_message);
+                        } else {
+                            rollback_message = strdup("Must condition failed");
                         }
+                        break;
                     }
                 }
             }
             
-            // Commit transaction
-            runtime_commit_transaction(inst);
+            // Execute actions only if conditions passed
+            if (!should_rollback) {
+                for (size_t j = 0; j < when->as.when.action_count; j++) {
+                    ASTNode* action = when->as.when.actions[j];
+                    
+                    if (action->type == NODE_ACTION_SET) {
+                        Value new_value = runtime_evaluate_expression(runtime_ctx, action->as.action_set.value);
+                        
+                        // Check if it's a field access (target.field) or just a field
+                        if (action->as.action_set.target) {
+                            // It's target.field - find the target instance
+                            Instance* target_inst = NULL;
+                            for (size_t k = 0; k < runtime_ctx->instance_count; k++) {
+                                if (strcmp(runtime_ctx->instances[k]->blueprint->name, action->as.action_set.target) == 0) {
+                                    target_inst = runtime_ctx->instances[k];
+                                    break;
+                                }
+                            }
+                            
+                            if (target_inst) {
+                                // Find the field and set it
+                                for (size_t k = 0; k < target_inst->blueprint->field_count; k++) {
+                                    if (strcmp(target_inst->blueprint->fields[k]->as.field.name, action->as.action_set.field) == 0) {
+                                        value_free(&target_inst->field_values[k]);
+                                        target_inst->field_values[k] = new_value;
+                                        break;
+                                    }
+                                }
+                            } else {
+                                value_free(&new_value);
+                            }
+                        } else {
+                            // Find the field and set it on current instance
+                            for (size_t k = 0; k < current_inst->blueprint->field_count; k++) {
+                                if (strcmp(current_inst->blueprint->fields[k]->as.field.name, action->as.action_set.field) == 0) {
+                                    value_free(&current_inst->field_values[k]);
+                                    current_inst->field_values[k] = new_value;
+                                    break;
+                                }
+                            }
+                        }
+                    } else if (action->type == NODE_ACTION_CHANGE) {
+                        // change field by +/- value
+                        Value change_value = runtime_evaluate_expression(runtime_ctx, action->as.action_change.value);
+                        
+                        // Find target instance
+                        Instance* target_inst = current_inst;
+                        if (action->as.action_change.target) {
+                            for (size_t k = 0; k < runtime_ctx->instance_count; k++) {
+                                if (strcmp(runtime_ctx->instances[k]->blueprint->name, action->as.action_change.target) == 0) {
+                                    target_inst = runtime_ctx->instances[k];
+                                    break;
+                                }
+                            }
+                        }
+                        
+                        if (target_inst) {
+                            // Find the field
+                            for (size_t k = 0; k < target_inst->blueprint->field_count; k++) {
+                                if (strcmp(target_inst->blueprint->fields[k]->as.field.name, action->as.action_change.field) == 0) {
+                                    Value* field_val = &target_inst->field_values[k];
+                                    
+                                    // Handle array operations
+                                    if (field_val->type == TYPE_NULL || field_val->type == TYPE_ARRAY) {
+                                        // Initialize array if null
+                                        if (field_val->type == TYPE_NULL) {
+                                            field_val->type = TYPE_ARRAY;
+                                            field_val->as.array.items = NULL;
+                                            field_val->as.array.count = 0;
+                                            field_val->as.array.capacity = 0;
+                                        }
+                                        
+                                        if (action->as.action_change.op == TOKEN_PLUS) {
+                                            // Add to array
+                                            if (field_val->as.array.count >= field_val->as.array.capacity) {
+                                                size_t new_capacity = field_val->as.array.capacity == 0 ? 8 : field_val->as.array.capacity * 2;
+                                                Value* new_items = (Value*)realloc(field_val->as.array.items, new_capacity * sizeof(Value));
+                                                if (new_items) {
+                                                    field_val->as.array.items = new_items;
+                                                    field_val->as.array.capacity = new_capacity;
+                                                }
+                                            }
+                                            
+                                            if (field_val->as.array.count < field_val->as.array.capacity) {
+                                                field_val->as.array.items[field_val->as.array.count++] = value_copy(&change_value);
+                                            }
+                                        } else if (action->as.action_change.op == TOKEN_MINUS) {
+                                            // Remove from array
+                                            for (size_t m = 0; m < field_val->as.array.count; m++) {
+                                                bool match = false;
+                                                if (field_val->as.array.items[m].type == change_value.type) {
+                                                    if (change_value.type == TYPE_STRING && 
+                                                        strcmp(field_val->as.array.items[m].as.string, change_value.as.string) == 0) {
+                                                        match = true;
+                                                    } else if (change_value.type == TYPE_NUMBER && 
+                                                              field_val->as.array.items[m].as.number == change_value.as.number) {
+                                                        match = true;
+                                                    }
+                                                }
+                                                
+                                                if (match) {
+                                                    value_free(&field_val->as.array.items[m]);
+                                                    // Shift remaining items
+                                                    for (size_t n = m; n < field_val->as.array.count - 1; n++) {
+                                                        field_val->as.array.items[n] = field_val->as.array.items[n + 1];
+                                                    }
+                                                    field_val->as.array.count--;
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                    }
+                                    
+                                    break;
+                                }
+                            }
+                        }
+                        
+                        value_free(&change_value);
+                    } else if (action->type == NODE_ACTION_MAKE) {
+                        // make target state - set state on instance
+                        Instance* target_inst = NULL;
+                        for (size_t k = 0; k < runtime_ctx->instance_count; k++) {
+                            if (strcmp(runtime_ctx->instances[k]->blueprint->name, action->as.action_make.target) == 0) {
+                                target_inst = runtime_ctx->instances[k];
+                                break;
+                            }
+                        }
+                        
+                        if (target_inst) {
+                            if (target_inst->current_state) {
+                                free(target_inst->current_state);
+                            }
+                            target_inst->current_state = strdup(action->as.action_make.new_state);
+                        }
+                    } else if (action->type == NODE_CALC) {
+                        // calc expr op expr as result_var
+                        Value left = runtime_evaluate_expression(runtime_ctx, action->as.calc.expr);
+                        Value right = runtime_evaluate_expression(runtime_ctx, action->as.calc.right);
+                        
+                        Value result = value_null();
+                        
+                        if (left.type == TYPE_NUMBER && right.type == TYPE_NUMBER) {
+                            switch (action->as.calc.op) {
+                                case TOKEN_PLUS:
+                                    result = value_number(left.as.number + right.as.number);
+                                    break;
+                                case TOKEN_MINUS:
+                                    result = value_number(left.as.number - right.as.number);
+                                    break;
+                                case TOKEN_TIMES:
+                                    result = value_number(left.as.number * right.as.number);
+                                    break;
+                                case TOKEN_DIV:
+                                    result = value_number(left.as.number / right.as.number);
+                                    break;
+                                default:
+                                    break;
+                            }
+                        }
+                        
+                        // Store result in variable
+                        if (action->as.calc.result_var) {
+                            runtime_set_variable(runtime_ctx, action->as.calc.result_var, result);
+                        } else {
+                            value_free(&result);
+                        }
+                        
+                        value_free(&left);
+                        value_free(&right);
+                    }
+                }
+            }
             
-            result.success = true;
-            if (when->as.when.result_message) {
-                result.message = strdup(when->as.when.result_message);
+            // Commit or rollback transaction
+            if (should_rollback) {
+                runtime_rollback_transaction(current_inst);
+                result.success = false;
+                result.message = rollback_message ? rollback_message : strdup("Transaction rolled back");
             } else {
-                result.message = strdup("When clause executed successfully");
+                runtime_commit_transaction(current_inst);
+                result.success = true;
+                if (when->as.when.result_message) {
+                    result.message = strdup(when->as.when.result_message);
+                } else {
+                    result.message = strdup("When clause executed successfully");
+                }
             }
             break;
         }
