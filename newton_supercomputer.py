@@ -153,6 +153,17 @@ from parccloud.auth import (
 VERSION = "1.2.1"
 ENGINE = f"Newton Supercomputer {VERSION}"
 
+# Serverless storage path (only writable directory in serverless environments)
+SERVERLESS_STORAGE_PATH = "/tmp/.newton_anchors"
+
+# Detect serverless environment (Vercel, AWS Lambda, etc.)
+# In serverless environments, we cannot use background threads or write to local filesystem
+IS_SERVERLESS = (
+    "VERCEL" in os.environ or
+    "AWS_LAMBDA_FUNCTION_NAME" in os.environ or
+    "SERVERLESS" in os.environ
+)
+
 # Initialize components
 forge = get_forge(ForgeConfig(enable_metrics=True, enable_caching=True))
 vault = get_vault(VaultConfig())
@@ -164,7 +175,13 @@ logic = LogicEngine(ExecutionBounds(max_iterations=10000, max_operations=1000000
 vault_client = get_vault_client(vault)
 policy_engine = get_policy_engine()
 negotiator = get_negotiator()
-merkle_scheduler = MerkleAnchorScheduler(ledger, interval_seconds=300)
+
+# In serverless environments, use /tmp for storage (only writable directory)
+# and don't start background scheduler thread
+if IS_SERVERLESS:
+    merkle_scheduler = MerkleAnchorScheduler(ledger, interval_seconds=300, storage_path=SERVERLESS_STORAGE_PATH)
+else:
+    merkle_scheduler = MerkleAnchorScheduler(ledger, interval_seconds=300)
 
 # Enable Glass Box mode in Forge
 forge.enable_glass_box(
@@ -173,8 +190,10 @@ forge.enable_glass_box(
     negotiator=negotiator
 )
 
-# Start Merkle anchoring scheduler
-merkle_scheduler.start()
+# Start Merkle anchoring scheduler only in non-serverless environments
+# Background threads are not supported in serverless functions
+if not IS_SERVERLESS:
+    merkle_scheduler.start()
 
 # Cartridge manager
 cartridges = get_cartridge_manager()
