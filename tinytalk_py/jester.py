@@ -56,6 +56,7 @@ class SourceLanguage(str, Enum):
     GO = "go"
     RUST = "rust"
     RUBY = "ruby"
+    COBOL = "cobol"  # The grandaddy of them all
     UNKNOWN = "unknown"
 
 
@@ -274,6 +275,23 @@ class LanguageDetector:
             (r"attr_(reader|writer|accessor)", 10),
             (r"puts\s+", 5),
         ],
+        SourceLanguage.COBOL: [
+            (r"IDENTIFICATION\s+DIVISION", 20),
+            (r"DATA\s+DIVISION", 20),
+            (r"PROCEDURE\s+DIVISION", 20),
+            (r"WORKING-STORAGE\s+SECTION", 15),
+            (r"IF\s+.+\s+THEN", 10),
+            (r"PERFORM\s+.+\s+UNTIL", 12),
+            (r"EVALUATE\s+", 12),
+            (r"MOVE\s+.+\s+TO\s+", 10),
+            (r"PIC\s+[X9]+", 15),
+            (r"\d{6}\s+", 5),  # Line numbers in columns 1-6
+            (r"END-IF", 10),
+            (r"END-PERFORM", 10),
+            (r"END-EVALUATE", 10),
+            (r"STOP\s+RUN", 10),
+            (r"GOBACK", 8),
+        ],
     }
 
     @classmethod
@@ -326,6 +344,12 @@ class ControlFlowAnalyzer:
             r"^\s*return\b",
             r"^\s*exit\s*\(",
             r"^\s*abort\s*\(",
+        ],
+        SourceLanguage.COBOL: [
+            r"^\s*STOP\s+RUN\b",
+            r"^\s*GOBACK\b",
+            r"^\s*EXIT\s+PROGRAM\b",
+            r"^\s*EXIT\s+PARAGRAPH\b",
         ],
     }
 
@@ -562,6 +586,10 @@ class ConstraintNormalizer:
         # Clean up the condition
         clean = condition.strip()
 
+        # COBOL-specific normalization FIRST (before general patterns catch COBOL keywords)
+        if language == SourceLanguage.COBOL:
+            clean = cls._normalize_cobol(clean)
+
         # Handle null/nil checks
         null_patterns = [
             (r"(\w+)\s*(?:==|===)\s*(?:None|null|nil|NULL)", r"\1 IS NULL"),
@@ -588,10 +616,11 @@ class ConstraintNormalizer:
         
         normalized = re.sub(ops_pattern, replace_op, normalized)
 
-        # Handle logical operators with proper precedence
-        # Wrap NOT targets in parentheses for precedence clarity (Python 'not' keyword only)
-        # Note: C-style '!x' is already handled above as 'IS FALSY' for truthiness checks
-        normalized = re.sub(r"\bnot\s+(\w+)", r"NOT(\1)", normalized, flags=re.IGNORECASE)
+        # Handle logical operators with proper precedence (skip for COBOL - already handled)
+        if language != SourceLanguage.COBOL:
+            # Wrap NOT targets in parentheses for precedence clarity (Python 'not' keyword only)
+            # Note: C-style '!x' is already handled above as 'IS FALSY' for truthiness checks
+            normalized = re.sub(r"\bnot\s+(\w+)", r"NOT(\1)", normalized, flags=re.IGNORECASE)
 
         # Then handle binary logical operators
         for code_op, newton_op in [("&&", "AND"), ("||", "OR"), ("and", "AND"), ("or", "OR")]:
@@ -604,6 +633,44 @@ class ConstraintNormalizer:
         newton = cls._to_newton_constraint(normalized, condition)
 
         return normalized, newton
+
+    @classmethod
+    def _normalize_cobol(cls, condition: str) -> str:
+        """Normalize COBOL-specific operators and syntax."""
+        result = condition
+
+        # COBOL comparison operators (verbose forms) - ORDER MATTERS!
+        # More specific patterns must come before general patterns
+        cobol_ops = [
+            # Compound comparisons first (most specific)
+            (r"\bIS\s+GREATER\s+THAN\s+OR\s+EQUAL\s+TO\b", ">="),
+            (r"\bIS\s+LESS\s+THAN\s+OR\s+EQUAL\s+TO\b", "<="),
+            (r"\bGREATER\s+THAN\s+OR\s+EQUAL\s+TO\b", ">="),
+            (r"\bLESS\s+THAN\s+OR\s+EQUAL\s+TO\b", "<="),
+            # NOT EQUAL must come before EQUAL
+            (r"\bIS\s+NOT\s+EQUAL\s+TO\b", "!="),
+            (r"\bNOT\s+EQUAL\s+TO\b", "!="),
+            # Simple comparisons
+            (r"\bIS\s+GREATER\s+THAN\b", ">"),
+            (r"\bIS\s+LESS\s+THAN\b", "<"),
+            (r"\bIS\s+EQUAL\s+TO\b", "="),
+            (r"\bGREATER\s+THAN\b", ">"),
+            (r"\bLESS\s+THAN\b", "<"),
+            (r"\bEQUAL\s+TO\b", "="),
+            # Type checks
+            (r"\bIS\s+NOT\s+NUMERIC\b", "IS NOT NUMERIC"),
+            (r"\bIS\s+NUMERIC\b", "IS NUMERIC"),
+            (r"\bIS\s+NOT\s+ALPHABETIC\b", "IS NOT ALPHABETIC"),
+            (r"\bIS\s+ALPHABETIC\b", "IS ALPHABETIC"),
+        ]
+
+        for pattern, replacement in cobol_ops:
+            result = re.sub(pattern, f" {replacement} ", result, flags=re.IGNORECASE)
+
+        # Clean up hyphens in COBOL variable names (e.g., WS-AMOUNT -> WS_AMOUNT)
+        # but preserve as-is for readability
+        
+        return result
 
     @classmethod
     def _to_newton_constraint(cls, normalized: str, original: str) -> str:
@@ -717,6 +784,35 @@ class RegexExtractor:
             "expect": r"\.expect\s*\(([^)]+)\)",
             "function_def": r"fn\s+(\w+)\s*\(",
         },
+        # =================================================================
+        # COBOL - The language that runs the world's banking systems
+        # =================================================================
+        SourceLanguage.COBOL: {
+            # IF statements: IF condition THEN ... END-IF
+            "if_condition": r"IF\s+(.+?)\s+THEN",
+            # Nested IF with ELSE
+            "if_else": r"IF\s+(.+?)\s+THEN\s*\n.*?ELSE",
+            # EVALUATE (switch/case equivalent)
+            "evaluate": r"EVALUATE\s+(\w+)",
+            "evaluate_when": r"WHEN\s+(.+?)\s*\n",
+            # PERFORM UNTIL (loop with exit condition)
+            "perform_until": r"PERFORM\s+(?:\w+\s+)?UNTIL\s+(.+)",
+            "perform_varying": r"PERFORM\s+.+\s+VARYING\s+(\w+)\s+FROM\s+(\d+)\s+BY\s+(\d+)\s+UNTIL\s+(.+)",
+            # File status checks
+            "file_status": r"IF\s+(\w+-STATUS)\s*(=|NOT\s*=|>|<)\s*(['\"]?\w+['\"]?)",
+            # Numeric validation
+            "numeric_check": r"IF\s+(\w+)\s+IS\s+(NOT\s+)?NUMERIC",
+            # Alphabetic validation  
+            "alpha_check": r"IF\s+(\w+)\s+IS\s+(NOT\s+)?ALPHABETIC",
+            # Condition names (88-level)
+            "condition_88": r"IF\s+(\w+-\w+|\w+)",
+            # STOP RUN / GOBACK (program termination)
+            "stop_run": r"STOP\s+RUN",
+            "goback": r"GOBACK",
+            # Paragraph/Section definitions
+            "paragraph_def": r"^\s*(\d{6})?\s*([A-Z0-9-]+)\s*\.\s*$",
+            "section_def": r"^\s*(\d{6})?\s*([A-Z0-9-]+)\s+SECTION\s*\.",
+        },
     }
 
     @classmethod
@@ -740,7 +836,7 @@ class RegexExtractor:
                         line_num,
                         "Swift guard statement"
                     )
-                elif pattern_name in ("if_condition", "if_let"):
+                elif pattern_name in ("if_condition", "if_let", "if_else"):
                     constraint = cls._create_constraint(
                         ConstraintKind.GUARD,
                         match.group(1),
@@ -781,6 +877,62 @@ class RegexExtractor:
                         language,
                         line_num,
                         "Unwrap requires non-null"
+                    )
+                # COBOL-specific patterns
+                elif pattern_name == "evaluate":
+                    constraint = cls._create_constraint(
+                        ConstraintKind.GUARD,
+                        f"EVALUATE {match.group(1)}",
+                        language,
+                        line_num,
+                        "COBOL EVALUATE statement"
+                    )
+                elif pattern_name == "evaluate_when":
+                    constraint = cls._create_constraint(
+                        ConstraintKind.GUARD,
+                        match.group(1),
+                        language,
+                        line_num,
+                        "COBOL WHEN condition"
+                    )
+                elif pattern_name in ("perform_until", "perform_varying"):
+                    cond = match.group(4) if pattern_name == "perform_varying" else match.group(1)
+                    constraint = cls._create_constraint(
+                        ConstraintKind.INVARIANT,
+                        cond,
+                        language,
+                        line_num,
+                        "COBOL PERFORM loop termination"
+                    )
+                elif pattern_name == "file_status":
+                    status_var = match.group(1)
+                    op = match.group(2)
+                    value = match.group(3)
+                    constraint = cls._create_constraint(
+                        ConstraintKind.GUARD,
+                        f"{status_var} {op} {value}",
+                        language,
+                        line_num,
+                        "COBOL file status check"
+                    )
+                elif pattern_name in ("numeric_check", "alpha_check"):
+                    var = match.group(1)
+                    negation = match.group(2) or ""
+                    check_type = "NUMERIC" if "numeric" in pattern_name else "ALPHABETIC"
+                    constraint = cls._create_constraint(
+                        ConstraintKind.TYPE_CHECK,
+                        f"{var} IS {negation}{check_type}",
+                        language,
+                        line_num,
+                        f"COBOL {check_type.lower()} validation"
+                    )
+                elif pattern_name in ("stop_run", "goback"):
+                    constraint = cls._create_constraint(
+                        ConstraintKind.EARLY_EXIT,
+                        pattern_name.upper().replace("_", " "),
+                        language,
+                        line_num,
+                        "COBOL program termination"
                     )
                 else:
                     continue
