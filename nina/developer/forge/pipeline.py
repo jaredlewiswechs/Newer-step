@@ -278,6 +278,10 @@ class Pipeline:
         start_time = time.time()
         bounds_report = BoundsReport()
         
+        # STAGE 0: INPUT SANITIZATION (Defense in Depth)
+        # Sanitize input BEFORE any parsing to prevent injection attacks
+        input_text = self._sanitize_input(input_text)
+        
         try:
             # Stage 1: Intent Lock
             trace.add(PipelineStage.INTENT_LOCK, "OK", {
@@ -682,6 +686,61 @@ class Pipeline:
                 raise ValueError(
                     f"Invariant violation: TRUSTED label from untrusted source {labeled.source}"
                 )
+    
+    def _sanitize_input(self, input_text: str) -> str:
+        """
+        Sanitize user input to prevent injection attacks.
+        
+        Defense in depth: Even though slots are only used for dictionary lookups
+        (not SQL, eval, or shell commands), we sanitize to protect against:
+        1. Log injection (newlines, control chars)
+        2. ReDoS (regex denial of service via catastrophic backtracking)
+        3. Future code changes that might use slots unsafely
+        4. XSS if values ever rendered in HTML
+        
+        POLICY:
+        - Max length: 1000 chars (prevents DoS, reasonable for queries)
+        - Strip control characters (except space)
+        - Neutralize shell metacharacters
+        - Neutralize HTML/script tags
+        - Preserve natural language queries
+        """
+        # Bound length first (prevents ReDoS and memory exhaustion)
+        MAX_INPUT_LENGTH = 1000
+        if len(input_text) > MAX_INPUT_LENGTH:
+            input_text = input_text[:MAX_INPUT_LENGTH]
+        
+        # Remove null bytes and control characters (keep printable + space)
+        # This prevents log injection and terminal control sequence attacks
+        sanitized = ''.join(
+            c for c in input_text 
+            if c.isprintable() or c == ' '
+        )
+        
+        # Neutralize shell injection patterns
+        # Replace dangerous shell metacharacters with safe equivalents
+        shell_escapes = {
+            '$': '＄',      # Dollar sign → fullwidth (neutralizes $(...), ${...})
+            '`': '｀',      # Backtick → fullwidth (neutralizes `...`)
+            ';': '；',      # Semicolon → fullwidth (neutralizes cmd chaining)
+            '|': '｜',      # Pipe → fullwidth (neutralizes piping)
+            '&': '＆',      # Ampersand → fullwidth (neutralizes background/AND)
+            '\n': ' ',      # Newline → space (neutralizes command injection)
+            '\r': ' ',      # Carriage return → space
+        }
+        for dangerous, safe in shell_escapes.items():
+            sanitized = sanitized.replace(dangerous, safe)
+        
+        # Neutralize HTML/XSS patterns
+        # Replace angle brackets with HTML entities or safe chars
+        sanitized = sanitized.replace('<', '＜')
+        sanitized = sanitized.replace('>', '＞')
+        
+        # Collapse multiple spaces (prevents regex DoS patterns)
+        while '  ' in sanitized:
+            sanitized = sanitized.replace('  ', ' ')
+        
+        return sanitized.strip()
     
     def get_ledger(self) -> List[Dict[str, Any]]:
         """Get the provenance ledger."""

