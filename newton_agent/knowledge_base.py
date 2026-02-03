@@ -8,9 +8,13 @@ Pre-verified facts from authoritative sources (CIA World Factbook, etc.)
 These facts are considered GROUND TRUTH - no LLM needed.
 Source: CIA World Factbook, ISO standards, official government data.
 
-Search Strategy:
-1. FAST: Keyword matching (~1ms) - exact matches
-2. SEMANTIC: Embedding fallback (~100ms) - natural language understanding
+Search Strategy (Three-Tier Kinematic Semantics):
+1. SHAPE: Kinematic query parsing (~0ms) - questions as equations
+2. SEMANTIC: Datamuse semantic field resolution (~200ms) - when patterns miss
+3. KEYWORD: Traditional keyword matching (~1ms) - fallback
+4. EMBEDDING: Vector search (~100ms) - last resort
+
+"The question has shape. The KB has shape. Match shapes, fill slots."
 """
 
 from dataclasses import dataclass
@@ -23,6 +27,20 @@ try:
     HAS_LANGUAGE_MECHANICS = True
 except ImportError:
     HAS_LANGUAGE_MECHANICS = False
+
+# Import kinematic query parser (shape-based)
+try:
+    from .query_parser import get_query_parser, QueryShape, ParsedQuery
+    HAS_QUERY_PARSER = True
+except ImportError:
+    HAS_QUERY_PARSER = False
+
+# Import semantic resolver (Datamuse API)
+try:
+    from .semantic_resolver import SemanticResolver
+    HAS_SEMANTIC_RESOLVER = True
+except ImportError:
+    HAS_SEMANTIC_RESOLVER = False
 
 # Import embeddings for semantic search fallback
 try:
@@ -673,9 +691,13 @@ class KnowledgeBase:
     Pre-verified knowledge base for instant fact retrieval.
     No LLM needed for known facts.
     
-    Search Strategy:
-    1. FAST: Keyword matching (~1ms)
-    2. SEMANTIC: Embedding fallback (~100ms) for natural language
+    Search Strategy (Three-Tier Kinematic Semantics):
+    1. SHAPE: Kinematic query parsing (~0ms) - questions as equations
+    2. SEMANTIC: Datamuse semantic field resolution (~200ms) - when patterns miss
+    3. KEYWORD: Traditional keyword matching (~1ms) - fallback
+    4. EMBEDDING: Vector search (~100ms) - last resort
+    
+    "The question has shape. The KB has shape. Match shapes, fill slots."
     """
     
     CIA_FACTBOOK_URL = "https://www.cia.gov/the-world-factbook/"
@@ -684,12 +706,22 @@ class KnowledgeBase:
     def __init__(self, enable_embeddings: bool = True):
         self.queries = 0
         self.hits = 0
-        self.keyword_hits = 0
-        self.semantic_hits = 0
+        self.shape_hits = 0       # Tier 1: Kinematic parser
+        self.semantic_hits = 0    # Tier 2: Datamuse semantic fields
+        self.keyword_hits = 0     # Tier 3: Traditional keyword matching
+        self.embedding_hits = 0   # Tier 4: Vector embeddings
         self.typo_corrections = 0
+        
         # Initialize language mechanics if available
         self._lm = get_language_mechanics() if HAS_LANGUAGE_MECHANICS else None
-        # Initialize embedding engine if available
+        
+        # Initialize kinematic query parser (Tier 1)
+        self._parser = get_query_parser() if HAS_QUERY_PARSER else None
+        
+        # Initialize semantic resolver (Tier 2)
+        self._semantic = SemanticResolver() if HAS_SEMANTIC_RESOLVER else None
+        
+        # Initialize embedding engine (Tier 4) - lazy loaded
         self._embeddings = None
         self._embeddings_indexed = False
         self._enable_embeddings = enable_embeddings and HAS_EMBEDDINGS
@@ -755,9 +787,11 @@ class KnowledgeBase:
         Query the knowledge base for a verified fact.
         Returns None if fact not found.
         
-        Strategy:
-        1. Try fast keyword matching first
-        2. Fall back to semantic search if no keyword match
+        Three-Tier Kinematic Semantics:
+        1. SHAPE: Kinematic query parsing (~0ms) - questions as equations
+        2. SEMANTIC: Datamuse semantic field resolution (~200ms)
+        3. KEYWORD: Traditional keyword matching (~1ms)
+        4. EMBEDDING: Vector search (~100ms) - last resort
         """
         self.queries += 1
         question_lower = question.lower().strip()
@@ -771,7 +805,32 @@ class KnowledgeBase:
             # Normalize the query (e.g., "founder of X" → "who founded X")
             question_lower = self._lm.normalize_query(question_lower)
         
-        # PHASE 1: Fast keyword matching (~1ms)
+        # ═══════════════════════════════════════════════════════════════════════
+        # TIER 1: KINEMATIC SHAPE PARSING (~0ms)
+        # "The question has shape. The KB has shape. Match shapes, fill slots."
+        # ═══════════════════════════════════════════════════════════════════════
+        if self._parser:
+            result = self._query_by_shape(question_lower)
+            if result:
+                self.hits += 1
+                self.shape_hits += 1
+                return result
+        
+        # ═══════════════════════════════════════════════════════════════════════
+        # TIER 2: SEMANTIC FIELD RESOLUTION (~200ms)
+        # "Beauty is in the eye of the beholder - meaning is contextual overlap."
+        # ═══════════════════════════════════════════════════════════════════════
+        if self._semantic:
+            result = self._query_by_semantic_field(question, question_lower)
+            if result:
+                self.hits += 1
+                self.semantic_hits += 1
+                return result
+        
+        # ═══════════════════════════════════════════════════════════════════════
+        # TIER 3: KEYWORD MATCHING (~1ms)
+        # Traditional pattern matching - still valuable for exact matches
+        # ═══════════════════════════════════════════════════════════════════════
         result = (
             self._query_capital(question_lower) or
             self._query_geographic_misconception(question_lower) or
@@ -797,23 +856,203 @@ class KnowledgeBase:
             self.keyword_hits += 1
             return result
         
-        # PHASE 2: Semantic search fallback (~100ms)
-        result = self._query_semantic(question_lower)
+        # ═══════════════════════════════════════════════════════════════════════
+        # TIER 4: EMBEDDING SEARCH (~100ms)
+        # Last resort - when structure is truly ambiguous
+        # ═══════════════════════════════════════════════════════════════════════
+        result = self._query_embedding(question_lower)
         if result:
             self.hits += 1
-            self.semantic_hits += 1
+            self.embedding_hits += 1
         
         return result
     
-    def _query_semantic(self, question: str) -> Optional[VerifiedFact]:
+    def _query_by_shape(self, question: str) -> Optional[VerifiedFact]:
         """
-        Semantic search fallback using embeddings.
-        Only called when keyword matching fails.
+        Tier 1: Kinematic query parsing.
+        Questions are incomplete equations seeking their terminus.
+        """
+        if not self._parser:
+            return None
+        
+        parsed = self._parser.parse(question)
+        
+        # Only use if we have good confidence
+        if parsed.confidence < 0.7 or parsed.shape == QueryShape.UNKNOWN:
+            return None
+        
+        slot = parsed.slot
+        if not slot:
+            return None
+        
+        # Direct shape-to-KB lookup
+        if parsed.shape == QueryShape.CAPITAL_OF:
+            if slot in COUNTRY_CAPITALS:
+                return VerifiedFact(
+                    fact=f"The capital of {slot.title()} is {COUNTRY_CAPITALS[slot]}.",
+                    category="geography",
+                    source="CIA World Factbook (shape-matched)",
+                    source_url=self.CIA_FACTBOOK_URL,
+                    confidence=parsed.confidence,
+                )
+        
+        elif parsed.shape == QueryShape.FOUNDER_OF:
+            if slot in COMPANY_FACTS:
+                founders = COMPANY_FACTS[slot].get("founders", [])
+                if founders:
+                    return VerifiedFact(
+                        fact=f"{slot.title()} was founded by {', '.join(founders)}.",
+                        category="company",
+                        source="Official Company Records (shape-matched)",
+                        source_url="",
+                        confidence=parsed.confidence,
+                    )
+        
+        elif parsed.shape == QueryShape.FOUNDED_WHEN:
+            if slot in COMPANY_FACTS:
+                year = COMPANY_FACTS[slot].get("founded")
+                if year:
+                    return VerifiedFact(
+                        fact=f"{slot.title()} was founded in {year}.",
+                        category="company",
+                        source="Official Company Records (shape-matched)",
+                        source_url="",
+                        confidence=parsed.confidence,
+                    )
+        
+        elif parsed.shape == QueryShape.POPULATION_OF:
+            if slot in COUNTRY_POPULATIONS:
+                pop, year = COUNTRY_POPULATIONS[slot]
+                return VerifiedFact(
+                    fact=f"The population of {slot.title()} is approximately {pop:,} ({year} estimate).",
+                    category="geography",
+                    source="CIA World Factbook (shape-matched)",
+                    source_url=self.CIA_FACTBOOK_URL,
+                    confidence=parsed.confidence,
+                )
+        
+        elif parsed.shape == QueryShape.ATOMIC_NUMBER:
+            if slot in PERIODIC_TABLE:
+                symbol, num, mass, category = PERIODIC_TABLE[slot]
+                return VerifiedFact(
+                    fact=f"The atomic number of {slot.title()} is {num}.",
+                    category="chemistry",
+                    source="IUPAC Periodic Table (shape-matched)",
+                    source_url="https://iupac.org/",
+                    confidence=parsed.confidence,
+                )
+        
+        elif parsed.shape == QueryShape.ACRONYM_EXPANSION:
+            if slot in ACRONYMS:
+                expansion, desc = ACRONYMS[slot]
+                return VerifiedFact(
+                    fact=f"{slot.upper()} stands for {expansion}. {desc}",
+                    category="definition",
+                    source="Standard Definitions (shape-matched)",
+                    source_url="",
+                    confidence=parsed.confidence,
+                )
+        
+        elif parsed.shape == QueryShape.PHYSICS_LAW:
+            # Try to match "first", "second", "third" etc.
+            for law_name, (statement, formula) in PHYSICS_LAWS.items():
+                if slot in law_name:
+                    return VerifiedFact(
+                        fact=f"{statement}" + (f" Formula: {formula}" if formula else ""),
+                        category="physics",
+                        source="Physics Fundamentals (shape-matched)",
+                        source_url="https://physics.nist.gov/",
+                        confidence=parsed.confidence,
+                    )
+        
+        elif parsed.shape == QueryShape.FORMULA_MEANING:
+            if slot in CHEMICAL_NOTATION:
+                return VerifiedFact(
+                    fact=CHEMICAL_NOTATION[slot],
+                    category="chemistry",
+                    source="IUPAC Nomenclature (shape-matched)",
+                    source_url="https://iupac.org/",
+                    confidence=parsed.confidence,
+                )
+        
+        return None
+    
+    def _query_by_semantic_field(self, question_original: str, question_lower: str) -> Optional[VerifiedFact]:
+        """
+        Tier 2: Semantic field resolution using Datamuse API.
+        Beauty is in the eye of the beholder - meaning is contextual overlap.
+        """
+        if not self._semantic:
+            return None
+        
+        # Detect shape from semantic field
+        shape = self._semantic.detect_shape(question_original)
+        if not shape:
+            return None
+        
+        # Extract entity
+        entity = self._semantic.extract_entity(question_original)
+        if not entity:
+            return None
+        
+        entity_lower = entity.lower()
+        
+        # Route to appropriate KB based on semantic shape
+        if shape == "CAPITAL_OF":
+            if entity_lower in COUNTRY_CAPITALS:
+                return VerifiedFact(
+                    fact=f"The capital of {entity} is {COUNTRY_CAPITALS[entity_lower]}.",
+                    category="geography",
+                    source="CIA World Factbook (semantic-resolved)",
+                    source_url=self.CIA_FACTBOOK_URL,
+                    confidence=0.85,  # Slightly lower confidence for semantic
+                )
+        
+        elif shape == "FOUNDER_OF":
+            if entity_lower in COMPANY_FACTS:
+                founders = COMPANY_FACTS[entity_lower].get("founders", [])
+                if founders:
+                    return VerifiedFact(
+                        fact=f"{entity} was founded by {', '.join(founders)}.",
+                        category="company",
+                        source="Official Company Records (semantic-resolved)",
+                        source_url="",
+                        confidence=0.85,
+                    )
+        
+        elif shape == "POPULATION_OF":
+            if entity_lower in COUNTRY_POPULATIONS:
+                pop, year = COUNTRY_POPULATIONS[entity_lower]
+                return VerifiedFact(
+                    fact=f"The population of {entity} is approximately {pop:,} ({year} estimate).",
+                    category="geography",
+                    source="CIA World Factbook (semantic-resolved)",
+                    source_url=self.CIA_FACTBOOK_URL,
+                    confidence=0.85,
+                )
+        
+        elif shape == "LANGUAGE_OF":
+            if entity_lower in COUNTRY_LANGUAGES:
+                languages = COUNTRY_LANGUAGES[entity_lower]
+                return VerifiedFact(
+                    fact=f"The official language(s) of {entity} are: {', '.join(languages)}.",
+                    category="geography",
+                    source="CIA World Factbook (semantic-resolved)",
+                    source_url=self.CIA_FACTBOOK_URL,
+                    confidence=0.85,
+                )
+        
+        return None
+    
+    def _query_embedding(self, question: str) -> Optional[VerifiedFact]:
+        """
+        Tier 4: Embedding search fallback.
+        Last resort - when structure is truly ambiguous.
         """
         if not self._enable_embeddings:
             return None
         
-        # Lazy-load embeddings on first semantic query
+        # Lazy-load embeddings on first embedding query
         self._ensure_embeddings_indexed()
         
         if not self._embeddings or not self._embeddings.is_available():
@@ -826,8 +1065,8 @@ class KnowledgeBase:
         # Return fact with similarity score in confidence
         return VerifiedFact(
             fact=match.text,
-            category="semantic_match",
-            source="Knowledge Base (Semantic)",
+            category="embedding_match",
+            source="Knowledge Base (Embedding)",
             source_url="",
             confidence=match.similarity,  # Similarity score as confidence
         )
@@ -1292,9 +1531,13 @@ class KnowledgeBase:
             "queries": self.queries,
             "hits": self.hits,
             "hit_rate": self.hits / max(1, self.queries),
-            "keyword_hits": self.keyword_hits,
-            "semantic_hits": self.semantic_hits,
+            "tier_1_shape_hits": self.shape_hits,
+            "tier_2_semantic_hits": self.semantic_hits,
+            "tier_3_keyword_hits": self.keyword_hits,
+            "tier_4_embedding_hits": self.embedding_hits,
             "typo_corrections": self.typo_corrections,
+            "parser_enabled": self._parser is not None,
+            "semantic_enabled": self._semantic is not None,
             "embeddings_enabled": self._enable_embeddings,
             "embeddings_indexed": self._embeddings_indexed,
         }
