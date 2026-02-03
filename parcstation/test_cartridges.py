@@ -9,6 +9,8 @@ Tests all cartridge endpoints
 import requests
 import sys
 import time
+import re
+import os
 
 G = "\033[92m"
 R = "\033[91m"
@@ -32,11 +34,47 @@ class CartridgeTest:
             self.failed += 1
         return condition
     
+    def check_frontend_config(self):
+        """Verify app2.js uses correct CONFIG property names and endpoints"""
+        print(f"{Y}Frontend Config Consistency:{W}")
+        
+        app2_path = os.path.join(os.path.dirname(__file__), "app2.js")
+        if not os.path.exists(app2_path):
+            self.check("app2.js exists", False, "File not found")
+            return
+            
+        with open(app2_path, "r", encoding="utf-8") as f:
+            content = f.read()
+        
+        # Check for typos in CONFIG property names
+        # Valid: CONFIG.CARTRIDGE_URL (singular)
+        # Invalid: CONFIG.CARTRIDGES_URL (plural - typo)
+        typo_matches = re.findall(r'CONFIG\.CARTRIDGES_URL', content)
+        self.check("No CONFIG.CARTRIDGES_URL typos", len(typo_matches) == 0, 
+                   f"Found {len(typo_matches)} instances of typo")
+        
+        # Verify CONFIG.CARTRIDGE_URL is defined
+        config_def = re.search(r"CARTRIDGE_URL:\s*['\"]", content)
+        self.check("CONFIG.CARTRIDGE_URL defined", config_def is not None)
+        
+        # Verify it's used correctly
+        correct_uses = re.findall(r'CONFIG\.CARTRIDGE_URL', content)
+        self.check("CONFIG.CARTRIDGE_URL used", len(correct_uses) >= 1, 
+                   f"Found {len(correct_uses)} uses")
+        
+        # Verify calculator uses cartridge endpoint (not Newton directly)
+        calc_uses_cartridge = re.search(r'calculate\(.*?\{[^}]*CARTRIDGE_URL.*?/cartridge/code', content, re.DOTALL)
+        self.check("Calculator uses cartridge endpoint", calc_uses_cartridge is not None,
+                   "Should use /cartridge/code/evaluate not /calculate")
+    
     def run(self):
         print(f"\n{B}═══ CARTRIDGE TEST SUITE ═══{W}\n")
         
+        # Check frontend config consistency first
+        self.check_frontend_config()
+        
         # Check service health
-        print(f"{Y}Service Health:{W}")
+        print(f"\n{Y}Service Health:{W}")
         try:
             r = requests.get(f"{CARTRIDGE_URL}/health", timeout=3)
             self.check("Service running", r.status_code == 200)

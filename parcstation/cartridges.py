@@ -660,4 +660,5 @@ API docs at http://localhost:8093/docs
 ═══════════════════════════════════════════════════════════════════════════════
     """)
     
-    uvicorn.run(app, host="0.0.0.0", port=8093)
+    # Use uvicorn with timeout settings to avoid socket issues
+    uvicorn.run(app, host="0.0.0.0", port=8093, timeout_keep_alive=5)

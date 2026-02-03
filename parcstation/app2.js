@@ -1222,6 +1222,24 @@ class ParcStationApp {
         } else {
             this.showStacksView();
         }
+        this.updateBackButton();
+    }
+
+    // Update back button visibility based on navigation history
+    updateBackButton() {
+        const backBtn = document.getElementById('btn-back');
+        if (backBtn) {
+            // Hide back button on root views (stacks, documents) with no history
+            const isRootView = this.currentView === 'stacks' || this.currentView === 'documents';
+            const hasHistory = this.history.length > 0;
+            if (isRootView && !hasHistory) {
+                backBtn.style.opacity = '0';
+                backBtn.style.pointerEvents = 'none';
+            } else {
+                backBtn.style.opacity = '1';
+                backBtn.style.pointerEvents = 'auto';
+            }
+        }
     }
 
     pushHistory() {
@@ -1275,6 +1293,7 @@ class ParcStationApp {
         this.updateBreadcrumb([{ label: 'All Stacks' }]);
         this.renderStackGrid();
         this.renderSidebar();
+        this.updateBackButton();
     }
 
     showStackDetail(stackId) {
@@ -1872,7 +1891,7 @@ class ParcStationApp {
     }
 
     async searchWikipedia(query) {
-        const resp = await fetch(`${CONFIG.CARTRIDGES_URL}/cartridge/wikipedia/search`, {
+        const resp = await fetch(`${CONFIG.CARTRIDGE_URL}/cartridge/wikipedia/search`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ query })
@@ -1881,7 +1900,7 @@ class ParcStationApp {
     }
 
     async searchArxiv(query) {
-        const resp = await fetch(`${CONFIG.CARTRIDGES_URL}/cartridge/arxiv/search`, {
+        const resp = await fetch(`${CONFIG.CARTRIDGE_URL}/cartridge/arxiv/search`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ query })
@@ -1890,16 +1909,16 @@ class ParcStationApp {
     }
 
     async calculate(expression) {
-        const resp = await fetch(`${CONFIG.NEWTON_URL}/calculate`, {
+        const resp = await fetch(`${CONFIG.CARTRIDGE_URL}/cartridge/code/evaluate`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ expression })
+            body: JSON.stringify({ code: expression })
         });
         return resp.json();
     }
 
     async parseDate(query) {
-        const resp = await fetch(`${CONFIG.CARTRIDGES_URL}/cartridge/calendar/parse`, {
+        const resp = await fetch(`${CONFIG.CARTRIDGE_URL}/cartridge/calendar/parse`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ query })
@@ -1954,12 +1973,13 @@ class ParcStationApp {
             `).join('');
         }
         // Calculator result
-        else if (data.result !== undefined) {
+        else if (data.result !== undefined && (this.currentCartridge === 'calculator' || data.verified !== undefined)) {
             resultsEl.innerHTML = `
                 <div class="cartridge-result-calc">
-                    <div class="calc-expression">${this.escapeHtml(data.expression || '')}</div>
+                    <div class="calc-expression">${this.escapeHtml(data.input || data.expression || '')}</div>
                     <div class="calc-equals">=</div>
                     <div class="calc-result">${data.result}</div>
+                    ${data.verified ? '<div class="calc-verified">✓ Verified</div>' : ''}
                     <button class="btn btn-secondary" onclick="navigator.clipboard.writeText('${data.result}'); app.showToast('Copied!')">
                         Copy Result
                     </button>
@@ -1967,12 +1987,12 @@ class ParcStationApp {
             `;
         }
         // Calendar result
-        else if (data.date) {
+        else if (data.datetime || data.date) {
             resultsEl.innerHTML = `
                 <div class="cartridge-result-date">
                     <div class="date-label">${this.escapeHtml(data.query || '')}</div>
-                    <div class="date-result">${data.formatted || data.date}</div>
-                    <div class="date-iso">${data.iso || data.date}</div>
+                    <div class="date-result">${data.formatted || data.datetime || data.date}</div>
+                    <div class="date-iso">${data.iso || data.datetime || data.date}</div>
                 </div>
             `;
         }
