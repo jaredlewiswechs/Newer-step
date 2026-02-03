@@ -51,7 +51,7 @@ class VerificationResult:
         return self.verified
     
     def __repr__(self) -> str:
-        status = "✓" if self.verified else "✗"
+        status = "PASS" if self.verified else "FAIL"
         return f"VerificationResult({status}, confidence={self.confidence:.2f})"
 
 
@@ -75,7 +75,7 @@ class ConstraintResult:
         return self.satisfied
     
     def __repr__(self) -> str:
-        status = "✓" if self.satisfied else "✗"
+        status = "PASS" if self.satisfied else "FAIL"
         return f"ConstraintResult({status}, {self.message})"
 
 
@@ -134,7 +134,7 @@ class GroundingResult:
         return self.grounded
     
     def __repr__(self) -> str:
-        status = "✓" if self.grounded else "✗"
+        status = "PASS" if self.grounded else "FAIL"
         return f"GroundingResult({status}, sources={len(self.sources)})"
 
 

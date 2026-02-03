@@ -132,6 +132,16 @@ COUNTRY_CAPITALS: Dict[str, str] = {
     "new zealand": "Wellington",
 }
 
+CONTINENTS: Dict[str, str] = {
+    "africa": "Africa is a continent, not a country. It contains 54 undisputed sovereign states.",
+    "asia": "Asia is the largest continent, not a country. It contains 48 undisputed sovereign states.",
+    "europe": "Europe is a continent, not a country. It contains 44 undisputed sovereign states.",
+    "north america": "North America is a continent, not a country. It contains 23 undisputed sovereign states.",
+    "south america": "South America is a continent, not a country. It contains 12 undisputed sovereign states.",
+    "antarctica": "Antarctica is a continent, not a country. It has no permanent population.",
+    "oceania": "Oceania is a geographic region/continent, not a single country.",
+}
+
 COUNTRY_POPULATIONS: Dict[str, tuple[int, int]] = {
     # (population, year)
     "china": (1_400_000_000, 2024),
@@ -429,6 +439,7 @@ class KnowledgeBase:
         # Try each category
         result = (
             self._query_capital(question_lower) or
+            self._query_geographic_misconception(question_lower) or
             self._query_population(question_lower) or
             self._query_language(question_lower) or
             self._query_currency(question_lower) or
@@ -486,6 +497,21 @@ class KnowledgeBase:
                 source_url=self.CIA_FACTBOOK_URL,
                 confidence=1.0,
             )
+        return None
+
+    def _query_geographic_misconception(self, question: str) -> Optional[VerifiedFact]:
+        """Check for common geographic misconceptions (e.g. capital of a continent)."""
+        # Check specifically for "capital of [continent]"
+        if "capital" in question:
+            for continent, fact in CONTINENTS.items():
+                if continent in question:
+                    return VerifiedFact(
+                        fact=fact,
+                        category="geography",
+                        source="CIA World Factbook",
+                        source_url=self.CIA_FACTBOOK_URL,
+                        confidence=1.0,
+                    )
         return None
     
     def _query_population(self, question: str) -> Optional[VerifiedFact]:
