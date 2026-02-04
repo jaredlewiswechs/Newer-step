@@ -17,7 +17,8 @@ from .parser import (
     Program, Literal, Identifier, BinaryOp, UnaryOp, Call, Index, Member,
     Array, MapLiteral, Lambda, Conditional, Range, Pipe, LetStmt, ConstStmt,
     Block, IfStmt, ForStmt, WhileStmt, ReturnStmt, BreakStmt, ContinueStmt,
-    FnDecl, StructDecl, EnumDecl, ImportStmt, MatchStmt, TryStmt, ThrowStmt
+    FnDecl, StructDecl, EnumDecl, ImportStmt, MatchStmt, TryStmt, ThrowStmt,
+    AssignStmt
 )
 
 
@@ -152,7 +153,7 @@ class Runtime:
         self.structs: Dict[str, TinyStruct] = {}
         self.enums: Dict[str, TinyEnum] = {}
         self.ledger = Ledger()
-        self.trace = Trace()
+        self.traces: List[Trace] = []  # List of traces instead of single Trace
         
         # Execution metrics
         self.op_count = 0
@@ -228,12 +229,14 @@ class Runtime:
         self.iteration_count = 0
         self.recursion_depth = 0
         self.start_time = time.time()
-        self.trace = Trace()
+        self.traces = []
         
         try:
             result = self._eval(ast, self.global_scope)
+            self.traces.append(Trace.t("execute", True, {"result": str(result)}))
             return result
         except ReturnException as e:
+            self.traces.append(Trace.t("return", True, {"value": str(e.value)}))
             return e.value
         except (BreakException, ContinueException):
             raise TinyTalkError("Break/continue outside of loop")
@@ -315,21 +318,21 @@ class Runtime:
         if isinstance(node, Conditional):
             cond = self._eval(node.condition, scope)
             if cond.is_truthy():
-                return self._eval(node.then_branch, scope)
+                return self._eval(node.then_expr, scope)
             else:
-                return self._eval(node.else_branch, scope)
+                return self._eval(node.else_expr, scope)
         
         # Range
         if isinstance(node, Range):
             start = self._eval(node.start, scope)
             end = self._eval(node.end, scope)
-            step = self._eval(node.step, scope) if node.step else Value.int_val(1)
             
             items = []
             i = start.data
-            while i < end.data:
+            end_val = end.data + 1 if node.inclusive else end.data
+            while i < end_val:
                 items.append(Value.int_val(i))
-                i += step.data
+                i += 1
             return Value.list_val(items)
         
         # Pipe
@@ -362,6 +365,36 @@ class Runtime:
         if isinstance(node, ConstStmt):
             val = self._eval(node.value, scope) if node.value else Value.null_val()
             scope.define(node.name, val, const=True)
+            return val
+        
+        # Assignment statement
+        if isinstance(node, AssignStmt):
+            val = self._eval(node.value, scope)
+            
+            if isinstance(node.target, Identifier):
+                if node.op == '=':
+                    if not scope.set(node.target.name, val):
+                        scope.define(node.target.name, val)
+                else:
+                    # Compound assignment
+                    old_val = scope.get(node.target.name)
+                    op = node.op[:-1]  # Remove '=' from '+=', '-=', etc.
+                    new_val = self._apply_op(old_val, val, op, node.line)
+                    scope.set(node.target.name, new_val)
+                    return new_val
+            elif isinstance(node.target, Index):
+                container = self._eval(node.target.obj, scope)
+                index = self._eval(node.target.index, scope)
+                if container.type == ValueType.LIST:
+                    container.data[int(index.data)] = val
+                elif container.type == ValueType.MAP:
+                    container.data[index.to_python()] = val
+            elif isinstance(node.target, Member):
+                obj = self._eval(node.target.obj, scope)
+                if obj.type == ValueType.STRUCT_INSTANCE:
+                    obj.data.fields[node.target.field] = val
+                elif obj.type == ValueType.MAP:
+                    obj.data[node.target.field] = val
             return val
         
         # Block
@@ -587,9 +620,9 @@ class Runtime:
         elif isinstance(node.left, Member):
             obj = self._eval(node.left.obj, scope)
             if obj.type == ValueType.STRUCT_INSTANCE:
-                obj.data.fields[node.left.member] = val
+                obj.data.fields[node.left.field] = val
             elif obj.type == ValueType.MAP:
-                obj.data[node.left.member] = val
+                obj.data[node.left.field] = val
         
         return val
     
@@ -620,6 +653,28 @@ class Runtime:
             scope.set(node.left.name, val)
         
         return val
+    
+    def _apply_op(self, left: Value, right: Value, op: str, line: int) -> Value:
+        """Apply binary operator to values."""
+        ops = {
+            '+': lambda a, b: a + b,
+            '-': lambda a, b: a - b,
+            '*': lambda a, b: a * b,
+            '/': lambda a, b: a / b,
+            '%': lambda a, b: a % b,
+            '//': lambda a, b: a // b,
+            '**': lambda a, b: a ** b,
+        }
+        
+        if op not in ops:
+            raise TinyTalkError(f"Unknown operator: {op}", line)
+        
+        result = ops[op](left.data, right.data)
+        if isinstance(result, float) and result.is_integer():
+            return Value.int_val(int(result))
+        elif isinstance(result, float):
+            return Value.float_val(result)
+        return Value.int_val(result)
     
     def _eval_unary(self, node: UnaryOp, scope: Scope) -> Value:
         """Evaluate unary operation."""
@@ -710,22 +765,22 @@ class Runtime:
         obj = self._eval(node.obj, scope)
         
         if obj.type == ValueType.STRUCT_INSTANCE:
-            if node.member in obj.data.fields:
-                return obj.data.fields[node.member]
-            raise TinyTalkError(f"Unknown field '{node.member}'", node.line)
+            if node.field in obj.data.fields:
+                return obj.data.fields[node.field]
+            raise TinyTalkError(f"Unknown field '{node.field}'", node.line)
         
         if obj.type == ValueType.MAP:
-            key = node.member
+            key = node.field
             if key in obj.data:
                 return obj.data[key]
             return Value.null_val()
         
         # Built-in methods
         if obj.type == ValueType.STRING:
-            if node.member == 'length':
+            if node.field == 'length':
                 return Value.int_val(len(obj.data))
         if obj.type == ValueType.LIST:
-            if node.member == 'length':
+            if node.field == 'length':
                 return Value.int_val(len(obj.data))
         
         raise TinyTalkError(f"Cannot access member of {obj.type.value}", node.line)

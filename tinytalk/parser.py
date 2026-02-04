@@ -64,7 +64,7 @@ class NodeType(Enum):
 @dataclass
 class ASTNode:
     """Base AST node."""
-    type: NodeType
+    type: NodeType = None  # Will be set by subclass __post_init__
     line: int = 0
     column: int = 0
     
