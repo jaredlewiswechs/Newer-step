@@ -9,6 +9,190 @@
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         /* ═══════════════════════════════════════════════════════════════
+           RETRO SPLASH SCREEN (NeXTSTEP / Classic Mac style)
+           ═══════════════════════════════════════════════════════════════ */
+        
+        #splash {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(180deg, #c0c0c0 0%, #a0a0a0 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            transition: opacity 0.8s ease;
+            font-family: 'Chicago', 'Geneva', 'Helvetica Neue', Arial, sans-serif;
+        }
+        
+        #splash.hidden {
+            opacity: 0;
+            visibility: hidden;
+        }
+        
+        .splash-window {
+            background: #ffffff;
+            border: 2px solid #000;
+            box-shadow: 
+                2px 2px 0 #000,
+                inset -1px -1px 0 #808080,
+                inset 1px 1px 0 #dfdfdf;
+            padding: 0;
+            width: 420px;
+        }
+        
+        .splash-titlebar {
+            background: linear-gradient(90deg, #000080 0%, #1084d0 100%);
+            padding: 4px 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .splash-titlebar-text {
+            color: #fff;
+            font-size: 12px;
+            font-weight: bold;
+            text-shadow: 1px 1px 0 #000;
+            letter-spacing: 0.5px;
+        }
+        
+        .splash-content {
+            padding: 24px 32px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: linear-gradient(180deg, #efefef 0%, #d4d4d4 100%);
+        }
+        
+        .splash-logo {
+            width: 96px;
+            height: 96px;
+            background: #000;
+            border: 3px solid #000;
+            box-shadow: 
+                inset -2px -2px 0 #404040,
+                inset 2px 2px 0 #606060,
+                4px 4px 0 rgba(0,0,0,0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-weight: bold;
+            font-size: 28px;
+            color: #00ff00;
+            text-shadow: 0 0 10px #00ff00;
+            letter-spacing: -2px;
+        }
+        
+        .splash-title {
+            margin-top: 20px;
+            font-size: 24px;
+            font-weight: bold;
+            color: #000;
+            text-shadow: 1px 1px 0 #fff;
+            letter-spacing: -0.5px;
+        }
+        
+        .splash-version {
+            margin-top: 4px;
+            font-size: 11px;
+            color: #444;
+        }
+        
+        .splash-divider {
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #808080, transparent);
+            margin: 20px 0;
+        }
+        
+        .splash-loading {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .splash-bar-container {
+            width: 280px;
+            height: 20px;
+            background: #fff;
+            border: 2px solid #000;
+            box-shadow: 
+                inset -1px -1px 0 #dfdfdf,
+                inset 1px 1px 0 #808080;
+            padding: 2px;
+        }
+        
+        .splash-bar-fill {
+            height: 100%;
+            width: 0%;
+            background: repeating-linear-gradient(
+                90deg,
+                #000080 0px,
+                #000080 8px,
+                #0000b0 8px,
+                #0000b0 16px
+            );
+            transition: width 0.4s ease;
+        }
+        
+        .splash-status {
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 11px;
+            color: #000;
+            height: 14px;
+        }
+        
+        .splash-extensions {
+            margin-top: 16px;
+            font-size: 10px;
+            color: #666;
+            text-align: center;
+            font-family: 'Monaco', 'Courier New', monospace;
+        }
+        
+        .splash-ext-item {
+            opacity: 0;
+            animation: fadeInExt 0.3s ease forwards;
+        }
+        
+        @keyframes fadeInExt {
+            to { opacity: 1; }
+        }
+        
+        .splash-copyright {
+            margin-top: 20px;
+            font-size: 9px;
+            color: #666;
+            text-align: center;
+        }
+        
+        .splash-icon-row {
+            display: flex;
+            gap: 16px;
+            margin-top: 16px;
+        }
+        
+        .splash-icon {
+            width: 32px;
+            height: 32px;
+            background: #fff;
+            border: 2px solid #000;
+            box-shadow: 
+                inset -1px -1px 0 #808080,
+                inset 1px 1px 0 #dfdfdf;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+        /* ═══════════════════════════════════════════════════════════════
            THEME SYSTEM - CSS Custom Properties
            ═══════════════════════════════════════════════════════════════ */
         
@@ -760,6 +944,43 @@
     </style>
 </head>
 <body data-theme="dark">
+    <!-- Retro Splash Screen -->
+    <div id="splash">
+        <div class="splash-window">
+            <div class="splash-titlebar">
+                <span class="splash-titlebar-text">realTinyTalk™</span>
+            </div>
+            <div class="splash-content">
+                <div class="splash-logo">rT</div>
+                <div class="splash-title">realTinyTalk</div>
+                <div class="splash-version">Version 1.0 • Build 2026.02</div>
+                
+                <div class="splash-divider"></div>
+                
+                <div class="splash-loading">
+                    <div class="splash-bar-container">
+                        <div class="splash-bar-fill" id="splashProgress"></div>
+                    </div>
+                    <div class="splash-status" id="splashStatus">Loading...</div>
+                </div>
+                
+                <div class="splash-extensions" id="splashExtensions"></div>
+                
+                <div class="splash-icon-row">
+                    <div class="splash-icon">⚡</div>
+                    <div class="splash-icon">📝</div>
+                    <div class="splash-icon">🔗</div>
+                    <div class="splash-icon">✨</div>
+                </div>
+                
+                <div class="splash-copyright">
+                    © 2026 Newton Systems<br>
+                    The Friendly Programming Language
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Header -->
     <header class="header">
         <div class="logo">
@@ -860,6 +1081,72 @@
         let currentTheme = localStorage.getItem('tinytalk-theme') || 'dark';
 
         // ═══════════════════════════════════════════════════════════════
+        // RETRO SPLASH SCREEN (5 second minimum)
+        // ═══════════════════════════════════════════════════════════════
+        
+        const splashStartTime = Date.now();
+        const MINIMUM_SPLASH_TIME = 5000; // Show splash for 5 seconds
+        
+        const loadingExtensions = [
+            'Monaco Editor',
+            'Syntax Highlighter',
+            'TinyTalk Language',
+            'Step Chains',
+            'Property Magic',
+            'Blueprints',
+            'Verified Runtime',
+            'Examples Library'
+        ];
+        let currentExtIndex = 0;
+        
+        function updateSplash(progress, status) {
+            const bar = document.getElementById('splashProgress');
+            const text = document.getElementById('splashStatus');
+            if (bar) bar.style.width = progress + '%';
+            if (text) text.textContent = status;
+        }
+        
+        function showExtension(name) {
+            const container = document.getElementById('splashExtensions');
+            if (container) {
+                container.innerHTML = `<span class="splash-ext-item">Loading: ${name}</span>`;
+            }
+        }
+        
+        // Cycle through extensions during load
+        function cycleExtensions() {
+            if (currentExtIndex < loadingExtensions.length) {
+                const ext = loadingExtensions[currentExtIndex];
+                showExtension(ext);
+                const progress = 10 + (currentExtIndex / loadingExtensions.length) * 80;
+                updateSplash(progress, `Initializing...`);
+                currentExtIndex++;
+                setTimeout(cycleExtensions, 500);
+            }
+        }
+        
+        function hideSplash() {
+            const elapsed = Date.now() - splashStartTime;
+            const remaining = Math.max(0, MINIMUM_SPLASH_TIME - elapsed);
+            
+            // Wait for minimum time, then fade out
+            setTimeout(() => {
+                updateSplash(100, 'Ready!');
+                showExtension('Complete');
+                setTimeout(() => {
+                    const splash = document.getElementById('splash');
+                    if (splash) {
+                        splash.classList.add('hidden');
+                        setTimeout(() => splash.remove(), 800);
+                    }
+                }, 600);
+            }, remaining);
+        }
+        
+        updateSplash(5, 'Starting...');
+        setTimeout(cycleExtensions, 300);
+
+        // ═══════════════════════════════════════════════════════════════
         // THEME MANAGEMENT
         // ═══════════════════════════════════════════════════════════════
 
@@ -906,7 +1193,12 @@
         // ═══════════════════════════════════════════════════════════════
 
         require.config({ paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.44.0/min/vs' } });
+        
+        updateSplash(20, 'Configuring editor...');
+        
         require(['vs/editor/editor.main'], function () {
+            updateSplash(40, 'Registering TinyTalk language...');
+            
             // Register TinyTalk language
             monaco.languages.register({ id: 'tinytalk' });
 
@@ -1233,6 +1525,8 @@
                 }
             });
 
+            updateSplash(60, 'Creating editor instance...');
+
             // Create editor
             editor = monaco.editor.create(document.getElementById('editor'), {
                 value: `// ═══════════════════════════════════════════════════════════
@@ -1493,6 +1787,14 @@ for i in range(10) {
                     return { suggestions };
                 }
             });
+            
+            updateSplash(80, 'Loading examples...');
+            
+            // Load examples then hide splash
+            loadExamples().then(() => {
+                updateSplash(95, 'Almost ready...');
+                hideSplash();
+            });
         });
 
         // ═══════════════════════════════════════════════════════════════
@@ -1634,9 +1936,6 @@ for i in range(10) {
             return div.innerHTML;
         }
 
-        // Initialize
-        loadExamples();
-        
         // Set initial theme option as active
         document.querySelectorAll('.theme-option').forEach(el => {
             el.classList.toggle('active', el.dataset.theme === currentTheme);

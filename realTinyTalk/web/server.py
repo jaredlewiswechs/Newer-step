@@ -113,9 +113,10 @@ show("Hello World!")
 let name = "Newton"
 show("Welcome" name "to realTinyTalk!")
 
-// Property magic: .str .upcase .len
-show("name.upcase:" name.upcase)
-show("name.len:" name.len)'''
+// Property magic - no parentheses needed!
+show("Uppercase:" name.upcase)
+show("Length:" name.len)
+show("Reversed:" name.reversed)'''
         },
         {
             'name': '📖 Tutorial: Basics',
@@ -128,7 +129,7 @@ let greeting = "Hello"
 let number = 42
 let pi = 3.14159
 
-// show() prints anything - spaces between args
+// show() prints anything - space-separated args
 show("greeting:" greeting)
 show("number:" number)
 show("pi:" pi)
@@ -137,18 +138,18 @@ show("pi:" pi)
 show("")
 show("=== Math ===")
 let sum = 2 + 3
-let div = 10 / 4
+let product = 10 * 4
 let power = 2 ** 8
 show("2 + 3 =" sum)
-show("10 / 4 =" div)
+show("10 * 4 =" product)
 show("2 ** 8 =" power)
 
 // Strings
 show("")
 show("=== Strings ===")
 let name = "Alice"
-show("Hello" name)
-show("Name length:" name.len)
+show("Hello" name "!")
+show("Length:" name.len)
 show("Uppercase:" name.upcase)
 show("Reversed:" name.reversed)'''
         },
@@ -269,19 +270,20 @@ for i in range(10) {
         },
         {
             'name': '🔧 Property Magic',
-            'code': '''// Property conversions - no function calls!
-// x.str  -> to string
-// x.num  -> to number  
-// x.int  -> to integer
-// x.bool -> to boolean
-// x.type -> type name
+            'code': '''// Property conversions - no parentheses needed!
+// .str   -> convert to string
+// .int   -> convert to integer
+// .float -> convert to float  
+// .bool  -> convert to boolean
+// .type  -> get type name
+// .len   -> get length
 
 let num = 42
 let text = "3.14"
 
 show("=== Type Conversions ===")
 show("num.str:" num.str)
-show("text.num:" text.num)
+show("text.float:" text.float)
 show("text.int:" text.int)
 show("num.type:" num.type)
 
@@ -293,6 +295,7 @@ show("trimmed:" msg.trim)
 show("upcase:" msg.upcase)
 show("lowcase:" msg.lowcase)
 show("len:" msg.len)
+show("reversed:" msg.reversed)
 
 show("")
 show("=== List Properties ===")
@@ -300,7 +303,8 @@ let items = [1, 2, 3, 4, 5]
 show("items:" items)
 show("first:" items.first)
 show("last:" items.last)
-show("empty:" items.empty)'''
+show("empty:" items.empty)
+show("len:" items.len)'''
         },
         {
             'name': '📜 when (Constants)',
@@ -613,7 +617,7 @@ show("Bob islike A*:" ("Bob" islike "A*"))'''
         },
         {
             'name': '✨ String Properties',
-            'code': '''// New string properties!
+            'code': '''// String properties - no parentheses needed!
 
 let msg = "  Hello World  "
 
@@ -630,7 +634,7 @@ show("")
 show("=== Split Operations ===")
 let sentence = "the quick brown fox"
 show("words:" sentence.words)
-show("chars:" sentence.chars _take(5))
+show("chars:" sentence.chars)
 
 // Works with step chains!
 show("")
@@ -639,6 +643,101 @@ let words = sentence.words
 show("first 2 words:" words _take(2))
 show("sorted words:" words _sort)
 show("unique chars:" sentence.chars _unique _sort)'''
+        },
+        {
+            'name': '🏗️ Blueprints (OOP)',
+            'code': '''// Blueprints = Classes in realTinyTalk
+// Define types with fields and methods
+
+blueprint Counter
+    field value
+    
+    forge inc()
+        self.value = self.value + 1
+        reply self.value
+    end
+    
+    forge add(n)
+        self.value = self.value + n
+        reply self.value
+    end
+    
+    forge reset()
+        self.value = 0
+        reply self.value
+    end
+end
+
+// Create instances
+let c = Counter(0)
+show("Initial:" c.value)
+
+// Call methods
+show("After inc():" c.inc())
+show("After inc():" c.inc())
+show("After add(10):" c.add(10))
+show("After reset():" c.reset())
+
+// Bound methods preserve self!
+let increment = c.inc
+show("Calling bound method:" increment())
+show("Again:" increment())'''
+        },
+        {
+            'name': '🔄 Higher-Order Functions',
+            'code': '''// Pass functions to other functions!
+
+let numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+
+// Define transforms
+law doubled(x)
+    reply x * 2
+end
+
+law squared(x)
+    reply x * x
+end
+
+// Define predicates
+law is_even(x)
+    reply x % 2 == 0
+end
+
+law is_odd(x)
+    reply x % 2 == 1
+end
+
+law greater_than_5(x)
+    reply x > 5
+end
+
+show("=== Transform with _map ===")
+show("Numbers:" numbers)
+show("Doubled:" numbers _map(doubled))
+show("Squared:" numbers _map(squared))
+
+show("")
+show("=== Filter with predicates ===")
+show("Evens:" numbers _filter(is_even))
+show("Odds:" numbers _filter(is_odd))
+
+show("")
+show("=== Chain them! ===")
+// Filter to odds, square each, sum
+let result = numbers _filter(is_odd) _map(squared) _sum
+show("Sum of squared odds:" result)
+
+// Filter >5, double, take 3
+show("Big doubled top 3:" numbers _filter(greater_than_5) _map(doubled) _take(3))
+
+show("")
+show("=== Functions are values ===")
+law apply_twice(func, x)
+    reply func(func(x))
+end
+
+show("apply_twice(doubled, 3):" apply_twice(doubled, 3))
+show("apply_twice(squared, 2):" apply_twice(squared, 2))'''
         },
     ]
     return jsonify(examples)
