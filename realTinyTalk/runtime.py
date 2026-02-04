@@ -112,6 +112,7 @@ class TinyStruct:
     """A TinyTalk struct definition."""
     name: str
     fields: List[Tuple[str, Optional[str], Optional[Any]]]  # (name, type, default)
+    methods: Dict[str, 'TinyFunction'] = field(default_factory=dict)  # method_name -> function
 
 
 @dataclass
@@ -119,6 +120,13 @@ class TinyEnum:
     """A TinyTalk enum definition."""
     name: str
     variants: Dict[str, Optional[Any]]  # variant_name -> associated_data
+
+
+@dataclass
+class BoundMethod:
+    """A method bound to a struct instance (like Python's bound methods)."""
+    method: 'TinyFunction'
+    instance: 'StructInstance'
 
 
 @dataclass
@@ -443,10 +451,22 @@ class Runtime:
             scope.define(node.name, Value.function_val(fn), const=True)
             return Value.null_val()
         
-        # Struct declaration
+        # Struct declaration (blueprint)
         if isinstance(node, StructDecl):
-            struct = TinyStruct(node.name, node.fields)
+            # Build methods dict from parsed methods
+            methods = {}
+            for kind, method_decl in node.methods:
+                method_fn = TinyFunction(
+                    method_decl.name,
+                    method_decl.params,
+                    method_decl.body,
+                    scope  # closure captures the scope at definition time
+                )
+                methods[method_decl.name] = method_fn
+            
+            struct = TinyStruct(node.name, node.fields, methods)
             self.structs[node.name] = struct
+            
             # Define constructor
             scope.define(node.name, Value.function_val(
                 TinyFunction(node.name, [(f[0], f[1]) for f in node.fields], None, scope, True,
@@ -881,8 +901,15 @@ class Runtime:
         obj = self._eval(node.obj, scope)
         
         if obj.type == ValueType.STRUCT_INSTANCE:
-            if node.field in obj.data.fields:
-                return obj.data.fields[node.field]
+            instance = obj.data
+            # Fields take priority over methods (Python-like)
+            if node.field in instance.fields:
+                return instance.fields[node.field]
+            # Check for methods - return bound method
+            if node.field in instance.struct.methods:
+                method = instance.struct.methods[node.field]
+                bound = BoundMethod(method, instance)
+                return Value(ValueType.FUNCTION, bound)
             raise TinyTalkError(f"Unknown field '{node.field}'", node.line)
         
         if obj.type == ValueType.MAP:

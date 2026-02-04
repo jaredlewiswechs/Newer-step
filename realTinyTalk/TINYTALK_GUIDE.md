@@ -1,11 +1,11 @@
-# The tinyTalk Programming Language
+# The realTinyTalk Programming Language
 
 ## A Complete Guide
 
 ```
 ╔═══════════════════════════════════════════════════════════════╗
 ║                                                               ║
-║                     t i n y T A L K                           ║
+║               r e a l T i n y T A L K                         ║
 ║                                                               ║
 ║              The Friendliest Programming Language             ║
 ║                                                               ║
@@ -24,23 +24,26 @@
 4. [Values and Types](#3-values-and-types)
 5. [Variables and Constants](#4-variables-and-constants)
 6. [Operators](#5-operators)
-7. [Control Flow](#6-control-flow)
-8. [Functions](#7-functions)
-9. [Collections](#8-collections)
-10. [Property Conversions](#9-property-conversions)
-11. [Blueprints (Classes)](#10-blueprints-classes)
-12. [Built-in Functions](#11-built-in-functions)
-13. [Error Handling](#12-error-handling)
-14. [Style Guide](#13-style-guide)
-15. [Complete Examples](#14-complete-examples)
+7. [Natural Comparisons](#natural-comparisons) ✨ NEW!
+8. [Step Chains](#step-chains) ✨ NEW!
+9. [Control Flow](#6-control-flow)
+10. [Functions](#7-functions)
+11. [Collections](#8-collections)
+12. [Property Conversions](#9-property-conversions)
+13. [String Properties](#string-properties) ✨ NEW!
+14. [Blueprints (Classes)](#10-blueprints-classes)
+15. [Built-in Functions](#11-built-in-functions)
+16. [Error Handling](#12-error-handling)
+17. [Style Guide](#13-style-guide)
+18. [Complete Examples](#14-complete-examples)
 
 ---
 
 ## 1. Introduction
 
-### What is tinyTalk?
+### What is realTinyTalk?
 
-tinyTalk is a general-purpose programming language designed for clarity and friendliness. Inspired by Smalltalk's elegance, tinyTalk removes unnecessary ceremony while maintaining expressive power.
+realTinyTalk is a general-purpose programming language designed for clarity and friendliness. Inspired by Smalltalk's elegance and dplyr's data pipelines, realTinyTalk removes unnecessary ceremony while maintaining expressive power.
 
 ### Design Philosophy
 
@@ -59,7 +62,7 @@ That's it. No imports, no main function, no semicolons required.
 
 ### The Friendliest Syntax
 
-tinyTalk has **space-separated arguments** — no commas or `+` needed:
+realTinyTalk has **space-separated arguments** — no commas or `+` needed:
 
 ```tinytalk
 let name = "Alice"
@@ -76,7 +79,7 @@ print(f"Hello {name}")
 print("You are", age, "years old")
 ```
 
-tinyTalk reads like English.
+realTinyTalk reads like English.
 
 ---
 
@@ -84,10 +87,11 @@ tinyTalk reads like English.
 
 ### The Web IDE
 
-Open http://localhost:5555 to access the tinyTalk IDE with:
-- Syntax highlighting
-- Example programs
+Open http://localhost:5555 to access the realTinyTalk IDE with:
+- Syntax highlighting with 4 beautiful themes (Dark, Light, Monokai, Nord)
+- Curated example programs
 - Instant execution (Ctrl+Enter)
+- Theme preference saved automatically
 
 ### Running Programs
 
@@ -96,7 +100,7 @@ Write code and press `Ctrl+Enter` or click Run.
 
 **From command line:**
 ```bash
-python -m tinytalk run program.tt
+python -m realTinyTalk run program.tt
 ```
 
 ### Comments
@@ -110,7 +114,7 @@ python -m tinytalk run program.tt
 
 ---
 
-## Quick Tutorial: Learn tinyTalk in 5 Minutes
+## Quick Tutorial: Learn realTinyTalk in 5 Minutes
 
 ### Lesson 1: Hello World
 
@@ -163,8 +167,9 @@ show(text.int)      // 3
 // String properties
 let s = "  HELLO  "
 show(s.trim)        // "HELLO"
-show(s.lower)       // "  hello  "
+show(s.lowcase)     // "  hello  "
 show(s.len)         // 9
+show(s.reversed)    // "  OLLEH  "
 ```
 
 ### Lesson 5: Functions
@@ -370,6 +375,135 @@ x /= 4      // x = 6
 
 ```tinytalk
 let status = age >= 18 ? "adult" : "minor"
+```
+
+---
+
+## Natural Comparisons
+
+realTinyTalk includes natural-language comparison operators that read like English:
+
+### is / isnt — Natural Equality
+
+```tinytalk
+let name = "Alice"
+
+show(name is "Alice")      // true
+show(name isnt "Bob")      // true
+show(5 is 5)               // true
+show(5 isnt 6)             // true
+```
+
+### has / hasnt — Container Checks
+
+Check if a collection contains an element:
+
+```tinytalk
+let numbers = [1, 2, 3, 4, 5]
+let text = "Hello World"
+
+show(numbers has 3)        // true
+show(numbers hasnt 99)     // true
+show(text has "World")     // true
+show(text hasnt "Goodbye") // true
+```
+
+### isin — Element Membership
+
+Check if an element is in a collection (reverse of `has`):
+
+```tinytalk
+let numbers = [1, 2, 3, 4, 5]
+
+show(3 isin numbers)       // true
+show(99 isin numbers)      // false
+```
+
+### islike — Pattern Matching
+
+Match strings with wildcards (`*` for any chars, `?` for single char):
+
+```tinytalk
+show("Alice" islike "A*")      // true  (starts with A)
+show("Alice" islike "*ice")    // true  (ends with ice)
+show("Alice" islike "Al?ce")   // true  (? = any char)
+show("Bob" islike "A*")        // false
+```
+
+---
+
+## Step Chains
+
+realTinyTalk's killer feature: **dplyr-style data pipelines** using underscore-prefixed steps!
+
+Chain operations together for clean, readable data manipulation:
+
+```tinytalk
+let numbers = [5, 2, 8, 1, 9, 3, 7, 4, 6]
+
+// Chain: sort, reverse, take top 3
+let top3 = numbers _sort _reverse _take(3)
+show(top3)  // [9, 8, 7]
+```
+
+### Available Steps
+
+| Step | Description | Example |
+|------|-------------|---------|
+| `_sort` | Sort ascending | `[3,1,2] _sort` → `[1,2,3]` |
+| `_reverse` | Reverse order | `[1,2,3] _reverse` → `[3,2,1]` |
+| `_take(n)` | Take first n | `[1,2,3,4] _take(2)` → `[1,2]` |
+| `_drop(n)` | Drop first n | `[1,2,3,4] _drop(2)` → `[3,4]` |
+| `_first` | First element | `[1,2,3] _first` → `1` |
+| `_last` | Last element | `[1,2,3] _last` → `3` |
+| `_unique` | Remove duplicates | `[1,1,2,2] _unique` → `[1,2]` |
+| `_flatten` | Flatten nested | `[[1,2],[3]] _flatten` → `[1,2,3]` |
+
+### Aggregation Steps
+
+| Step | Description | Example |
+|------|-------------|---------|
+| `_count` | Count elements | `[1,2,3] _count` → `3` |
+| `_sum` | Sum all | `[1,2,3] _sum` → `6` |
+| `_avg` | Average | `[1,2,3] _avg` → `2` |
+| `_min` | Minimum | `[3,1,2] _min` → `1` |
+| `_max` | Maximum | `[3,1,2] _max` → `3` |
+
+### Transform Steps
+
+| Step | Description | Example |
+|------|-------------|---------|
+| `_filter(fn)` | Keep matching | `[1,2,3,4] _filter(is_even)` |
+| `_map(fn)` | Transform each | `[1,2,3] _map(double)` |
+| `_group(fn)` | Group by key | `[1,2,3,4] _group(is_even)` |
+| `_chunk(n)` | Split into chunks | `[1,2,3,4] _chunk(2)` |
+| `_zip(list)` | Pair with another | `[1,2] _zip([3,4])` |
+
+### Complete Example
+
+```tinytalk
+let data = [5, 2, 8, 1, 9, 3, 7, 4, 6]
+
+// Define filter function
+law is_big(x)
+    reply x > 3
+end
+
+// Define transform function  
+law squared(x)
+    reply x * x
+end
+
+// Pipeline: filter big numbers, sort, square them, sum
+let result = data _filter(is_big) _sort _map(squared) _sum
+show(result)  // 5² + 6² + 7² + 8² + 9² = 255
+
+// Quick stats
+show("Count:" data _count)
+show("Sum:" data _sum)
+show("Avg:" data _avg)
+show("Min:" data _min)
+show("Max:" data _max)
 ```
 
 ---
@@ -742,7 +876,7 @@ show("hello".bool)      // true
 
 ```tinytalk
 let messy = "  HELLO WORLD  "
-show(messy.trim.lower)      // "hello world"
+show(messy.trim.lowcase)    // "hello world"
 ```
 
 ### List Properties
@@ -759,6 +893,59 @@ show(messy.trim.lower)      // "hello world"
 ```tinytalk
 let age = 25
 show("I am " + age.str + " years old")
+```
+
+---
+
+## String Properties
+
+realTinyTalk provides rich string manipulation through properties:
+
+### Case Conversion
+
+| Property | Description | Example |
+|----------|-------------|---------|
+| `.upcase` | All uppercase | `"hello".upcase` → `"HELLO"` |
+| `.lowcase` | All lowercase | `"HELLO".lowcase` → `"hello"` |
+
+### Splitting
+
+| Property | Description | Example |
+|----------|-------------|---------|
+| `.chars` | Split to characters | `"abc".chars` → `["a","b","c"]` |
+| `.words` | Split by spaces | `"hello world".words` → `["hello","world"]` |
+| `.lines` | Split by newlines | `"a\nb".lines` → `["a","b"]` |
+
+### Transformations
+
+| Property | Description | Example |
+|----------|-------------|---------|
+| `.reversed` | Reverse string | `"hello".reversed` → `"olleh"` |
+| `.trim` | Remove whitespace | `"  hi  ".trim` → `"hi"` |
+| `.len` | Length | `"hello".len` → `5` |
+
+### Complete Example
+
+```tinytalk
+let text = "  Hello World  "
+
+show("Original:" text)
+show("Trimmed:" text.trim)
+show("Uppercase:" text.upcase)
+show("Lowercase:" text.lowcase)
+show("Reversed:" text.reversed)
+show("Length:" text.len)
+
+// Split and manipulate
+let words = text.trim.words
+show("Words:" words)
+show("First word:" words.first)
+show("Word count:" words _count)
+
+// Combine with step chains!
+let chars = "hello".chars
+show("Sorted chars:" chars _sort)
+show("Unique chars:" "mississippi".chars _unique _sort)
 ```
 
 ---

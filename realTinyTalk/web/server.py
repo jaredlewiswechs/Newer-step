@@ -14,8 +14,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from flask import Flask, request, jsonify, send_from_directory
-from tinytalk import run, ExecutionBounds
-from tinytalk.runtime import TinyTalkError
+from realTinyTalk import run, ExecutionBounds
+from realTinyTalk.runtime import TinyTalkError
 
 app = Flask(__name__, static_folder='static')
 
@@ -102,14 +102,20 @@ def get_examples():
     examples = [
         {
             'name': '👋 Hello World',
-            'code': '''// Welcome to tinyTalk!
+            'code': '''// ═══════════════════════════════════════════════════════════
+// Welcome to realTinyTalk!
 // The friendliest programming language
+// ═══════════════════════════════════════════════════════════
 
 show("Hello World!")
 
 // Space-separated args - no commas needed!
 let name = "Newton"
-show("Welcome" name "to tinyTalk!")'''
+show("Welcome" name "to realTinyTalk!")
+
+// Property magic: .str .upcase .len
+show("name.upcase:" name.upcase)
+show("name.len:" name.len)'''
         },
         {
             'name': '📖 Tutorial: Basics',
@@ -143,7 +149,8 @@ show("=== Strings ===")
 let name = "Alice"
 show("Hello" name)
 show("Name length:" name.len)
-show("Uppercase:" name.upper)'''
+show("Uppercase:" name.upcase)
+show("Reversed:" name.reversed)'''
         },
         {
             'name': '📖 Tutorial: Functions',
@@ -644,7 +651,7 @@ show("unique chars:" sentence.chars _unique _sort)'''
 if __name__ == '__main__':
     print("""
 ╔═══════════════════════════════════════════════════════════════╗
-║                    TinyTalk Web IDE                           ║
+║                  realTinyTalk Web IDE                         ║
 ║                                                               ║
 ║  The Verified General-Purpose Programming Language            ║
 ║  Every loop bounded. Every operation traced.                  ║
