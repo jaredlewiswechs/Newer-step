@@ -49,6 +49,13 @@ try:
 except ImportError:
     HAS_EMBEDDINGS = False
 
+# Import canonical knowledge base from adan (the single source of truth)
+try:
+    from adan.knowledge_base import get_knowledge_base as get_adan_kb
+    HAS_ADAN_KB = True
+except ImportError:
+    HAS_ADAN_KB = False
+
 
 @dataclass
 class VerifiedFact:
@@ -2097,6 +2104,15 @@ class KnowledgeBase:
             return result
         
         # ═══════════════════════════════════════════════════════════════════════
+        # TIER 3.5: CANONICAL ADAN KB (~5ms)
+        # Query the shared adan knowledge base (includes Wikipedia scraped facts)
+        # ═══════════════════════════════════════════════════════════════════════
+        result = self._query_adan_kb(question_lower)
+        if result:
+            self.hits += 1
+            return result
+        
+        # ═══════════════════════════════════════════════════════════════════════
         # TIER 4: EMBEDDING SEARCH (~100ms)
         # Last resort - when structure is truly ambiguous
         # ═══════════════════════════════════════════════════════════════════════
@@ -2509,6 +2525,31 @@ class KnowledgeBase:
                         source_url=f"https://en.wikipedia.org/wiki/{company.title()}",
                         confidence=1.0,
                     )
+        return None
+    
+    def _query_adan_kb(self, question: str) -> Optional[VerifiedFact]:
+        """
+        Query the canonical adan knowledge base.
+        This includes Wikipedia facts and the expanded knowledge store.
+        """
+        if not HAS_ADAN_KB:
+            return None
+        
+        try:
+            adan_kb = get_adan_kb()
+            result = adan_kb.query(question)
+            if result:
+                # Convert adan's VerifiedFact to our VerifiedFact
+                return VerifiedFact(
+                    fact=result.fact,
+                    category=f"adan/{result.category}",
+                    source=result.source,
+                    source_url=result.source_url,
+                    confidence=result.confidence,
+                )
+        except Exception:
+            pass
+        
         return None
     
     def _query_general(self, question: str) -> Optional[VerifiedFact]:

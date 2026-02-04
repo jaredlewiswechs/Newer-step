@@ -334,11 +334,43 @@ def get_categories(facts: List[Dict]) -> Dict[str, int]:
 
 @app.get("/", response_class=HTMLResponse)
 async def root():
-    """Serve the wiki UI."""
+    """Serve the wiki UI with embedded data to avoid fetch issues."""
     ui_path = Path(__file__).parent / "index.html"
-    if ui_path.exists():
-        return HTMLResponse(content=ui_path.read_text(encoding='utf-8'))
-    return HTMLResponse("<h1>Adanpedia</h1><p>UI not found.</p>")
+    if not ui_path.exists():
+        return HTMLResponse("<h1>Adanpedia</h1><p>UI not found.</p>")
+    
+    html = ui_path.read_text(encoding='utf-8')
+    
+    # Build facts and embed as JSON in the page
+    import json
+    import html as html_module
+    
+    facts = build_facts_list()
+    categories = get_categories(facts)
+    
+    # Properly escape JSON for embedding in HTML script tag
+    facts_json = json.dumps(facts, ensure_ascii=True)
+    categories_json = json.dumps(categories, ensure_ascii=True)
+    
+    # Escape </script> in JSON strings
+    facts_json = facts_json.replace("</", "<\\/")
+    categories_json = categories_json.replace("</", "<\\/")
+    
+    # Inject data into script
+    data_script = f"""<script>
+// Pre-loaded data (avoids fetch issues in embedded browsers)
+window.PRELOADED_DATA = {{
+    facts: {facts_json},
+    categories: {categories_json},
+    total: {len(facts)},
+    store_count: {knowledge_store.count()}
+}};
+console.log("PRELOADED_DATA loaded:", window.PRELOADED_DATA.total, "facts");
+</script>
+</head>"""
+    
+    html = html.replace("</head>", data_script)
+    return HTMLResponse(content=html)
 
 
 @app.get("/api/facts")

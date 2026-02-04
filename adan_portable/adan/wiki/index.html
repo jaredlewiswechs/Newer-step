@@ -443,6 +443,7 @@
             <h3>Contribute</h3>
             <ul>
                 <li><a href="#" onclick="showImport(); return false;">Import from Wikipedia</a></li>
+                <li><a href="#" onclick="showScraper(); return false;">🔗 Scrape & Chain</a></li>
                 <li><a href="#" onclick="showAddFact(); return false;">Add verified fact</a></li>
             </ul>
             
@@ -472,16 +473,30 @@ let knowledgeBase = [];
 let categories = {};
 
 async function init() {
+    console.log("init() called");
+    console.log("PRELOADED_DATA:", window.PRELOADED_DATA);
     await loadKnowledgeBase();
     showHome();
 }
 
 async function loadKnowledgeBase() {
+    console.log("loadKnowledgeBase() called");
     try {
-        const res = await fetch(`${API_BASE}/api/facts`);
-        const data = await res.json();
-        knowledgeBase = data.facts || [];
-        categories = data.categories || {};
+        // Use preloaded data if available (for embedded browsers)
+        if (window.PRELOADED_DATA) {
+            console.log("Using PRELOADED_DATA");
+            const data = window.PRELOADED_DATA;
+            knowledgeBase = data.facts || [];
+            categories = data.categories || {};
+            console.log("Loaded", knowledgeBase.length, "facts");
+        } else {
+            // Fall back to fetch
+            console.log("Fetching from API...");
+            const res = await fetch(`${API_BASE}/api/facts`);
+            const data = await res.json();
+            knowledgeBase = data.facts || [];
+            categories = data.categories || {};
+        }
         
         // Update stats
         document.getElementById('stat-count').textContent = knowledgeBase.length;
@@ -493,11 +508,12 @@ async function loadKnowledgeBase() {
             `<li><a href="#" onclick="showCategory('${cat}'); return false;">${cat}</a></li>`
         ).join('');
         
+        console.log("KB loaded successfully");
     } catch (e) {
         console.error('Failed to load KB:', e);
         document.getElementById('content').innerHTML = `
             <div class="article-header"><h1>Connection Error</h1></div>
-            <p>Could not connect to the knowledge base server. Make sure it's running on port 8085.</p>
+            <p>Could not connect to the knowledge base server. Error: ${e.message}</p>
         `;
     }
 }
@@ -738,6 +754,115 @@ function showImport() {
             <li>Source attribution is preserved (Wikipedia)</li>
         </ol>
     `;
+}
+
+function showScraper() {
+    document.getElementById('content').innerHTML = `
+        <div class="article-header">
+            <h1>🔗 Scrape & Chain Wikipedia</h1>
+            <span class="verified-badge">Newton Wiki Scraper</span>
+        </div>
+        
+        <div class="import-panel" style="background: linear-gradient(135deg, #eaf3ff 0%, #d5fdf4 100%);">
+            <h3>🕷️ Intelligent Link-Chaining Scraper</h3>
+            <p style="margin-bottom: 1rem; font-size: 0.9rem;">
+                Scrape Wikipedia with <strong>diff-based deduplication</strong> and <strong>link following</strong>.
+                Only NEW facts are stored — duplicates are automatically skipped.
+            </p>
+            <div class="import-form">
+                <input type="text" id="scrape-seed" placeholder="Seed article (e.g., 'Quantum mechanics')" style="flex: 2;">
+                <select id="scrape-depth" style="padding: 0.5rem; border: 1px solid var(--border);">
+                    <option value="1">Depth: 1 hop</option>
+                    <option value="2">Depth: 2 hops</option>
+                    <option value="3">Depth: 3 hops</option>
+                </select>
+                <select id="scrape-pages" style="padding: 0.5rem; border: 1px solid var(--border);">
+                    <option value="5">5 pages</option>
+                    <option value="10" selected>10 pages</option>
+                    <option value="20">20 pages</option>
+                    <option value="50">50 pages</option>
+                </select>
+                <button onclick="runScraper()" style="background: var(--verified); color: #fff;">Scrape</button>
+            </div>
+            <div id="scrape-status" style="margin-top: 0.5rem; font-family: sans-serif; font-size: 0.85rem;"></div>
+            <div id="scrape-progress" style="margin-top: 0.5rem;"></div>
+        </div>
+        
+        <h2 style="margin: 1.5rem 0 1rem;">How Link-Chaining Works</h2>
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1.5rem;">
+            <div style="border: 1px solid var(--border); padding: 1rem; text-align: center;">
+                <div style="font-size: 2rem;">🎯</div>
+                <h4 style="font-family: sans-serif; margin: 0.5rem 0;">1. Seed Article</h4>
+                <p style="font-size: 0.85rem; color: var(--text-muted);">Start from any Wikipedia article</p>
+            </div>
+            <div style="border: 1px solid var(--border); padding: 1rem; text-align: center;">
+                <div style="font-size: 2rem;">🔗</div>
+                <h4 style="font-family: sans-serif; margin: 0.5rem 0;">2. Follow Links</h4>
+                <p style="font-size: 0.85rem; color: var(--text-muted);">BFS crawl follows related articles</p>
+            </div>
+            <div style="border: 1px solid var(--border); padding: 1rem; text-align: center;">
+                <div style="font-size: 2rem;">⚡</div>
+                <h4 style="font-family: sans-serif; margin: 0.5rem 0;">3. Diff Extract</h4>
+                <p style="font-size: 0.85rem; color: var(--text-muted);">Only NEW facts are stored</p>
+            </div>
+        </div>
+        
+        <h2 style="margin: 1.5rem 0 1rem;">Features</h2>
+        <ul style="margin-left: 1.5rem;">
+            <li><strong>Diff-based:</strong> Hashes existing facts, only stores new ones</li>
+            <li><strong>Semantic dedup:</strong> Fuzzy matching catches near-duplicates</li>
+            <li><strong>Kinematic extraction:</strong> Shape-based patterns for capitals, dates, events</li>
+            <li><strong>Rate limited:</strong> Respects Wikipedia's API guidelines</li>
+        </ul>
+    `;
+}
+
+async function runScraper() {
+    const seed = document.getElementById('scrape-seed').value.trim();
+    if (!seed) {
+        alert('Please enter a seed article');
+        return;
+    }
+    
+    const depth = parseInt(document.getElementById('scrape-depth').value);
+    const pages = parseInt(document.getElementById('scrape-pages').value);
+    
+    const status = document.getElementById('scrape-status');
+    const progress = document.getElementById('scrape-progress');
+    
+    status.innerHTML = '<span style="color: var(--link);">🔄 Scraping in progress... this may take a moment.</span>';
+    progress.innerHTML = '<div class="loading">Fetching articles</div>';
+    
+    try {
+        const res = await fetch(API_BASE + '/api/scrape', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ seed, max_depth: depth, max_pages: pages })
+        });
+        
+        const data = await res.json();
+        
+        if (data.success) {
+            const s = data.stats;
+            status.innerHTML = '<span style="color: var(--verified);">✓ Scraping complete!</span>';
+            progress.innerHTML = 
+                '<table style="width: 100%; font-family: sans-serif; font-size: 0.85rem; border-collapse: collapse; margin-top: 0.5rem;">' +
+                '<tr style="background: #eaecf0;"><td style="padding: 0.3rem 0.5rem;">Pages Scraped</td><td style="padding: 0.3rem 0.5rem;"><strong>' + s.pages_scraped + '</strong></td></tr>' +
+                '<tr><td style="padding: 0.3rem 0.5rem;">Facts Extracted</td><td style="padding: 0.3rem 0.5rem;"><strong>' + s.facts_extracted + '</strong></td></tr>' +
+                '<tr style="background: #d5fdf4;"><td style="padding: 0.3rem 0.5rem;">✓ New Facts Added</td><td style="padding: 0.3rem 0.5rem;"><strong style="color: var(--verified);">' + s.facts_new + '</strong></td></tr>' +
+                '<tr><td style="padding: 0.3rem 0.5rem;">Duplicates Skipped</td><td style="padding: 0.3rem 0.5rem;">' + s.facts_duplicate + '</td></tr>' +
+                '<tr><td style="padding: 0.3rem 0.5rem;">Similar Skipped</td><td style="padding: 0.3rem 0.5rem;">' + s.facts_similar + '</td></tr>' +
+                '<tr style="background: #eaecf0;"><td style="padding: 0.3rem 0.5rem;">Time</td><td style="padding: 0.3rem 0.5rem;">' + s.elapsed_seconds + 's (' + s.facts_per_second + ' facts/sec)</td></tr>' +
+                '</table>';
+            await loadKnowledgeBase();
+        } else {
+            status.innerHTML = '<span style="color: #d33;">✗ ' + (data.error || 'Scraping failed') + '</span>';
+            progress.innerHTML = '';
+        }
+    } catch (e) {
+        status.innerHTML = '<span style="color: #d33;">✗ Connection error: ' + e.message + '</span>';
+        progress.innerHTML = '';
+    }
 }
 
 function showAddFact() {
