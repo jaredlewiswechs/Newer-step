@@ -1089,6 +1089,11 @@ class Parser:
         if self._match(TokenType.IDENTIFIER):
             return Identifier(name=tok.value, line=tok.line, column=tok.column)
         
+        # Type keywords as identifiers (for builtin functions like str(), int(), etc.)
+        if self._match(TokenType.INT, TokenType.FLOAT, TokenType.STR, TokenType.BOOL,
+                       TokenType.LIST, TokenType.MAP, TokenType.ANY):
+            return Identifier(name=tok.value, line=tok.line, column=tok.column)
+        
         # Parenthesized expression or lambda
         if self._match(TokenType.LPAREN):
             # Check for lambda: (x, y) => ...
