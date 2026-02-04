@@ -129,13 +129,26 @@ class JSEmitter:
         self._write_raw("    return a === b;")
         self._write_raw("  },")
         self._write_raw("  isnt: (a, b) => !tt.is(a, b),")
-        self._write_raw("  has: (obj, field) => obj != null && field in obj,")
+        self._write_raw("  has: (obj, item) => {")
+        self._write_raw("    if (obj == null) return false;")
+        self._write_raw("    if (Array.isArray(obj)) return obj.includes(item);")
+        self._write_raw("    if (typeof obj === 'string') return obj.includes(item);")
+        self._write_raw("    if (typeof obj === 'object') return item in obj;")
+        self._write_raw("    return false;")
+        self._write_raw("  },")
         self._write_raw("  hasnt: (obj, field) => !tt.has(obj, field),")
         self._write_raw("  isin: (item, collection) => {")
         self._write_raw("    if (Array.isArray(collection)) return collection.includes(item);")
         self._write_raw("    if (typeof collection === 'string') return collection.includes(item);")
         self._write_raw("    if (typeof collection === 'object') return item in collection;")
         self._write_raw("    return false;")
+        self._write_raw("  },")
+        self._write_raw("  islike: (str, pattern) => {")
+        self._write_raw("    // Convert glob pattern to regex")
+        self._write_raw("    const regex = pattern.replace(/[.+^${}()|[\\]\\\\]/g, '\\\\$&')")
+        self._write_raw("                          .replace(/\\*/g, '.*')")
+        self._write_raw("                          .replace(/\\?/g, '.');")
+        self._write_raw("    return new RegExp('^' + regex + '$').test(String(str));")
         self._write_raw("  },")
         self._write_raw("  ")
         self._write_raw("  // Collection helpers")
@@ -372,6 +385,8 @@ class JSEmitter:
             return f'tt.hasnt({left}, {right})'
         if op == 'isin':
             return f'tt.isin({left}, {right})'
+        if op == 'islike':
+            return f'tt.islike({left}, {right})'
         
         # Exponentiation
         if op == '**':

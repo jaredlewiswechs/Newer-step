@@ -723,6 +723,84 @@
             color: var(--accent);
         }
 
+        /* Output Panel Tabs */
+        .output-tabs {
+            display: flex;
+            align-items: center;
+            padding: 0 8px;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            height: 36px;
+            gap: 2px;
+        }
+
+        .output-tab {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 6px 10px;
+            font-size: 11px;
+            color: var(--text-secondary);
+            border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            margin-bottom: -1px;
+            transition: all 0.12s ease;
+        }
+
+        .output-tab:hover {
+            color: var(--text-primary);
+            background: var(--bg-tertiary);
+        }
+
+        .output-tab.active {
+            color: var(--text-primary);
+            background: var(--bg-primary);
+            border-bottom-color: var(--accent);
+        }
+
+        .output-tab .tab-icon {
+            font-size: 12px;
+        }
+
+        .output-tabs .status-badge {
+            margin-left: auto;
+        }
+
+        /* Transpiler Content */
+        .transpiler-content {
+            padding: 0 !important;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .transpiler-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 12px;
+            border-bottom: 1px solid var(--border);
+            background: var(--bg-tertiary);
+        }
+
+        .transpiler-title {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .transpiler-editor {
+            flex: 1;
+            min-height: 200px;
+        }
+
+        .btn-sm {
+            padding: 4px 8px;
+            font-size: 11px;
+        }
+
         .output-content {
             flex: 1;
             overflow-y: auto;
@@ -1056,12 +1134,20 @@
 
         <!-- Output Panel -->
         <aside class="output-panel">
-            <div class="output-header">
-                <div class="output-title">
-                    📤 Output
+            <div class="output-tabs">
+                <div class="output-tab active" data-tab="output" onclick="switchOutputTab('output')">
+                    <span class="tab-icon">📤</span> Output
+                </div>
+                <div class="output-tab" data-tab="javascript" onclick="switchOutputTab('javascript')">
+                    <span class="tab-icon">🟨</span> JavaScript
+                </div>
+                <div class="output-tab" data-tab="python" onclick="switchOutputTab('python')">
+                    <span class="tab-icon">🐍</span> Python
                 </div>
                 <span class="status-badge" id="statusBadge"></span>
             </div>
+            
+            <!-- Output Content -->
             <div class="output-content" id="outputContent">
                 <div class="welcome">
                     <div class="welcome-icon">✨</div>
@@ -1069,6 +1155,24 @@
                         Write code and press <kbd>Ctrl+Enter</kbd> to run
                     </div>
                 </div>
+            </div>
+            
+            <!-- JavaScript Transpiled Code -->
+            <div class="output-content transpiler-content" id="jsContent" style="display: none;">
+                <div class="transpiler-header">
+                    <span class="transpiler-title">Transpiled JavaScript</span>
+                    <button class="btn btn-ghost btn-sm" onclick="copyCode('js')">📋 Copy</button>
+                </div>
+                <div id="jsEditor" class="transpiler-editor"></div>
+            </div>
+            
+            <!-- Python Transpiled Code -->
+            <div class="output-content transpiler-content" id="pyContent" style="display: none;">
+                <div class="transpiler-header">
+                    <span class="transpiler-title">Transpiled Python</span>
+                    <button class="btn btn-ghost btn-sm" onclick="copyCode('py')">📋 Copy</button>
+                </div>
+                <div id="pyEditor" class="transpiler-editor"></div>
             </div>
         </aside>
     </main>
@@ -1156,8 +1260,16 @@
             localStorage.setItem('tinytalk-theme', theme);
             
             // Update Monaco theme
+            const monacoTheme = 'tinytalk-' + theme;
             if (editor) {
-                monaco.editor.setTheme('tinytalk-' + theme);
+                monaco.editor.setTheme(monacoTheme);
+            }
+            // Also update transpiler editors
+            if (typeof jsEditor !== 'undefined' && jsEditor) {
+                monaco.editor.setTheme(monacoTheme);
+            }
+            if (typeof pyEditor !== 'undefined' && pyEditor) {
+                monaco.editor.setTheme(monacoTheme);
             }
             
             // Update theme menu
@@ -1842,6 +1954,154 @@ for i in range(10) {
         });
 
         // ═══════════════════════════════════════════════════════════════
+        // TRANSPILER EDITORS
+        // ═══════════════════════════════════════════════════════════════
+        
+        let jsEditor = null;
+        let pyEditor = null;
+        let currentOutputTab = 'output';
+        
+        function getMonacoTheme(themeName) {
+            const themeMap = {
+                'dark': 'tinytalk-dark',
+                'light': 'tinytalk-light',
+                'monokai': 'tinytalk-monokai',
+                'nord': 'tinytalk-nord'
+            };
+            return themeMap[themeName] || 'tinytalk-dark';
+        }
+        
+        // Deferred editor creation - create when tab is first shown
+        function ensureJsEditor() {
+            if (!jsEditor) {
+                jsEditor = monaco.editor.create(document.getElementById('jsEditor'), {
+                    value: '// JavaScript output will appear here after running code',
+                    language: 'javascript',
+                    theme: getMonacoTheme(currentTheme),
+                    readOnly: true,
+                    minimap: { enabled: false },
+                    lineNumbers: 'on',
+                    scrollBeyondLastLine: false,
+                    fontSize: 13,
+                    fontFamily: "'JetBrains Mono', monospace",
+                    automaticLayout: true,
+                    wordWrap: 'on'
+                });
+            }
+            return jsEditor;
+        }
+        
+        function ensurePyEditor() {
+            if (!pyEditor) {
+                pyEditor = monaco.editor.create(document.getElementById('pyEditor'), {
+                    value: '# Python output will appear here after running code',
+                    language: 'python',
+                    theme: getMonacoTheme(currentTheme),
+                    readOnly: true,
+                    minimap: { enabled: false },
+                    lineNumbers: 'on',
+                    scrollBeyondLastLine: false,
+                    fontSize: 13,
+                    fontFamily: "'JetBrains Mono', monospace",
+                    automaticLayout: true,
+                    wordWrap: 'on'
+                });
+            }
+            return pyEditor;
+        }
+        
+        // Tab switching
+        function switchOutputTab(tab) {
+            currentOutputTab = tab;
+            
+            // Update tab active states
+            document.querySelectorAll('.output-tab').forEach(el => {
+                el.classList.toggle('active', el.dataset.tab === tab);
+            });
+            
+            // Show/hide content
+            document.getElementById('outputContent').style.display = tab === 'output' ? 'block' : 'none';
+            document.getElementById('jsContent').style.display = tab === 'javascript' ? 'flex' : 'none';
+            document.getElementById('pyContent').style.display = tab === 'python' ? 'flex' : 'none';
+            
+            // Create and layout Monaco editors when tab is shown
+            if (tab === 'javascript') {
+                const ed = ensureJsEditor();
+                setTimeout(() => ed.layout(), 100);
+            }
+            if (tab === 'python') {
+                const ed = ensurePyEditor();
+                setTimeout(() => ed.layout(), 100);
+            }
+        }
+        
+        // Make switchOutputTab globally accessible
+        window.switchOutputTab = switchOutputTab;
+        
+        // Copy code function
+        function copyCode(lang) {
+            let code = '';
+            if (lang === 'js') {
+                const ed = ensureJsEditor();
+                code = ed.getValue();
+            } else if (lang === 'py') {
+                const ed = ensurePyEditor();
+                code = ed.getValue();
+            }
+            
+            navigator.clipboard.writeText(code).then(() => {
+                // Brief visual feedback
+                const btn = event.target;
+                const originalText = btn.textContent;
+                btn.textContent = '✓ Copied!';
+                setTimeout(() => btn.textContent = originalText, 1500);
+            });
+        }
+        
+        window.copyCode = copyCode;
+        
+        // Transpile code
+        async function transpileCode(code) {
+            // Transpile to JavaScript
+            try {
+                const jsResponse = await fetch('/api/transpile/js', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ code, include_runtime: true })
+                });
+                const jsResult = await jsResponse.json();
+                const jsEd = ensureJsEditor();
+                if (jsResult.success) {
+                    jsEd.setValue(jsResult.code);
+                } else {
+                    jsEd.setValue('// Error transpiling to JavaScript:\n// ' + (jsResult.error || 'Unknown error'));
+                }
+            } catch (err) {
+                const jsEd = ensureJsEditor();
+                jsEd.setValue('// Error: ' + err.message);
+            }
+            
+            // Transpile to Python
+            try {
+                const pyResponse = await fetch('/api/transpile/python', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ code, include_runtime: true })
+                });
+                const pyResult = await pyResponse.json();
+                const pyEd = ensurePyEditor();
+                if (pyResult.success) {
+                    pyEd.setValue(pyResult.code);
+                } else {
+                    pyEd.setValue('# Error transpiling to Python:\n# ' + (pyResult.error || 'Unknown error'));
+                }
+            } catch (err) {
+                const pyEd = ensurePyEditor();
+                pyEd.setValue('# Error: ' + err.message);
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════════
         // RUN CODE
         // ═══════════════════════════════════════════════════════════════
 
@@ -1855,6 +2115,9 @@ for i in range(10) {
             runBtn.innerHTML = '<div class="spinner"></div> Running...';
             statusBadge.className = 'status-badge status-running';
             statusBadge.textContent = 'Running...';
+            
+            // Transpile in parallel
+            transpileCode(code);
 
             try {
                 const response = await fetch('/api/run', {

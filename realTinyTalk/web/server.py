@@ -96,6 +96,87 @@ def run_code():
             'elapsed_ms': round(elapsed, 2)
         })
 
+
+@app.route('/api/transpile/js', methods=['POST'])
+def transpile_to_js():
+    """Transpile TinyTalk code to JavaScript."""
+    data = request.get_json()
+    code = data.get('code', '')
+    include_runtime = data.get('include_runtime', True)
+    
+    start_time = time.time()
+    
+    try:
+        from realTinyTalk.lexer import Lexer
+        from realTinyTalk.parser import Parser
+        from realTinyTalk.backends.js.emitter import JSEmitter
+        
+        lexer = Lexer(code)
+        tokens = lexer.tokenize()
+        parser = Parser(tokens)
+        ast = parser.parse()
+        
+        emitter = JSEmitter(include_runtime=include_runtime)
+        js_code = emitter.emit(ast)
+        
+        elapsed = (time.time() - start_time) * 1000
+        
+        return jsonify({
+            'success': True,
+            'code': js_code,
+            'language': 'javascript',
+            'elapsed_ms': round(elapsed, 2)
+        })
+        
+    except Exception as e:
+        elapsed = (time.time() - start_time) * 1000
+        return jsonify({
+            'success': False,
+            'error': f"{type(e).__name__}: {e}",
+            'elapsed_ms': round(elapsed, 2)
+        })
+
+
+@app.route('/api/transpile/python', methods=['POST'])
+def transpile_to_python():
+    """Transpile TinyTalk code to Python."""
+    data = request.get_json()
+    code = data.get('code', '')
+    include_runtime = data.get('include_runtime', True)
+    
+    start_time = time.time()
+    
+    try:
+        from realTinyTalk.lexer import Lexer
+        from realTinyTalk.parser import Parser
+        from realTinyTalk.backends.python.emitter import PythonEmitter
+        
+        lexer = Lexer(code)
+        tokens = lexer.tokenize()
+        parser = Parser(tokens)
+        ast = parser.parse()
+        
+        emitter = PythonEmitter(include_runtime=include_runtime)
+        py_code = emitter.emit(ast)
+        
+        elapsed = (time.time() - start_time) * 1000
+        
+        return jsonify({
+            'success': True,
+            'code': py_code,
+            'language': 'python',
+            'elapsed_ms': round(elapsed, 2)
+        })
+        
+    except Exception as e:
+        elapsed = (time.time() - start_time) * 1000
+        return jsonify({
+            'success': False,
+            'error': f"{type(e).__name__}: {e}",
+            'elapsed_ms': round(elapsed, 2)
+        })
+
+
 @app.route('/api/examples')
 def get_examples():
     """Get example programs - using ultra-clean tinyTalk syntax."""
