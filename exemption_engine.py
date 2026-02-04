@@ -344,7 +344,36 @@ HTML_TEMPLATE = '''
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Final Exam Exemption Engine</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --bg-primary: #FDF6F0;
+            --bg-secondary: #FFFFFF;
+            --bg-tertiary: #F5EDE6;
+            --accent-warm: #E8927C;
+            --accent-coral: #F4A896;
+            --accent-peach: #FFD4C4;
+            --accent-sage: #B8C9A3;
+            --accent-mint: #C5DDD4;
+            --accent-sky: #A8D4E6;
+            --accent-lavender: #C9B8D9;
+            --text-primary: #2D3436;
+            --text-secondary: #636E72;
+            --text-muted: #9DA5A8;
+            --success: #7CB99E;
+            --success-bg: #E8F5EE;
+            --error: #E07A6B;
+            --error-bg: #FDEBE8;
+            --shadow-soft: 0 4px 24px rgba(45, 52, 54, 0.06);
+            --shadow-hover: 0 8px 32px rgba(45, 52, 54, 0.1);
+            --radius-sm: 12px;
+            --radius-md: 20px;
+            --radius-lg: 28px;
+            --radius-xl: 36px;
+        }
+        
         * {
             box-sizing: border-box;
             margin: 0;
@@ -352,162 +381,240 @@ HTML_TEMPLATE = '''
         }
         
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
             min-height: 100vh;
-            color: #e0e0e0;
-            padding: 20px;
+            color: var(--text-primary);
+            padding: 32px;
+            line-height: 1.6;
         }
         
         .container {
-            max-width: 1200px;
+            max-width: 1280px;
             margin: 0 auto;
         }
         
         header {
             text-align: center;
-            padding: 30px 0;
-            border-bottom: 1px solid #333;
-            margin-bottom: 30px;
+            padding: 48px 0 40px;
+            margin-bottom: 40px;
+        }
+        
+        .logo-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            background: var(--bg-secondary);
+            padding: 12px 24px;
+            border-radius: var(--radius-xl);
+            box-shadow: var(--shadow-soft);
+            margin-bottom: 24px;
+        }
+        
+        .logo-icon {
+            width: 44px;
+            height: 44px;
+            background: linear-gradient(135deg, var(--accent-warm) 0%, var(--accent-coral) 100%);
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+        }
+        
+        .logo-text {
+            font-weight: 600;
+            font-size: 1.1em;
+            color: var(--text-primary);
+            letter-spacing: -0.02em;
         }
         
         h1 {
-            font-size: 2.5em;
-            color: #00d4ff;
-            margin-bottom: 10px;
+            font-size: 3em;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 12px;
+            letter-spacing: -0.03em;
         }
         
         .subtitle {
-            color: #888;
-            font-size: 1.1em;
+            color: var(--text-secondary);
+            font-size: 1.15em;
+            font-weight: 400;
         }
         
         .panels {
             display: grid;
             grid-template-columns: 1fr 1fr 1fr;
-            gap: 20px;
+            gap: 24px;
         }
         
-        @media (max-width: 900px) {
+        @media (max-width: 1100px) {
+            .panels {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+        
+        @media (max-width: 768px) {
             .panels {
                 grid-template-columns: 1fr;
+            }
+            body {
+                padding: 16px;
+            }
+            h1 {
+                font-size: 2em;
             }
         }
         
         .panel {
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 12px;
-            padding: 25px;
-            border: 1px solid #333;
+            background: var(--bg-secondary);
+            border-radius: var(--radius-lg);
+            padding: 32px;
+            box-shadow: var(--shadow-soft);
+            transition: box-shadow 0.3s ease, transform 0.3s ease;
+        }
+        
+        .panel:hover {
+            box-shadow: var(--shadow-hover);
         }
         
         .panel h2 {
-            color: #00d4ff;
-            margin-bottom: 20px;
+            color: var(--text-primary);
+            margin-bottom: 28px;
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 14px;
+            font-weight: 600;
+            font-size: 1.3em;
+            letter-spacing: -0.01em;
         }
         
         .panel h2 .num {
-            background: #00d4ff;
-            color: #1a1a2e;
-            width: 30px;
-            height: 30px;
-            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent-peach) 0%, var(--accent-coral) 100%);
+            color: var(--text-primary);
+            width: 36px;
+            height: 36px;
+            border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 0.9em;
-            font-weight: bold;
+            font-size: 0.85em;
+            font-weight: 700;
+        }
+        
+        .panel:nth-child(2) h2 .num {
+            background: linear-gradient(135deg, var(--accent-mint) 0%, var(--accent-sage) 100%);
+        }
+        
+        .panel:nth-child(3) h2 .num {
+            background: linear-gradient(135deg, var(--accent-sky) 0%, var(--accent-lavender) 100%);
         }
         
         label {
             display: block;
-            margin-bottom: 5px;
-            color: #aaa;
+            margin-bottom: 8px;
+            color: var(--text-secondary);
             font-size: 0.9em;
+            font-weight: 500;
         }
         
         input, select {
             width: 100%;
-            padding: 12px;
-            margin-bottom: 15px;
-            border: 1px solid #444;
-            border-radius: 8px;
-            background: rgba(0, 0, 0, 0.3);
-            color: #fff;
+            padding: 14px 18px;
+            margin-bottom: 18px;
+            border: 2px solid var(--bg-tertiary);
+            border-radius: var(--radius-sm);
+            background: var(--bg-primary);
+            color: var(--text-primary);
             font-size: 1em;
+            font-family: inherit;
+            transition: border-color 0.2s ease, background 0.2s ease;
         }
         
         input:focus, select:focus {
             outline: none;
-            border-color: #00d4ff;
+            border-color: var(--accent-coral);
+            background: var(--bg-secondary);
+        }
+        
+        input::placeholder {
+            color: var(--text-muted);
         }
         
         button {
             width: 100%;
-            padding: 15px;
-            background: linear-gradient(135deg, #00d4ff 0%, #0099cc 100%);
+            padding: 18px 24px;
+            background: linear-gradient(135deg, var(--accent-warm) 0%, var(--accent-coral) 100%);
             border: none;
-            border-radius: 8px;
-            color: #fff;
-            font-size: 1.1em;
-            font-weight: bold;
+            border-radius: var(--radius-md);
+            color: white;
+            font-size: 1.05em;
+            font-weight: 600;
+            font-family: inherit;
             cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            letter-spacing: -0.01em;
         }
         
         button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 20px rgba(0, 212, 255, 0.3);
+            transform: translateY(-3px);
+            box-shadow: 0 12px 28px rgba(232, 146, 124, 0.35);
+        }
+        
+        button:active {
+            transform: translateY(-1px);
         }
         
         .answer-box {
-            padding: 20px;
-            border-radius: 8px;
-            margin-bottom: 20px;
+            padding: 32px 24px;
+            border-radius: var(--radius-md);
+            margin-bottom: 24px;
             text-align: center;
+            transition: all 0.3s ease;
         }
         
         .answer-box.eligible {
-            background: rgba(0, 200, 83, 0.2);
-            border: 2px solid #00c853;
+            background: var(--success-bg);
+            border: 2px solid var(--success);
         }
         
         .answer-box.not-eligible {
-            background: rgba(255, 82, 82, 0.2);
-            border: 2px solid #ff5252;
+            background: var(--error-bg);
+            border: 2px solid var(--error);
         }
         
         .answer-box.waiting {
-            background: rgba(255, 255, 255, 0.1);
-            border: 2px dashed #444;
+            background: var(--bg-tertiary);
+            border: 2px dashed var(--text-muted);
         }
         
         .answer-status {
-            font-size: 2em;
-            margin-bottom: 10px;
+            font-size: 3em;
+            margin-bottom: 12px;
+            line-height: 1;
         }
         
         .answer-text {
-            font-size: 1.1em;
-            color: #ccc;
+            font-size: 1em;
+            color: var(--text-secondary);
+            font-weight: 500;
         }
         
         .receipt {
-            background: rgba(0, 0, 0, 0.3);
-            border-radius: 8px;
-            padding: 15px;
-            font-family: 'Courier New', monospace;
-            font-size: 0.85em;
+            background: var(--bg-tertiary);
+            border-radius: var(--radius-md);
+            padding: 20px;
+            font-family: 'DM Sans', monospace;
+            font-size: 0.88em;
         }
         
         .receipt-row {
             display: flex;
             justify-content: space-between;
-            padding: 8px 0;
-            border-bottom: 1px solid #333;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(45, 52, 54, 0.08);
         }
         
         .receipt-row:last-child {
@@ -515,61 +622,89 @@ HTML_TEMPLATE = '''
         }
         
         .receipt-label {
-            color: #888;
+            color: var(--text-muted);
+            font-weight: 500;
         }
         
         .receipt-value {
-            color: #00d4ff;
-            font-weight: bold;
+            color: var(--text-primary);
+            font-weight: 600;
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: 0.92em;
+            background: var(--bg-secondary);
+            padding: 4px 10px;
+            border-radius: 8px;
         }
         
         .receipt-value.pass {
-            color: #00c853;
+            color: var(--success);
+            background: var(--success-bg);
         }
         
         .receipt-value.fail {
-            color: #ff5252;
+            color: var(--error);
+            background: var(--error-bg);
         }
         
         .witnesses {
-            margin-top: 20px;
+            margin-top: 24px;
         }
         
         .witness-grid {
             display: grid;
             grid-template-columns: 1fr 1fr 1fr;
-            gap: 8px;
-            margin-top: 10px;
+            gap: 10px;
+            margin-top: 14px;
         }
         
         .witness-item {
-            background: rgba(0, 200, 83, 0.2);
-            padding: 8px;
-            border-radius: 4px;
+            background: var(--success-bg);
+            color: var(--success);
+            padding: 10px 8px;
+            border-radius: var(--radius-sm);
             text-align: center;
-            font-size: 0.8em;
+            font-size: 0.82em;
+            font-weight: 600;
+            transition: transform 0.2s ease;
+        }
+        
+        .witness-item:hover {
+            transform: scale(1.03);
         }
         
         .witness-item.fail {
-            background: rgba(255, 82, 82, 0.2);
+            background: var(--error-bg);
+            color: var(--error);
         }
         
         .rules-list {
-            margin-top: 15px;
+            margin-top: 20px;
+        }
+        
+        .rules-list h3 {
+            color: var(--text-secondary);
+            font-size: 0.95em;
+            font-weight: 600;
+            margin-bottom: 14px;
         }
         
         .rule-item {
             display: flex;
             align-items: center;
-            gap: 10px;
-            padding: 10px;
-            background: rgba(0, 0, 0, 0.2);
-            border-radius: 6px;
-            margin-bottom: 8px;
+            gap: 14px;
+            padding: 14px 16px;
+            background: var(--bg-tertiary);
+            border-radius: var(--radius-sm);
+            margin-bottom: 10px;
+            transition: transform 0.2s ease;
+        }
+        
+        .rule-item:hover {
+            transform: translateX(4px);
         }
         
         .rule-status {
-            font-size: 1.2em;
+            font-size: 1.3em;
         }
         
         .rule-details {
@@ -577,67 +712,148 @@ HTML_TEMPLATE = '''
         }
         
         .rule-name {
-            font-weight: bold;
-            color: #fff;
+            font-weight: 600;
+            color: var(--text-primary);
+            font-size: 0.95em;
+            margin-bottom: 2px;
         }
         
         .rule-info {
             font-size: 0.85em;
-            color: #888;
+            color: var(--text-muted);
         }
         
         .badge {
-            display: inline-block;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 0.8em;
-            font-weight: bold;
+            display: inline-flex;
+            align-items: center;
+            padding: 6px 14px;
+            border-radius: var(--radius-xl);
+            font-size: 0.78em;
+            font-weight: 600;
             margin-right: 8px;
+            letter-spacing: 0.02em;
         }
         
         .badge.trusted {
-            background: #00c853;
-            color: #fff;
+            background: var(--success-bg);
+            color: var(--success);
         }
         
         .badge.verified {
-            background: #ffab00;
-            color: #000;
+            background: #FFF8E7;
+            color: #D4A853;
         }
         
         .badge.untrusted {
-            background: #ff5252;
-            color: #fff;
+            background: var(--error-bg);
+            color: var(--error);
         }
         
         footer {
             text-align: center;
-            padding: 30px 0;
-            margin-top: 30px;
-            border-top: 1px solid #333;
-            color: #666;
+            padding: 48px 24px;
+            margin-top: 48px;
+            color: var(--text-muted);
+        }
+        
+        footer p {
+            font-size: 0.95em;
+        }
+        
+        footer .tagline {
+            margin-top: 8px;
+            font-style: italic;
+            color: var(--text-secondary);
         }
         
         .verify-btn {
-            background: linear-gradient(135deg, #7c4dff 0%, #536dfe 100%);
-            margin-top: 15px;
+            background: linear-gradient(135deg, var(--accent-sky) 0%, var(--accent-lavender) 100%);
+            margin-top: 20px;
+            color: var(--text-primary);
+        }
+        
+        .verify-btn:hover {
+            box-shadow: 0 12px 28px rgba(168, 212, 230, 0.4);
         }
         
         #verification-detail {
             display: none;
-            margin-top: 20px;
+            margin-top: 24px;
+            animation: slideDown 0.3s ease;
+        }
+        
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
         
         #verification-detail.show {
             display: block;
         }
+        
+        /* Form row for compact layout */
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        
+        /* Decorative elements */
+        .decorative-circle {
+            position: fixed;
+            border-radius: 50%;
+            pointer-events: none;
+            opacity: 0.4;
+            z-index: -1;
+        }
+        
+        .circle-1 {
+            width: 300px;
+            height: 300px;
+            background: var(--accent-peach);
+            top: -100px;
+            right: -100px;
+            filter: blur(80px);
+        }
+        
+        .circle-2 {
+            width: 250px;
+            height: 250px;
+            background: var(--accent-mint);
+            bottom: 100px;
+            left: -80px;
+            filter: blur(60px);
+        }
+        
+        .circle-3 {
+            width: 200px;
+            height: 200px;
+            background: var(--accent-lavender);
+            bottom: -50px;
+            right: 20%;
+            filter: blur(70px);
+        }
     </style>
 </head>
 <body>
+    <div class="decorative-circle circle-1"></div>
+    <div class="decorative-circle circle-2"></div>
+    <div class="decorative-circle circle-3"></div>
+    
     <div class="container">
         <header>
-            <h1>Final Exam Exemption Engine</h1>
-            <p class="subtitle">Verified Decisions with Auditable Receipts</p>
+            <div class="logo-badge">
+                <div class="logo-icon">⚡</div>
+                <span class="logo-text">Newton Engine</span>
+            </div>
+            <h1>Exam Exemption</h1>
+            <p class="subtitle">Verified decisions with auditable receipts</p>
         </header>
         
         <div class="panels">
@@ -646,42 +862,57 @@ HTML_TEMPLATE = '''
                 <h2><span class="num">1</span> Ask</h2>
                 <form id="exemption-form">
                     <label>Student ID</label>
-                    <input type="text" id="student_id" value="STU-2026-1234" required>
+                    <input type="text" id="student_id" value="STU-2026-1234" placeholder="Enter student ID" required>
                     
                     <label>Student Name</label>
-                    <input type="text" id="student_name" value="Alex Johnson" required>
+                    <input type="text" id="student_name" value="Alex Johnson" placeholder="Full name" required>
                     
-                    <label>Grade Level</label>
-                    <select id="grade_level">
-                        <option value="9">9th Grade</option>
-                        <option value="10">10th Grade</option>
-                        <option value="11" selected>11th Grade</option>
-                        <option value="12">12th Grade</option>
-                    </select>
+                    <div class="form-row">
+                        <div>
+                            <label>Grade Level</label>
+                            <select id="grade_level">
+                                <option value="9">9th Grade</option>
+                                <option value="10">10th Grade</option>
+                                <option value="11" selected>11th Grade</option>
+                                <option value="12">12th Grade</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label>Conduct</label>
+                            <select id="conduct_grade">
+                                <option value="S" selected>S - Satisfactory</option>
+                                <option value="N">N - Needs Work</option>
+                                <option value="U">U - Unsatisfactory</option>
+                            </select>
+                        </div>
+                    </div>
                     
                     <label>Course</label>
-                    <input type="text" id="course" value="AP Chemistry" required>
+                    <input type="text" id="course" value="AP Chemistry" placeholder="Course name" required>
                     
-                    <label>Cycle Average (%)</label>
-                    <input type="number" id="cycle_average" value="85" min="0" max="100" required>
+                    <div class="form-row">
+                        <div>
+                            <label>Cycle Average (%)</label>
+                            <input type="number" id="cycle_average" value="85" min="0" max="100" required>
+                        </div>
+                        <div>
+                            <label>Absences</label>
+                            <input type="number" id="absences" value="2" min="0" required>
+                        </div>
+                    </div>
                     
-                    <label>Absences</label>
-                    <input type="number" id="absences" value="2" min="0" required>
+                    <div class="form-row">
+                        <div>
+                            <label>ISS Count</label>
+                            <input type="number" id="iss_count" value="0" min="0">
+                        </div>
+                        <div>
+                            <label>OSS Count</label>
+                            <input type="number" id="oss_count" value="0" min="0">
+                        </div>
+                    </div>
                     
-                    <label>Conduct Grade</label>
-                    <select id="conduct_grade">
-                        <option value="S" selected>S - Satisfactory</option>
-                        <option value="N">N - Needs Improvement</option>
-                        <option value="U">U - Unsatisfactory</option>
-                    </select>
-                    
-                    <label>ISS Assignments</label>
-                    <input type="number" id="iss_count" value="0" min="0">
-                    
-                    <label>OSS Assignments</label>
-                    <input type="number" id="oss_count" value="0" min="0">
-                    
-                    <button type="submit">Check Eligibility</button>
+                    <button type="submit">Check Eligibility →</button>
                 </form>
             </div>
             
@@ -689,12 +920,12 @@ HTML_TEMPLATE = '''
             <div class="panel">
                 <h2><span class="num">2</span> Answer</h2>
                 <div id="answer-display" class="answer-box waiting">
-                    <div class="answer-status">❓</div>
-                    <div class="answer-text">Enter student information and click "Check Eligibility"</div>
+                    <div class="answer-status">🎯</div>
+                    <div class="answer-text">Enter student information to check exemption eligibility</div>
                 </div>
                 
                 <div id="rules-display" class="rules-list" style="display: none;">
-                    <h3 style="margin-bottom: 10px; color: #888;">Rules Checked</h3>
+                    <h3>Rules Evaluated</h3>
                     <div id="rules-list"></div>
                 </div>
             </div>
@@ -717,59 +948,60 @@ HTML_TEMPLATE = '''
                             <span class="receipt-value" id="receipt-trust">—</span>
                         </div>
                         <div class="receipt-row">
-                            <span class="receipt-label">Source</span>
+                            <span class="receipt-label">Policy Source</span>
                             <span class="receipt-value" id="receipt-source">—</span>
                         </div>
                         <div class="receipt-row">
-                            <span class="receipt-label">Time</span>
+                            <span class="receipt-label">Compute Time</span>
                             <span class="receipt-value" id="receipt-time">—</span>
                         </div>
                         <div class="receipt-row">
                             <span class="receipt-label">Operations</span>
                             <span class="receipt-value" id="receipt-ops">—</span>
                         </div>
-                        <div class="receipt-row">
-                            <span class="receipt-label">Input Hash</span>
-                            <span class="receipt-value" id="receipt-input-hash">—</span>
-                        </div>
-                        <div class="receipt-row">
-                            <span class="receipt-label">Output Hash</span>
-                            <span class="receipt-value" id="receipt-output-hash">—</span>
-                        </div>
-                        <div class="receipt-row">
-                            <span class="receipt-label">Prev Hash</span>
-                            <span class="receipt-value" id="receipt-prev-hash">—</span>
-                        </div>
-                        <div class="receipt-row">
-                            <span class="receipt-label">Entry Hash</span>
-                            <span class="receipt-value" id="receipt-entry-hash">—</span>
-                        </div>
                     </div>
                     
                     <button class="verify-btn" onclick="showVerificationDetail()">
-                        Show Full Verification
+                        View Cryptographic Proof ↓
                     </button>
                     
                     <div id="verification-detail">
+                        <div class="receipt" style="margin-top: 16px;">
+                            <div class="receipt-row">
+                                <span class="receipt-label">Input Hash</span>
+                                <span class="receipt-value" id="receipt-input-hash">—</span>
+                            </div>
+                            <div class="receipt-row">
+                                <span class="receipt-label">Output Hash</span>
+                                <span class="receipt-value" id="receipt-output-hash">—</span>
+                            </div>
+                            <div class="receipt-row">
+                                <span class="receipt-label">Prev Hash</span>
+                                <span class="receipt-value" id="receipt-prev-hash">—</span>
+                            </div>
+                            <div class="receipt-row">
+                                <span class="receipt-label">Entry Hash</span>
+                                <span class="receipt-value" id="receipt-entry-hash">—</span>
+                            </div>
+                        </div>
+                        
                         <div class="witnesses">
-                            <h3 style="color: #888; margin-bottom: 5px;">Witness Checklist (9/9)</h3>
+                            <h3 style="color: var(--text-secondary); font-size: 0.9em; font-weight: 600;">Pipeline Witnesses</h3>
                             <div class="witness-grid" id="witness-grid"></div>
                         </div>
                     </div>
                 </div>
                 
                 <div id="no-receipt" class="answer-box waiting">
-                    <div class="answer-status">🔒</div>
-                    <div class="answer-text">Receipt will appear after verification</div>
+                    <div class="answer-status">🔐</div>
+                    <div class="answer-text">Verification receipt will appear here</div>
                 </div>
             </div>
         </div>
         
         <footer>
-            <p>Verified Answer Artifact Calculus (VAAC) · Newton Engine</p>
-            <p style="margin-top: 5px; font-size: 0.9em;">
-                "A computer that can show its work."
-            </p>
+            <p><strong>Newton Engine</strong> · Verified Answer Artifact Calculus</p>
+            <p class="tagline">"A computer that can show its work."</p>
         </footer>
     </div>
     
@@ -831,10 +1063,10 @@ HTML_TEMPLATE = '''
             rulesDisplay.style.display = 'block';
             rulesList.innerHTML = result.rules_checked.map(rule => `
                 <div class="rule-item">
-                    <span class="rule-status">${rule.passed ? '✅' : '❌'}</span>
+                    <span class="rule-status">${rule.passed ? '✓' : '✗'}</span>
                     <div class="rule-details">
-                        <div class="rule-name">${rule.rule.replace(/_/g, ' ').toUpperCase()}</div>
-                        <div class="rule-info">Required: ${rule.requirement} | Actual: ${rule.actual}</div>
+                        <div class="rule-name">${rule.rule.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</div>
+                        <div class="rule-info">Required: ${rule.requirement} · Actual: ${rule.actual}</div>
                     </div>
                 </div>
             `).join('');
@@ -850,9 +1082,9 @@ HTML_TEMPLATE = '''
             trustSpan.textContent = result.trust_level;
             trustSpan.className = 'receipt-value ' + (result.trust_level === 'TRUSTED' ? 'pass' : 'fail');
             
-            document.getElementById('receipt-source').textContent = result.source.substring(0, 30) + '...';
-            document.getElementById('receipt-time').textContent = result.time_ms.toFixed(2) + ' ms';
-            document.getElementById('receipt-ops').textContent = result.operations;
+            document.getElementById('receipt-source').textContent = 'Handbook §4.3';
+            document.getElementById('receipt-time').textContent = result.time_ms.toFixed(3) + 'ms';
+            document.getElementById('receipt-ops').textContent = result.operations + ' ops';
             document.getElementById('receipt-input-hash').textContent = result.input_hash;
             document.getElementById('receipt-output-hash').textContent = result.output_hash;
             document.getElementById('receipt-prev-hash').textContent = result.prev_hash;
