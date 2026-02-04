@@ -20,18 +20,19 @@
 
 1. [Introduction](#1-introduction)
 2. [Getting Started](#2-getting-started)
-3. [Values and Types](#3-values-and-types)
-4. [Variables and Constants](#4-variables-and-constants)
-5. [Operators](#5-operators)
-6. [Control Flow](#6-control-flow)
-7. [Functions](#7-functions)
-8. [Collections](#8-collections)
-9. [Property Conversions](#9-property-conversions)
-10. [Blueprints (Classes)](#10-blueprints-classes)
-11. [Built-in Functions](#11-built-in-functions)
-12. [Error Handling](#12-error-handling)
-13. [Style Guide](#13-style-guide)
-14. [Complete Examples](#14-complete-examples)
+3. [Quick Tutorial](#quick-tutorial-learn-tinytalk-in-5-minutes) ⭐
+4. [Values and Types](#3-values-and-types)
+5. [Variables and Constants](#4-variables-and-constants)
+6. [Operators](#5-operators)
+7. [Control Flow](#6-control-flow)
+8. [Functions](#7-functions)
+9. [Collections](#8-collections)
+10. [Property Conversions](#9-property-conversions)
+11. [Blueprints (Classes)](#10-blueprints-classes)
+12. [Built-in Functions](#11-built-in-functions)
+13. [Error Handling](#12-error-handling)
+14. [Style Guide](#13-style-guide)
+15. [Complete Examples](#14-complete-examples)
 
 ---
 
@@ -140,7 +141,10 @@ let age = 384
 // These all work:
 show("Hello" name)                  // Hello Newton
 show(name "is" age "years old")     // Newton is 384 years old
-show("1 + 2 =" (1 + 2))             // 1 + 2 = 3
+
+// For expressions, use a variable or parentheses after a space
+let sum = 1 + 2
+show("1 + 2 =" sum)                 // 1 + 2 = 3
 ```
 
 ### Lesson 4: Property Conversions

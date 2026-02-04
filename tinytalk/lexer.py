@@ -45,8 +45,42 @@ class TokenType(Enum):
     FIELD = auto()          # State declaration
     FORGE = auto()          # Action that mutates state
     REPLY = auto()          # Return from forge
+    DO = auto()             # Action/return in when functions
+    FIN_THEN = auto()       # Else clause in when functions
     END = auto()            # Block terminator
     
+    # ═══════════════════════════════════════════════════════════════
+    # STEPS - dplyr-style data chaining (prefix: _)
+    # ═══════════════════════════════════════════════════════════════
+    STEP_FILTER = auto()    # _filter
+    STEP_SORT = auto()      # _sort
+    STEP_MAP = auto()       # _map  
+    STEP_TAKE = auto()      # _take
+    STEP_DROP = auto()      # _drop
+    STEP_FIRST = auto()     # _first
+    STEP_LAST = auto()      # _last
+    STEP_REVERSE = auto()   # _reverse
+    STEP_UNIQUE = auto()    # _unique
+    STEP_COUNT = auto()     # _count
+    STEP_SUM = auto()       # _sum
+    STEP_AVG = auto()       # _avg
+    STEP_MIN = auto()       # _min
+    STEP_MAX = auto()       # _max
+    STEP_GROUP = auto()     # _group
+    STEP_FLATTEN = auto()   # _flatten
+    STEP_ZIP = auto()       # _zip
+    STEP_CHUNK = auto()     # _chunk
+    
+    # ═══════════════════════════════════════════════════════════════
+    # COMPARISON KEYWORDS - natural language style
+    # ═══════════════════════════════════════════════════════════════
+    IS = auto()             # is (natural equality)
+    ISNT = auto()           # isnt (natural not-equal)
+    HASNT = auto()          # hasnt (doesn't contain)
+    HAS = auto()            # has (contains)
+    ISIN = auto()           # isin (element of)
+    ISLIKE = auto()         # islike (pattern match)
+
     # General Keywords (compatible mode)
     LET = auto()
     CONST = auto()
@@ -206,6 +240,8 @@ class Lexer:
         'field': TokenType.FIELD,
         'forge': TokenType.FORGE,
         'reply': TokenType.REPLY,
+        'do': TokenType.DO,             # Action/return in when functions  
+        'fin_then': TokenType.FIN_THEN, # Else clause in when functions
         'end': TokenType.END,
         
         # Compatible keywords (general programming)
@@ -249,6 +285,16 @@ class Lexer:
         # Logical operators as words
         'or': TokenType.OR,
         'not': TokenType.NOT,
+        
+        # ═══════════════════════════════════════════════════════════
+        # COMPARISON KEYWORDS - natural speech
+        # ═══════════════════════════════════════════════════════════
+        'is': TokenType.IS,
+        'isnt': TokenType.ISNT,
+        'has': TokenType.HAS,
+        'hasnt': TokenType.HASNT,
+        'isin': TokenType.ISIN,
+        'islike': TokenType.ISLIKE,
         
         # Type keywords (also callable as builtins)
         'int': TokenType.INT,
@@ -555,8 +601,30 @@ class Lexer:
         
         self.tokens.append(Token(TokenType.NUMBER, value, start_line, start_col))
     
+    # Step keywords - _underscore prefixed operations (dplyr-style)
+    STEP_KEYWORDS = {
+        '_filter': TokenType.STEP_FILTER,
+        '_sort': TokenType.STEP_SORT,
+        '_map': TokenType.STEP_MAP,
+        '_take': TokenType.STEP_TAKE,
+        '_drop': TokenType.STEP_DROP,
+        '_first': TokenType.STEP_FIRST,
+        '_last': TokenType.STEP_LAST,
+        '_reverse': TokenType.STEP_REVERSE,
+        '_unique': TokenType.STEP_UNIQUE,
+        '_count': TokenType.STEP_COUNT,
+        '_sum': TokenType.STEP_SUM,
+        '_avg': TokenType.STEP_AVG,
+        '_min': TokenType.STEP_MIN,
+        '_max': TokenType.STEP_MAX,
+        '_group': TokenType.STEP_GROUP,
+        '_flatten': TokenType.STEP_FLATTEN,
+        '_zip': TokenType.STEP_ZIP,
+        '_chunk': TokenType.STEP_CHUNK,
+    }
+    
     def _scan_identifier(self):
-        """Scan an identifier or keyword."""
+        """Scan an identifier, keyword, or step."""
         start_line = self.line
         start_col = self.column
         start_pos = self.pos
@@ -565,6 +633,11 @@ class Lexer:
             self._advance()
         
         text = self.source[start_pos:self.pos]
+        
+        # Check for step keywords (_filter, _sort, etc.)
+        if text in self.STEP_KEYWORDS:
+            self.tokens.append(Token(self.STEP_KEYWORDS[text], text, start_line, start_col))
+            return
         
         # Check if keyword
         if text in self.KEYWORDS:

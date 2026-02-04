@@ -18,7 +18,7 @@ from .parser import (
     Array, MapLiteral, Lambda, Conditional, Range, Pipe, LetStmt, ConstStmt,
     Block, IfStmt, ForStmt, WhileStmt, ReturnStmt, BreakStmt, ContinueStmt,
     FnDecl, StructDecl, EnumDecl, ImportStmt, MatchStmt, TryStmt, ThrowStmt,
-    AssignStmt
+    AssignStmt, StepChain
 )
 
 
@@ -358,6 +358,10 @@ class Runtime:
                 fn = self._eval(node.right, scope)
                 return self._call_function(fn.data, [left], scope, node.line)
         
+        # Step chain (dplyr-style: data _filter _sort _take)
+        if isinstance(node, StepChain):
+            return self._eval_step_chain(node, scope)
+        
         # Let statement
         if isinstance(node, LetStmt):
             val = self._eval(node.value, scope) if node.value else Value.null_val()
@@ -572,11 +576,60 @@ class Runtime:
             return Value.bool_val(left.data <= right.data)
         if op == '>=':
             return Value.bool_val(left.data >= right.data)
-        if op == '==':
+        if op == '==' or op == 'is':
             return self._equal(left, right)
-        if op == '!=':
+        if op == '!=' or op == 'isnt':
             eq = self._equal(left, right)
             return Value.bool_val(not eq.data)
+        
+        # ═══════════════════════════════════════════════════════════════════
+        # NATURAL LANGUAGE COMPARISON OPERATORS
+        # ═══════════════════════════════════════════════════════════════════
+        
+        # has - check if container contains value
+        if op == 'has':
+            if left.type == ValueType.LIST:
+                return Value.bool_val(any(right.data == v.data for v in left.data))
+            if left.type == ValueType.MAP:
+                return Value.bool_val(right.to_python() in left.data)
+            if left.type == ValueType.STRING:
+                return Value.bool_val(str(right.data) in left.data)
+            return Value.bool_val(False)
+        
+        # hasnt - opposite of has  
+        if op == 'hasnt':
+            if left.type == ValueType.LIST:
+                return Value.bool_val(not any(right.data == v.data for v in left.data))
+            if left.type == ValueType.MAP:
+                return Value.bool_val(right.to_python() not in left.data)
+            if left.type == ValueType.STRING:
+                return Value.bool_val(str(right.data) not in left.data)
+            return Value.bool_val(True)
+        
+        # isin - check if value is in container (reverse of 'in')
+        if op == 'isin':
+            if right.type == ValueType.LIST:
+                return Value.bool_val(any(left.data == v.data for v in right.data))
+            if right.type == ValueType.MAP:
+                return Value.bool_val(left.to_python() in right.data)
+            if right.type == ValueType.STRING:
+                return Value.bool_val(str(left.data) in right.data)
+            return Value.bool_val(False)
+        
+        # islike - pattern matching (simple wildcard or regex-lite)
+        if op == 'islike':
+            import re
+            if left.type != ValueType.STRING or right.type != ValueType.STRING:
+                return Value.bool_val(False)
+            # Convert simple wildcards to regex
+            pattern = right.data
+            # Escape regex special chars except * and ?
+            pattern = re.escape(pattern)
+            pattern = pattern.replace(r'\*', '.*').replace(r'\?', '.')
+            try:
+                return Value.bool_val(bool(re.fullmatch(pattern, left.data, re.IGNORECASE)))
+            except:
+                return Value.bool_val(False)
         
         # Bitwise
         if op == '&':
@@ -906,12 +959,20 @@ class Runtime:
         if obj.type == ValueType.STRING:
             if node.field == 'length':
                 return Value.int_val(len(obj.data))
-            if node.field == 'upper':
+            if node.field in ('upper', 'upcase'):  # Support both
                 return Value.string_val(obj.data.upper())
-            if node.field == 'lower':
+            if node.field in ('lower', 'lowcase'):  # Support both
                 return Value.string_val(obj.data.lower())
             if node.field == 'trim':
                 return Value.string_val(obj.data.strip())
+            if node.field == 'chars':  # Get chars as list
+                return Value.list_val([Value.string_val(c) for c in obj.data])
+            if node.field == 'words':  # Split into words
+                return Value.list_val([Value.string_val(w) for w in obj.data.split()])
+            if node.field == 'lines':  # Split into lines
+                return Value.list_val([Value.string_val(l) for l in obj.data.splitlines()])
+            if node.field == 'reversed':  # Reverse the string
+                return Value.string_val(obj.data[::-1])
         if obj.type == ValueType.LIST:
             if node.field == 'length':
                 return Value.int_val(len(obj.data))
@@ -1036,6 +1097,185 @@ class Runtime:
             ffi.import_external(node.module, scope, node.names, node.alias)
         
         return Value.null_val()
+    
+    # ═══════════════════════════════════════════════════════════════════════════════
+    # STEP CHAIN EVALUATION - dplyr-style data manipulation
+    # ═══════════════════════════════════════════════════════════════════════════════
+    
+    def _eval_step_chain(self, node, scope: Scope) -> Value:
+        """
+        Evaluate step chain: data _filter _sort _take
+        
+        Steps are applied left-to-right, each transforming the data.
+        """
+        # Start with the source data
+        data = self._eval(node.source, scope)
+        
+        for step_name, step_args in node.steps:
+            # Evaluate step arguments (if any)
+            args = [self._eval(a, scope) for a in step_args]
+            
+            # Apply the step
+            data = self._apply_step(data, step_name, args, scope, node.line)
+        
+        return data
+    
+    def _apply_step(self, data: Value, step: str, args: List[Value], scope: Scope, line: int) -> Value:
+        """Apply a single step transformation."""
+        
+        # Ensure we have a list to work with
+        if data.type != ValueType.LIST:
+            if data.type == ValueType.STRING:
+                # Convert string to list of chars for step operations
+                data = Value.list_val([Value.string_val(c) for c in data.data])
+            else:
+                raise TinyTalkError(f"Step operations require a list, got {data.type.value}", line)
+        
+        items = data.data  # List[Value]
+        
+        # _filter(predicate) - Keep items where predicate is true
+        if step == '_filter':
+            if not args:
+                raise TinyTalkError("_filter requires a predicate function", line)
+            pred = args[0]
+            if pred.type != ValueType.FUNCTION:
+                raise TinyTalkError("_filter argument must be a function", line)
+            result = []
+            for item in items:
+                res = self._call_function(pred.data, [item], scope, line)
+                if res.is_truthy():
+                    result.append(item)
+            return Value.list_val(result)
+        
+        # _sort - Sort the list (optionally with key function)
+        if step == '_sort':
+            if args and args[0].type == ValueType.FUNCTION:
+                key_fn = args[0]
+                sorted_items = sorted(items, key=lambda x: self._call_function(key_fn.data, [x], scope, line).to_python())
+            else:
+                sorted_items = sorted(items, key=lambda x: x.to_python())
+            return Value.list_val(sorted_items)
+        
+        # _map(transform) - Transform each item
+        if step == '_map':
+            if not args:
+                raise TinyTalkError("_map requires a transform function", line)
+            fn = args[0]
+            if fn.type != ValueType.FUNCTION:
+                raise TinyTalkError("_map argument must be a function", line)
+            result = [self._call_function(fn.data, [item], scope, line) for item in items]
+            return Value.list_val(result)
+        
+        # _take(n) - Take first n items
+        if step == '_take':
+            n = int(args[0].data) if args else 1
+            return Value.list_val(items[:n])
+        
+        # _drop(n) - Drop first n items
+        if step == '_drop':
+            n = int(args[0].data) if args else 1
+            return Value.list_val(items[n:])
+        
+        # _first - Get first item
+        if step == '_first':
+            return items[0] if items else Value.null_val()
+        
+        # _last - Get last item
+        if step == '_last':
+            return items[-1] if items else Value.null_val()
+        
+        # _reverse - Reverse the list
+        if step == '_reverse':
+            return Value.list_val(list(reversed(items)))
+        
+        # _unique - Remove duplicates (preserving order)
+        if step == '_unique':
+            seen = set()
+            result = []
+            for item in items:
+                key = item.to_python()
+                # Make lists hashable by converting to tuple
+                if isinstance(key, list):
+                    key = tuple(key)
+                if key not in seen:
+                    seen.add(key)
+                    result.append(item)
+            return Value.list_val(result)
+        
+        # _count - Count items (or count matching predicate)
+        if step == '_count':
+            if args and args[0].type == ValueType.FUNCTION:
+                pred = args[0]
+                count = sum(1 for item in items if self._call_function(pred.data, [item], scope, line).is_truthy())
+            else:
+                count = len(items)
+            return Value.int_val(count)
+        
+        # _sum - Sum numeric values
+        if step == '_sum':
+            total = sum(item.data for item in items if item.type in (ValueType.INT, ValueType.FLOAT))
+            return Value.float_val(total) if any(item.type == ValueType.FLOAT for item in items) else Value.int_val(int(total))
+        
+        # _avg - Average of numeric values
+        if step == '_avg':
+            nums = [item.data for item in items if item.type in (ValueType.INT, ValueType.FLOAT)]
+            if not nums:
+                return Value.null_val()
+            return Value.float_val(sum(nums) / len(nums))
+        
+        # _min - Minimum value
+        if step == '_min':
+            if not items:
+                return Value.null_val()
+            return min(items, key=lambda x: x.to_python())
+        
+        # _max - Maximum value
+        if step == '_max':
+            if not items:
+                return Value.null_val()
+            return max(items, key=lambda x: x.to_python())
+        
+        # _group(key_fn) - Group by key function
+        if step == '_group':
+            if not args:
+                raise TinyTalkError("_group requires a key function", line)
+            key_fn = args[0]
+            if key_fn.type != ValueType.FUNCTION:
+                raise TinyTalkError("_group argument must be a function", line)
+            groups = {}
+            for item in items:
+                key = self._call_function(key_fn.data, [item], scope, line).to_python()
+                if key not in groups:
+                    groups[key] = []
+                groups[key].append(item)
+            # Return as map of key -> list
+            return Value.map_val({k: Value.list_val(v) for k, v in groups.items()})
+        
+        # _flatten - Flatten nested lists one level
+        if step == '_flatten':
+            result = []
+            for item in items:
+                if item.type == ValueType.LIST:
+                    result.extend(item.data)
+                else:
+                    result.append(item)
+            return Value.list_val(result)
+        
+        # _zip(other_list) - Zip with another list
+        if step == '_zip':
+            if not args or args[0].type != ValueType.LIST:
+                raise TinyTalkError("_zip requires a list argument", line)
+            other = args[0].data
+            result = [Value.list_val([a, b]) for a, b in zip(items, other)]
+            return Value.list_val(result)
+        
+        # _chunk(size) - Split into chunks of size n
+        if step == '_chunk':
+            n = int(args[0].data) if args else 2
+            result = [Value.list_val(items[i:i+n]) for i in range(0, len(items), n)]
+            return Value.list_val(result)
+        
+        raise TinyTalkError(f"Unknown step: {step}", line)
     
     def _eval_match(self, node: MatchStmt, scope: Scope) -> Value:
         """Evaluate match statement."""

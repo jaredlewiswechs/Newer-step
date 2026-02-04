@@ -73,6 +73,7 @@ class NodeType(Enum):
     RANGE = auto()
     ASSIGN = auto()
     COMPOUND_ASSIGN = auto()
+    STEP_CHAIN = auto()     # dplyr-style step chain: data _filter _sort _take
 
 
 @dataclass
@@ -227,6 +228,20 @@ class Pipe(ASTNode):
     
     def __post_init__(self):
         self.type = NodeType.PIPE
+
+
+@dataclass
+class StepChain(ASTNode):
+    """
+    Step chain expression (dplyr-style data manipulation).
+    
+    data _filter(x > 5) _sort _take(3)
+    """
+    source: ASTNode = None  # The data source
+    steps: List[tuple] = field(default_factory=list)  # [(step_name, args), ...]
+    
+    def __post_init__(self):
+        self.type = NodeType.STEP_CHAIN
 
 
 @dataclass
@@ -552,6 +567,9 @@ class Parser:
         
         if self._match(TokenType.REPLY):
             return self._parse_reply()
+        
+        if self._match(TokenType.DO):
+            return self._parse_do()
         
         if self._match(TokenType.LBRACE):
             return self._parse_block()
@@ -982,21 +1000,52 @@ class Parser:
         return FnDecl(name=name_tok.value, params=params, body=body,
                       line=tok.line, column=tok.column)
     
-    def _parse_when(self) -> LetStmt:
+    def _parse_when(self):
         """
-        Parse when (fact declaration).
+        Parse when - either a fact (constant) or a function definition.
         
-        when x = 42           -> let x = 42 (immutable fact)
-        when name = "Newton"  -> establishes truth
+        when x = 42           -> constant (immutable fact)
+        when name = "Newton"  -> constant
+        
+        when square(x)        -> function definition
+          do x * x
+        finfr
         """
         tok = self.tokens[self.pos - 1]
-        name_tok = self._consume(TokenType.IDENTIFIER, "Expected fact name")
-        self._consume(TokenType.ASSIGN, "Expected '=' after fact name")
-        value = self._parse_expression()
+        name_tok = self._consume(TokenType.IDENTIFIER, "Expected name after 'when'")
         
-        # when creates an immutable binding (const)
-        return ConstStmt(name=name_tok.value, value=value,
-                         line=tok.line, column=tok.column)
+        # Check if this is a function definition (has parentheses)
+        if self._match(TokenType.LPAREN):
+            # Function definition: when square(x) ... finfr
+            params = []
+            if not self._check(TokenType.RPAREN):
+                params = self._parse_params()
+            self._consume(TokenType.RPAREN, "Expected ')' after parameters")
+            
+            self._skip_newlines()
+            
+            # Parse body until 'finfr' or 'end'
+            statements = []
+            while not self._check(TokenType.FINFR, TokenType.END) and not self._at_end():
+                stmt = self._parse_statement()
+                if stmt:
+                    statements.append(stmt)
+                self._skip_newlines()
+            
+            # Accept either 'finfr' or 'end' as terminator
+            if not self._match(TokenType.FINFR):
+                self._consume(TokenType.END, "Expected 'finfr' or 'end' after when function")
+            
+            body = Block(statements=statements, line=tok.line, column=tok.column)
+            return FnDecl(name=name_tok.value, params=params, body=body,
+                          line=tok.line, column=tok.column)
+        else:
+            # Constant declaration: when x = 42
+            self._consume(TokenType.ASSIGN, "Expected '=' after fact name")
+            value = self._parse_expression()
+            
+            return ConstStmt(name=name_tok.value, value=value,
+                             line=tok.line, column=tok.column)
     
     def _parse_fin(self) -> ReturnStmt:
         """
@@ -1026,6 +1075,21 @@ class Parser:
         
         # For now, finfr is the same as fin/return
         # In a full implementation, it would mark the scope as terminated
+        return ReturnStmt(value=value, line=tok.line, column=tok.column)
+    
+    def _parse_do(self) -> ReturnStmt:
+        """
+        Parse do (action/return in when functions).
+        
+        do x * x     -> returns x * x
+        do result    -> returns result
+        """
+        tok = self.tokens[self.pos - 1]
+        
+        value = None
+        if not self._check(TokenType.NEWLINE, TokenType.END, TokenType.EOF, TokenType.FINFR, TokenType.FIN_THEN):
+            value = self._parse_expression()
+        
         return ReturnStmt(value=value, line=tok.line, column=tok.column)
     
     def _parse_reply(self) -> ReturnStmt:
@@ -1115,14 +1179,22 @@ class Parser:
         return left
     
     def _parse_equality(self) -> ASTNode:
-        """Parse equality: ==, !="""
+        """Parse equality: ==, !=, is, isnt, has, hasnt, isin, islike"""
         left = self._parse_comparison()
         
-        while self._match(TokenType.EQ, TokenType.NE):
+        while self._match(TokenType.EQ, TokenType.NE, 
+                          TokenType.IS, TokenType.ISNT,
+                          TokenType.HAS, TokenType.HASNT,
+                          TokenType.ISIN, TokenType.ISLIKE):
             tok = self.tokens[self.pos - 1]
-            op = '==' if tok.type == TokenType.EQ else '!='
+            op_map = {
+                TokenType.EQ: '==', TokenType.NE: '!=',
+                TokenType.IS: 'is', TokenType.ISNT: 'isnt',
+                TokenType.HAS: 'has', TokenType.HASNT: 'hasnt',
+                TokenType.ISIN: 'isin', TokenType.ISLIKE: 'islike',
+            }
             right = self._parse_comparison()
-            left = BinaryOp(op=op, left=left, right=right,
+            left = BinaryOp(op=op_map[tok.type], left=left, right=right,
                             line=tok.line, column=tok.column)
         
         return left
@@ -1259,11 +1331,14 @@ class Parser:
         return self._parse_postfix()
     
     def _parse_postfix(self) -> ASTNode:
-        """Parse postfix: calls, indexing, member access."""
+        """Parse postfix: calls, indexing, member access, step chains."""
         expr = self._parse_primary()
         
         while True:
-            if self._match(TokenType.LPAREN):
+            # Only allow function calls on identifiers, member access, or other calls
+            # NOT on literals (prevents "string"(args) being parsed as call)
+            if self._check(TokenType.LPAREN) and not isinstance(expr, Literal):
+                self._advance()  # consume LPAREN
                 # Function call
                 tok = self.tokens[self.pos - 1]
                 args = []
@@ -1299,10 +1374,43 @@ class Parser:
                 expr = Member(obj=expr, field=field_name, 
                               line=tok.line, column=tok.column)
             
+            elif self._is_step_token():
+                # Step chain: data _filter _sort _take
+                # Collect all steps until no more step tokens
+                tok = self._peek()
+                steps = []
+                
+                while self._is_step_token():
+                    step_tok = self._advance()
+                    step_name = step_tok.value  # _filter, _sort, etc.
+                    step_args = []
+                    
+                    # Check for optional arguments: _filter(x > 5) or _take(3)
+                    if self._match(TokenType.LPAREN):
+                        if not self._check(TokenType.RPAREN):
+                            step_args = self._parse_args()
+                        self._consume(TokenType.RPAREN, f"Expected ')' after {step_name} arguments")
+                    
+                    steps.append((step_name, step_args))
+                
+                expr = StepChain(source=expr, steps=steps,
+                                 line=tok.line, column=tok.column)
+            
             else:
                 break
         
         return expr
+    
+    def _is_step_token(self) -> bool:
+        """Check if current token is a step token (_filter, _sort, etc.)."""
+        return self._check(
+            TokenType.STEP_FILTER, TokenType.STEP_SORT, TokenType.STEP_MAP,
+            TokenType.STEP_TAKE, TokenType.STEP_DROP, TokenType.STEP_FIRST,
+            TokenType.STEP_LAST, TokenType.STEP_REVERSE, TokenType.STEP_UNIQUE,
+            TokenType.STEP_COUNT, TokenType.STEP_SUM, TokenType.STEP_AVG,
+            TokenType.STEP_MIN, TokenType.STEP_MAX, TokenType.STEP_GROUP,
+            TokenType.STEP_FLATTEN, TokenType.STEP_ZIP, TokenType.STEP_CHUNK,
+        )
     
     def _parse_args(self) -> List[ASTNode]:
         """Parse function call arguments.

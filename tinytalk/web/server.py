@@ -130,9 +130,12 @@ show("pi:" pi)
 // Math just works
 show("")
 show("=== Math ===")
-show("2 + 3 =" (2 + 3))
-show("10 / 4 =" (10 / 4))
-show("2 ** 8 =" (2 ** 8))
+let sum = 2 + 3
+let div = 10 / 4
+let power = 2 ** 8
+show("2 + 3 =" sum)
+show("10 / 4 =" div)
+show("2 ** 8 =" power)
 
 // Strings
 show("")
@@ -280,7 +283,8 @@ show("=== String Properties ===")
 let msg = "  hello world  "
 show("original:" msg)
 show("trimmed:" msg.trim)
-show("upper:" msg.upper)
+show("upcase:" msg.upcase)
+show("lowcase:" msg.lowcase)
 show("len:" msg.len)
 
 show("")
@@ -341,9 +345,51 @@ show("")
 countdown(5)'''
         },
         {
-            'name': '⚖️ law (Pure Functions)',
-            'code': '''// LAW - Pure functions, no side effects
-// Same input = same output, always
+            'name': '⚖️ when/do/finfr (NEW!)',
+            'code': '''// The NEW way to define functions!
+// when name(params)
+//   do expression
+// finfr  (fin for real!)
+
+when square(x)
+  do x * x
+finfr
+
+when double(x)
+  do x * 2
+finfr
+
+when add(a, b)
+  do a + b
+finfr
+
+show("square(5):" square(5))
+show("double(21):" double(21))
+show("add(10, 32):" add(10, 32))
+
+// With conditionals
+when factorial(n)
+  if n <= 1 { do 1 }
+  do n * factorial(n - 1)
+finfr
+
+show("")
+show("=== Factorials ===")
+for i in range(1, 8) {
+    show(i.str "! =" factorial(i))
+}
+
+// when also works for constants!
+when PI = 3.14159
+show("")
+show("PI =" PI)'''
+        },
+        {
+            'name': '⚖️ law/reply/end (classic)',
+            'code': '''// Classic function syntax (still works!)
+// law name(params)
+//   reply expression
+// end
 
 law square(x)
     reply x * x
@@ -475,6 +521,117 @@ show("10 / 5 =" result.value)
 
 let bad = divide(10, 0)
 show("10 / 0 =" bad.error)'''
+        },
+        {
+            'name': '🔗 Step Chains (NEW!)',
+            'code': '''// dplyr-style data manipulation
+// Chain operations with _underscore steps!
+
+let numbers = [5, 2, 8, 1, 9, 3, 7, 4, 6]
+show("Numbers:" numbers)
+
+// Chain multiple steps: sort, take top 3
+let top3 = numbers _sort _reverse _take(3)
+show("Top 3:" top3)
+
+// Filter and count
+law is_even(x)
+    reply x % 2 == 0
+end
+
+let evens = numbers _filter(is_even)
+show("Evens:" evens)
+show("Even count:" numbers _filter(is_even) _count)
+
+// Sum and average
+show("Sum:" numbers _sum)
+show("Average:" numbers _avg)
+show("Min:" numbers _min)
+show("Max:" numbers _max)
+
+// Transform with _map
+law doubled(x)
+    reply x * 2
+end
+
+show("Doubled:" numbers _map(doubled))
+
+// Combine operations: filter > 3, sort, take 3
+show("")
+show("=== Complex Chain ===")
+law big(x)
+    reply x > 3
+end
+
+let result = numbers _filter(big) _sort _take(3)
+show("filter(>3) + sort + take(3):" result)'''
+        },
+        {
+            'name': '💬 Natural Comparisons',
+            'code': '''// Natural language comparisons!
+// is, isnt, has, hasnt, isin, islike
+
+let name = "Alice"
+let numbers = [1, 2, 3, 4, 5]
+let text = "Hello World"
+
+// is / isnt - natural equality
+show("=== is / isnt ===")
+show("name is Alice:" (name is "Alice"))
+show("name isnt Bob:" (name isnt "Bob"))
+show("5 is 5:" (5 is 5))
+show("5 isnt 6:" (5 isnt 6))
+
+// has / hasnt - container checks
+show("")
+show("=== has / hasnt ===")
+show("numbers has 3:" (numbers has 3))
+show("numbers hasnt 99:" (numbers hasnt 99))
+show("text has World:" (text has "World"))
+show("text hasnt Goodbye:" (text hasnt "Goodbye"))
+
+// isin - element membership
+show("")
+show("=== isin ===")
+show("3 isin numbers:" (3 isin numbers))
+show("99 isin numbers:" (99 isin numbers))
+
+// islike - pattern matching (* and ?)
+show("")
+show("=== islike (wildcards) ===")
+show("Alice islike A*:" ("Alice" islike "A*"))
+show("Alice islike *ice:" ("Alice" islike "*ice"))
+show("Alice islike Al?ce:" ("Alice" islike "Al?ce"))
+show("Bob islike A*:" ("Bob" islike "A*"))'''
+        },
+        {
+            'name': '✨ String Properties',
+            'code': '''// New string properties!
+
+let msg = "  Hello World  "
+
+show("=== String Properties ===")
+show("original:" msg)
+show("trimmed:" msg.trim)
+show("upcase:" msg.upcase)
+show("lowcase:" msg.lowcase)
+show("reversed:" msg.reversed)
+show("len:" msg.len)
+
+// Split into parts
+show("")
+show("=== Split Operations ===")
+let sentence = "the quick brown fox"
+show("words:" sentence.words)
+show("chars:" sentence.chars _take(5))
+
+// Works with step chains!
+show("")
+show("=== String + Steps ===")
+let words = sentence.words
+show("first 2 words:" words _take(2))
+show("sorted words:" words _sort)
+show("unique chars:" sentence.chars _unique _sort)'''
         },
     ]
     return jsonify(examples)
