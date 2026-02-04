@@ -910,33 +910,105 @@
             // Register TinyTalk language
             monaco.languages.register({ id: 'tinytalk' });
 
-            // Syntax highlighting
+            // ═══════════════════════════════════════════════════════════════
+            // COMPLETE TINYTALK LANGUAGE DEFINITION
+            // Synced with lexer.py + stdlib.py + runtime.py (Feb 2026)
+            // ═══════════════════════════════════════════════════════════════
+
             monaco.languages.setMonarchTokensProvider('tinytalk', {
+                // ─────────────────────────────────────────────────────────────
+                // THE SACRED KEYWORDS (tinyTalk Bible)
+                // ─────────────────────────────────────────────────────────────
                 keywords: [
-                    'when', 'do', 'fin', 'finfr', 'fin_then',
-                    'law', 'forge', 'reply', 'end',
-                    'let', 'const', 'if', 'else', 'elif', 'for', 'while', 'in',
-                    'return', 'break', 'continue', 'fn', 'match', 'case',
-                    'true', 'false', 'null', 'nil',
-                    'and', 'or', 'not',
+                    // The Five Sacred Words
+                    'when', 'and', 'fin', 'finfr', 'ratio',
+                    // Layer 0: Governance
+                    'blueprint', 'law',
+                    // Layer 1: Executive
+                    'field', 'forge', 'reply', 'do', 'fin_then', 'end',
+                    // General Keywords
+                    'let', 'const', 'fn', 'return', 'if', 'else', 'elif',
+                    'for', 'while', 'in', 'break', 'continue', 'match', 'case',
+                    'type', 'struct', 'enum', 'impl', 'trait',
+                    'import', 'export', 'from', 'as', 'pub', 'mut',
+                    'async', 'await', 'try', 'catch', 'throw',
+                    // Type keywords
+                    'int', 'float', 'str', 'bool', 'list', 'map', 'any', 'void',
+                    // Matter Types (Units)
+                    'money', 'mass', 'distance', 'temperature', 'pressure',
+                    'velocity', 'time', 'volume',
+                    // Logical
+                    'or', 'not'
+                ],
+                
+                // ─────────────────────────────────────────────────────────────
+                // NATURAL COMPARISON KEYWORDS (reads like English)
+                // ─────────────────────────────────────────────────────────────
+                comparisons: [
                     'is', 'isnt', 'has', 'hasnt', 'isin', 'islike'
                 ],
+                
+                // ─────────────────────────────────────────────────────────────
+                // CONSTANTS
+                // ─────────────────────────────────────────────────────────────
+                constants: [
+                    'true', 'false', 'null', 'nil',
+                    'PI', 'E', 'TAU', 'INF', 'NAN'
+                ],
+                
+                // ─────────────────────────────────────────────────────────────
+                // STDLIB BUILTINS (from stdlib.py)
+                // ─────────────────────────────────────────────────────────────
                 builtins: [
-                    'show', 'print', 'println', 'len', 'type', 'str', 'int', 'float', 'bool',
-                    'list', 'map', 'range', 'sum', 'min', 'max', 'abs', 'round', 'floor', 'ceil',
-                    'sqrt', 'pow', 'sin', 'cos', 'tan', 'log', 'exp', 'input', 'split', 'join',
-                    'append', 'pop', 'push', 'keys', 'values', 'contains', 'slice', 'reverse',
-                    'sort', 'filter', 'zip', 'enumerate', 'assert', 'typeof', 'hash'
+                    // Output
+                    'show', 'print', 'println',
+                    // Input
+                    'input',
+                    // Types
+                    'len', 'type', 'typeof',
+                    // Collections
+                    'range', 'append', 'push', 'pop', 'keys', 'values',
+                    'contains', 'slice', 'reverse', 'sort',
+                    // Higher-order
+                    'filter', 'map_', 'reduce', 'zip', 'enumerate',
+                    // Strings
+                    'split', 'join',
+                    // Math
+                    'sum', 'min', 'max', 'abs', 'round', 'floor', 'ceil',
+                    'sqrt', 'pow', 'sin', 'cos', 'tan', 'log', 'exp',
+                    // Utility
+                    'assert', 'assert_equal', 'assert_true', 'assert_false',
+                    'assert_throws', 'hash'
                 ],
+                
+                // ─────────────────────────────────────────────────────────────
+                // STEP OPERATIONS (dplyr-style data chaining)
+                // ─────────────────────────────────────────────────────────────
                 steps: [
-                    '_filter', '_sort', '_map', '_take', '_drop', '_first', '_last',
-                    '_reverse', '_unique', '_count', '_sum', '_avg', '_min', '_max',
-                    '_group', '_flatten', '_zip', '_chunk'
+                    '_filter', '_sort', '_map', '_take', '_drop',
+                    '_first', '_last', '_reverse', '_unique', '_count',
+                    '_sum', '_avg', '_min', '_max', '_group',
+                    '_flatten', '_zip', '_chunk'
                 ],
+                
+                // ─────────────────────────────────────────────────────────────
+                // PROPERTY MAGIC (from runtime.py - no parens needed!)
+                // ─────────────────────────────────────────────────────────────
+                properties: [
+                    // Universal
+                    'len', 'str', 'int', 'float', 'bool', 'type',
+                    // String magic
+                    'upper', 'upcase', 'lower', 'lowcase', 'trim',
+                    'chars', 'words', 'lines', 'reversed', 'length',
+                    // List magic
+                    'first', 'last', 'empty'
+                ],
+                
                 operators: [
-                    '=', '==', '!=', '<', '>', '<=', '>=',
+                    '=', '==', '!=', '~~', '<', '>', '<=', '>=',
                     '+', '-', '*', '/', '//', '%', '**',
-                    '|>', ':='
+                    '|>', ':=', '->', '=>', '..', '..=', '::',
+                    '&', '|', '^', '~', '<<', '>>'
                 ],
                 symbols: /[=><!~?:&|+\-*\/\^%]+/,
 
@@ -947,7 +1019,7 @@
                         [/#.*$/, 'comment'],
                         [/\/\*/, 'comment', '@comment'],
 
-                        // Strings - IMPORTANT: Use distinctive color!
+                        // Strings
                         [/"([^"\\]|\\.)*$/, 'string.invalid'],
                         [/"/, 'string', '@string_double'],
                         [/'([^'\\]|\\.)*$/, 'string.invalid'],
@@ -956,9 +1028,10 @@
                         // Numbers
                         [/\d+\.\d+([eE][\-+]?\d+)?/, 'number.float'],
                         [/0[xX][0-9a-fA-F]+/, 'number.hex'],
+                        [/0[bB][01]+/, 'number.binary'],
                         [/\d+/, 'number'],
 
-                        // Step operations (underscore-prefixed)
+                        // Step operations (underscore-prefixed) - IMPORTANT!
                         [/_[a-zA-Z]\w*/, {
                             cases: {
                                 '@steps': 'keyword.step',
@@ -966,13 +1039,20 @@
                             }
                         }],
 
-                        // Property access with dot
-                        [/\.[a-zA-Z]\w*/, 'variable.property'],
+                        // Property access with dot (property magic)
+                        [/\.([a-zA-Z]\w*)/, {
+                            cases: {
+                                '$1@properties': 'variable.property.magic',
+                                '@default': 'variable.property'
+                            }
+                        }],
 
                         // Identifiers
                         [/[a-zA-Z_]\w*/, {
                             cases: {
                                 '@keywords': 'keyword',
+                                '@comparisons': 'keyword.comparison',
+                                '@constants': 'constant',
                                 '@builtins': 'predefined',
                                 '@default': 'identifier'
                             }
@@ -1013,23 +1093,33 @@
 
             // Define themes with CONSISTENT, BEAUTIFUL colors
             
-            // Dark theme
+            // Dark theme (GitHub Dark)
             monaco.editor.defineTheme('tinytalk-dark', {
                 base: 'vs-dark',
                 inherit: true,
                 rules: [
+                    // Keywords
                     { token: 'keyword', foreground: 'ff7b72', fontStyle: 'bold' },
+                    { token: 'keyword.comparison', foreground: 'ff7b72', fontStyle: 'bold italic' },
                     { token: 'keyword.step', foreground: 'd2a8ff', fontStyle: 'italic' },
+                    // Constants & Builtins
+                    { token: 'constant', foreground: '79c0ff', fontStyle: 'bold' },
                     { token: 'predefined', foreground: 'd2a8ff' },
+                    // Literals
                     { token: 'string', foreground: 'a5d6ff' },
                     { token: 'string.escape', foreground: '79c0ff' },
                     { token: 'number', foreground: '79c0ff' },
                     { token: 'number.float', foreground: '79c0ff' },
                     { token: 'number.hex', foreground: '79c0ff' },
+                    { token: 'number.binary', foreground: '79c0ff' },
+                    // Comments
                     { token: 'comment', foreground: '8b949e', fontStyle: 'italic' },
+                    // Operators & Identifiers
                     { token: 'operator', foreground: 'ff7b72' },
                     { token: 'identifier', foreground: 'e6edf3' },
+                    // Properties - key differentiator!
                     { token: 'variable.property', foreground: '7ee787' },
+                    { token: 'variable.property.magic', foreground: 'ffa657', fontStyle: 'italic' },
                     { token: 'delimiter', foreground: '8b949e' },
                 ],
                 colors: {
@@ -1044,21 +1134,27 @@
                 }
             });
 
-            // Light theme
+            // Light theme (GitHub Light)
             monaco.editor.defineTheme('tinytalk-light', {
                 base: 'vs',
                 inherit: true,
                 rules: [
                     { token: 'keyword', foreground: 'cf222e', fontStyle: 'bold' },
+                    { token: 'keyword.comparison', foreground: 'cf222e', fontStyle: 'bold italic' },
                     { token: 'keyword.step', foreground: '8250df', fontStyle: 'italic' },
+                    { token: 'constant', foreground: '0550ae', fontStyle: 'bold' },
                     { token: 'predefined', foreground: '8250df' },
                     { token: 'string', foreground: '0a3069' },
                     { token: 'string.escape', foreground: '0550ae' },
                     { token: 'number', foreground: '0550ae' },
+                    { token: 'number.float', foreground: '0550ae' },
+                    { token: 'number.hex', foreground: '0550ae' },
+                    { token: 'number.binary', foreground: '0550ae' },
                     { token: 'comment', foreground: '6e7781', fontStyle: 'italic' },
                     { token: 'operator', foreground: 'cf222e' },
                     { token: 'identifier', foreground: '1f2328' },
                     { token: 'variable.property', foreground: '116329' },
+                    { token: 'variable.property.magic', foreground: '953800', fontStyle: 'italic' },
                 ],
                 colors: {
                     'editor.background': '#ffffff',
@@ -1077,15 +1173,21 @@
                 inherit: true,
                 rules: [
                     { token: 'keyword', foreground: 'f92672', fontStyle: 'bold' },
+                    { token: 'keyword.comparison', foreground: 'f92672', fontStyle: 'bold italic' },
                     { token: 'keyword.step', foreground: '66d9ef', fontStyle: 'italic' },
+                    { token: 'constant', foreground: 'ae81ff', fontStyle: 'bold' },
                     { token: 'predefined', foreground: 'a6e22e' },
                     { token: 'string', foreground: 'e6db74' },
                     { token: 'string.escape', foreground: 'ae81ff' },
                     { token: 'number', foreground: 'ae81ff' },
+                    { token: 'number.float', foreground: 'ae81ff' },
+                    { token: 'number.hex', foreground: 'ae81ff' },
+                    { token: 'number.binary', foreground: 'ae81ff' },
                     { token: 'comment', foreground: '75715e', fontStyle: 'italic' },
                     { token: 'operator', foreground: 'f92672' },
                     { token: 'identifier', foreground: 'f8f8f2' },
                     { token: 'variable.property', foreground: 'a6e22e' },
+                    { token: 'variable.property.magic', foreground: 'fd971f', fontStyle: 'italic' },
                 ],
                 colors: {
                     'editor.background': '#272822',
@@ -1104,15 +1206,21 @@
                 inherit: true,
                 rules: [
                     { token: 'keyword', foreground: '81a1c1', fontStyle: 'bold' },
+                    { token: 'keyword.comparison', foreground: '81a1c1', fontStyle: 'bold italic' },
                     { token: 'keyword.step', foreground: '88c0d0', fontStyle: 'italic' },
+                    { token: 'constant', foreground: 'b48ead', fontStyle: 'bold' },
                     { token: 'predefined', foreground: '88c0d0' },
                     { token: 'string', foreground: 'a3be8c' },
                     { token: 'string.escape', foreground: 'ebcb8b' },
                     { token: 'number', foreground: 'b48ead' },
+                    { token: 'number.float', foreground: 'b48ead' },
+                    { token: 'number.hex', foreground: 'b48ead' },
+                    { token: 'number.binary', foreground: 'b48ead' },
                     { token: 'comment', foreground: '616e88', fontStyle: 'italic' },
                     { token: 'operator', foreground: '81a1c1' },
                     { token: 'identifier', foreground: 'eceff4' },
                     { token: 'variable.property', foreground: '8fbcbb' },
+                    { token: 'variable.property.magic', foreground: 'd08770', fontStyle: 'italic' },
                 ],
                 colors: {
                     'editor.background': '#2e3440',
@@ -1200,56 +1308,165 @@ for i in range(10) {
             // Ctrl+Enter to run
             editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, runCode);
 
-            // Auto-completion
+            // ═══════════════════════════════════════════════════════════════
+            // AUTO-COMPLETION - Full Language Support
+            // ═══════════════════════════════════════════════════════════════
+
             monaco.languages.registerCompletionItemProvider('tinytalk', {
                 provideCompletionItems: () => {
                     const suggestions = [
-                        // Keywords
-                        ...['when', 'do', 'finfr', 'law', 'reply', 'end', 'let', 'const', 'if', 'else', 'for', 'while', 'in', 'return', 'true', 'false'].map(k => ({
+                        // ─────────────────────────────────────────────────
+                        // Sacred Keywords
+                        // ─────────────────────────────────────────────────
+                        ...['when', 'and', 'fin', 'finfr', 'ratio', 'do', 'fin_then'].map(k => ({
+                            label: k,
+                            kind: monaco.languages.CompletionItemKind.Keyword,
+                            insertText: k,
+                            documentation: 'Sacred keyword (TinyTalk Bible)'
+                        })),
+                        
+                        // ─────────────────────────────────────────────────
+                        // Governance Keywords
+                        // ─────────────────────────────────────────────────
+                        ...['blueprint', 'law', 'field', 'forge', 'reply', 'end'].map(k => ({
+                            label: k,
+                            kind: monaco.languages.CompletionItemKind.Keyword,
+                            insertText: k,
+                            documentation: 'Governance/Executive keyword'
+                        })),
+                        
+                        // ─────────────────────────────────────────────────
+                        // Control Flow
+                        // ─────────────────────────────────────────────────
+                        ...['let', 'const', 'if', 'else', 'elif', 'for', 'while', 'in', 
+                            'return', 'break', 'continue', 'fn', 'match', 'case'].map(k => ({
                             label: k,
                             kind: monaco.languages.CompletionItemKind.Keyword,
                             insertText: k,
                         })),
-                        // Builtins
-                        ...['show', 'len', 'range', 'str', 'int', 'float', 'sum', 'min', 'max', 'abs', 'sqrt', 'sort', 'reverse'].map(b => ({
+                        
+                        // ─────────────────────────────────────────────────
+                        // Natural Comparisons (reads like English!)
+                        // ─────────────────────────────────────────────────
+                        { label: 'is', kind: monaco.languages.CompletionItemKind.Operator, 
+                          insertText: 'is', documentation: 'Natural equality: x is 5' },
+                        { label: 'isnt', kind: monaco.languages.CompletionItemKind.Operator, 
+                          insertText: 'isnt', documentation: 'Natural not-equal: x isnt 5' },
+                        { label: 'has', kind: monaco.languages.CompletionItemKind.Operator, 
+                          insertText: 'has', documentation: 'Contains check: list has 5' },
+                        { label: 'hasnt', kind: monaco.languages.CompletionItemKind.Operator, 
+                          insertText: 'hasnt', documentation: 'Not contains: list hasnt 5' },
+                        { label: 'isin', kind: monaco.languages.CompletionItemKind.Operator, 
+                          insertText: 'isin', documentation: 'Element of: x isin list' },
+                        { label: 'islike', kind: monaco.languages.CompletionItemKind.Operator, 
+                          insertText: 'islike', documentation: 'Pattern match: name islike "N*"' },
+                        
+                        // ─────────────────────────────────────────────────
+                        // Constants
+                        // ─────────────────────────────────────────────────
+                        ...['true', 'false', 'null', 'nil', 'PI', 'E', 'TAU', 'INF'].map(c => ({
+                            label: c,
+                            kind: monaco.languages.CompletionItemKind.Constant,
+                            insertText: c,
+                        })),
+                        
+                        // ─────────────────────────────────────────────────
+                        // Builtins (from stdlib.py)
+                        // ─────────────────────────────────────────────────
+                        ...['show', 'print', 'println', 'input'].map(b => ({
+                            label: b,
+                            kind: monaco.languages.CompletionItemKind.Function,
+                            insertText: b,
+                            documentation: 'I/O function'
+                        })),
+                        ...['len', 'type', 'typeof', 'str', 'int', 'float', 'bool', 'list', 'map'].map(b => ({
+                            label: b,
+                            kind: monaco.languages.CompletionItemKind.Function,
+                            insertText: b,
+                            documentation: 'Type conversion/inspection'
+                        })),
+                        ...['range', 'append', 'push', 'pop', 'keys', 'values', 'contains', 
+                            'slice', 'reverse', 'sort', 'filter', 'zip', 'enumerate'].map(b => ({
+                            label: b,
+                            kind: monaco.languages.CompletionItemKind.Function,
+                            insertText: b,
+                            documentation: 'Collection function'
+                        })),
+                        ...['sum', 'min', 'max', 'abs', 'round', 'floor', 'ceil',
+                            'sqrt', 'pow', 'sin', 'cos', 'tan', 'log', 'exp'].map(b => ({
+                            label: b,
+                            kind: monaco.languages.CompletionItemKind.Function,
+                            insertText: b,
+                            documentation: 'Math function'
+                        })),
+                        ...['split', 'join', 'hash'].map(b => ({
                             label: b,
                             kind: monaco.languages.CompletionItemKind.Function,
                             insertText: b,
                         })),
-                        // Steps
-                        ...['_filter', '_sort', '_map', '_take', '_drop', '_first', '_last', '_sum', '_avg', '_count', '_reverse', '_unique'].map(s => ({
+                        
+                        // ─────────────────────────────────────────────────
+                        // Step Operations (dplyr-style chaining)
+                        // ─────────────────────────────────────────────────
+                        ...['_filter', '_sort', '_map', '_take', '_drop', '_first', '_last',
+                            '_reverse', '_unique', '_count', '_sum', '_avg', '_min', '_max',
+                            '_group', '_flatten', '_zip', '_chunk'].map(s => ({
                             label: s,
                             kind: monaco.languages.CompletionItemKind.Method,
                             insertText: s,
-                            documentation: 'Step operation for data chaining',
+                            documentation: 'Step operation for data chaining: list ' + s,
                         })),
-                        // Comparisons
-                        ...['is', 'isnt', 'has', 'hasnt', 'isin', 'islike'].map(c => ({
-                            label: c,
-                            kind: monaco.languages.CompletionItemKind.Operator,
-                            insertText: c,
-                            documentation: 'Natural comparison operator',
-                        })),
-                        // Properties
-                        ...['.str', '.int', '.len', '.type', '.upcase', '.lowcase', '.trim', '.reversed', '.first', '.last'].map(p => ({
-                            label: p,
+                        
+                        // ─────────────────────────────────────────────────
+                        // Property Magic (no parens needed!)
+                        // ─────────────────────────────────────────────────
+                        ...[ 
+                            { prop: '.str', doc: 'Convert to string' },
+                            { prop: '.int', doc: 'Convert to integer' },
+                            { prop: '.float', doc: 'Convert to float' },
+                            { prop: '.bool', doc: 'Convert to boolean' },
+                            { prop: '.len', doc: 'Get length' },
+                            { prop: '.type', doc: 'Get type name' },
+                            { prop: '.upcase', doc: 'String to UPPERCASE' },
+                            { prop: '.lowcase', doc: 'String to lowercase' },
+                            { prop: '.trim', doc: 'Strip whitespace' },
+                            { prop: '.chars', doc: 'String to char list' },
+                            { prop: '.words', doc: 'Split into words' },
+                            { prop: '.lines', doc: 'Split into lines' },
+                            { prop: '.reversed', doc: 'Reverse string/list' },
+                            { prop: '.first', doc: 'First element of list' },
+                            { prop: '.last', doc: 'Last element of list' },
+                            { prop: '.empty', doc: 'Check if list is empty' },
+                        ].map(p => ({
+                            label: p.prop,
                             kind: monaco.languages.CompletionItemKind.Property,
-                            insertText: p,
+                            insertText: p.prop,
+                            documentation: p.doc + ' (no parens needed!)'
                         })),
+                        
+                        // ─────────────────────────────────────────────────
                         // Snippets
+                        // ─────────────────────────────────────────────────
                         {
                             label: 'law',
                             kind: monaco.languages.CompletionItemKind.Snippet,
                             insertText: 'law ${1:name}(${2:args})\n\t$0\n\treply ${3:result}\nend',
                             insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-                            documentation: 'Define a pure function'
+                            documentation: 'Define a pure function (law)'
                         },
                         {
                             label: 'when',
                             kind: monaco.languages.CompletionItemKind.Snippet,
                             insertText: 'when ${1:name}(${2:x})\n\tdo ${3:x * 2}\nfinfr',
                             insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-                            documentation: 'Define a function (new syntax)'
+                            documentation: 'Define a function (sacred syntax)'
+                        },
+                        {
+                            label: 'blueprint',
+                            kind: monaco.languages.CompletionItemKind.Snippet,
+                            insertText: 'blueprint ${1:Name}\n\tfield ${2:x}\n\t\n\tforge ${3:method}()\n\t\t$0\n\t\treply self.${2:x}\n\tend\nend',
+                            insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+                            documentation: 'Define a class (blueprint)'
                         },
                         {
                             label: 'for',
@@ -1257,6 +1474,20 @@ for i in range(10) {
                             insertText: 'for ${1:i} in ${2:range(10)} {\n\t$0\n}',
                             insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
                             documentation: 'For loop'
+                        },
+                        {
+                            label: 'if',
+                            kind: monaco.languages.CompletionItemKind.Snippet,
+                            insertText: 'if ${1:condition} {\n\t$0\n}',
+                            insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+                            documentation: 'If statement'
+                        },
+                        {
+                            label: 'ifelse',
+                            kind: monaco.languages.CompletionItemKind.Snippet,
+                            insertText: 'if ${1:condition} {\n\t$2\n} else {\n\t$0\n}',
+                            insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+                            documentation: 'If-else statement'
                         },
                     ];
                     return { suggestions };
