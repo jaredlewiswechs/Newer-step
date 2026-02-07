@@ -65,101 +65,98 @@ def ensure_user_dirs():
 
 def _safe_name(name: str) -> str:
     # Keep only safe chars for filenames, enforce .tt
-    if not name:
-        name = 'untitled.tt'
-    # strip path parts
-    name = Path(name).name
-    name = re.sub(r"[^A-Za-z0-9._-]", "-", name)
-    # avoid leading dots
-    name = name.lstrip('.')
-    if not name.lower().endswith('.tt'):
-        name = name + '.tt'
-    if len(name) > 64:
-        base, ext = os.path.splitext(name)
-        name = base[:64 - len(ext)] + ext
-    return name
+    examples = [
+        {
+            'name': '🔄 Higher-Order Functions',
+            'code': '''// Pass functions to other functions!
 
+let numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
-def _script_dir(name: str) -> Path:
-    ensure_user_dirs()
-    return current_user_root() / 'scripts' / _safe_name(name)
+// Define transforms
+law doubled(x)
+    reply x * 2
+end
 
+law squared(x)
+    reply x * x
+end
 
-def _auth_path(user: str) -> Path:
-    return STORAGE_ROOT / 'users' / user / 'auth.json'
+// Define predicates
+law is_even(x)
+    reply x % 2 == 0
+end
 
+law is_odd(x)
+    reply x % 2 == 1
+end
 
-def _user_exists(user: str) -> bool:
-    return (STORAGE_ROOT / 'users' / user).exists()
+law greater_than_5(x)
+    reply x > 5
+end
 
+show("=== Transform with _map ===")
+show("Numbers:" numbers)
+show("Doubled:" numbers _map(doubled))
+show("Squared:" numbers _map(squared))
 
-def require_auth():
-    u = get_user()
-    if u == 'anonymous':
-        return None
-    return u
+show("")
+show("=== Filter with predicates ===")
+show("Evens:" numbers _filter(is_even))
+show("Odds:" numbers _filter(is_odd))
 
+show("")
+show("=== Chain them! ===")
+// Filter to odds, square each, sum
+let result = numbers _filter(is_odd) _map(squared) _sum
+show("Sum of squared odds:" result)
 
+// Filter >5, double, take 3
+show("Big doubled top 3:" numbers _filter(greater_than_5) _map(doubled) _take(3))
 
-def _meta_path(script_dir: Path) -> Path:
-    return script_dir / 'meta.json'
+show("")
+show("=== Functions are values ===")
+law apply_twice(func, x)
+    reply func(func(x))
+end
 
+show("apply_twice(doubled, 3):" apply_twice(doubled, 3))
+show("apply_twice(squared, 2):" apply_twice(squared, 2))'''
+        },
+        {
+            'name': '🎮 Turn-Based Strategy Game',
+            'code': '''// ═══════════════════════════════════════
+// TURN-BASED STRATEGY GAME EXAMPLE
+// ═══════════════════════════════════════
 
-def _now_ts() -> str:
-    return datetime.utcnow().isoformat() + 'Z'
+// Define units
+law Unit(name, health, attack)
+    field name
+    field health
+    field attack
+end
 
+// Create units
+let knight = Unit("Knight", 100, 15)
+let archer = Unit("Archer", 75, 10)
 
-def _read_meta(script_dir: Path) -> dict:
-    meta_p = _meta_path(script_dir)
-    if not meta_p.exists():
-        return {'versions': []}
-    try:
-        return json.loads(meta_p.read_text())
-    except Exception:
-        return {'versions': []}
+// Battle logic
+law battle(attacker, defender)
+    defender.health -= attacker.attack
+    if defender.health <= 0 {
+        show(defender.name + " is defeated!")
+    } else {
+        show(defender.name + " has " + defender.health.str + " health left.")
+    }
+end
 
-
-def _write_meta(script_dir: Path, meta: dict):
-    meta_p = _meta_path(script_dir)
-    meta_p.write_text(json.dumps(meta, indent=2))
-
-
-def _save_version(script_dir: Path, code: str, message: str = '') -> dict:
-    script_dir.mkdir(parents=True, exist_ok=True)
-    ts = _now_ts()
-    # version id uses hash for uniqueness
-    vid = hashlib.sha1(f"{ts}:{code}".encode('utf-8')).hexdigest()
-    versions_dir = script_dir / 'versions'
-    versions_dir.mkdir(parents=True, exist_ok=True)
-    fname = versions_dir / f"{vid}.tt"
-    fname.write_text(code)
-    meta = _read_meta(script_dir)
-    meta.setdefault('versions', []).append({'id': vid, 'ts': ts, 'message': message})
-    _write_meta(script_dir, meta)
-    return {'id': vid, 'ts': ts, 'message': message}
-
-
-def _latest_version(script_dir: Path):
-    meta = _read_meta(script_dir)
-    if not meta.get('versions'):
-        return None
-    return meta['versions'][-1]
-
-
-# API: list scripts
-@app.route('/api/scripts', methods=['GET'])
-def list_scripts():
-    ensure_user_dirs()
-    user_scripts_root = current_user_root() / 'scripts'
-    scripts = []
-    for d in user_scripts_root.iterdir():
-        if d.is_dir():
-            meta = _read_meta(d)
-            latest = meta.get('versions', [])[-1] if meta.get('versions') else None
-            scripts.append({'name': d.name, 'versions': len(meta.get('versions', [])), 'latest': latest})
-    return jsonify(scripts)
-
-
+// Simulate battle
+show("Battle Start!")
+battle(knight, archer)
+battle(archer, knight)
+battle(knight, archer)'''
+        }
+    ]
+    return jsonify(examples)
 @app.route('/api/register', methods=['POST'])
 def register():
     data = request.get_json() or {}

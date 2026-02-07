@@ -1,0 +1,29 @@
+# Newton Supercomputer - Python Dependencies
+
+# Web Framework
+fastapi==0.109.0
+uvicorn==0.27.0
+gunicorn==21.2.0
+
+# Pydantic - using v1.x to avoid Rust/pydantic-core build issues on Render
+pydantic==1.10.13
+
+# Cryptography (for Vault encryption)
+cryptography==41.0.7
+
+# HTTP Client (for external integrations)
+requests==2.31.0
+
+# External Search (for grounding)
+googlesearch-python==1.2.5
+
+# Graph operations (for TLM)
+networkx==3.1
+
+# Testing
+pytest==7.4.4
+hypothesis==6.92.1
+
+# Deployment on Render
+flask
+gunicorn
