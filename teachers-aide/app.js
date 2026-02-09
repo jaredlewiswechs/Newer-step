@@ -8,48 +8,13 @@
  */
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// CONFIGURATION
+// CONFIGURATION - OFFLINE MODE
 // ═══════════════════════════════════════════════════════════════════════════════
 
-// Determine API base URL based on deployment environment
-function getApiBase() {
-  const hostname = window.location.hostname;
-  
-  // Try to use shared config first
-  if (typeof window.NewtonConfig !== 'undefined') {
-    return window.NewtonConfig.API_BASE;
-  }
-  
-  // Fallback: Local development
-  if (hostname === 'localhost' || hostname === '127.0.0.1') {
-    return 'http://localhost:8000';
-  }
-  
-  // Vercel deployment - API is on same origin (PRIMARY)
-  if (hostname.endsWith('.vercel.app') || hostname === 'vercel.app') {
-    return window.location.origin;
-  }
-  
-  // Legacy Render deployment - API is on same origin
-  if (hostname.endsWith('.onrender.com') || hostname === 'onrender.com') {
-    return window.location.origin;
-  }
-  
-  // Legacy Cloudflare Pages - same origin
-  if (hostname.endsWith('.pages.dev') || hostname === 'pages.dev' || 
-      hostname.endsWith('.cloudflare.com') || hostname === 'cloudflare.com') {
-    return window.location.origin;
-  }
-  
-  // Default: assume API is on same origin
-  return window.location.origin;
-}
-
 const CONFIG = {
-  API_BASE: getApiBase(),
-  TIMEOUT: 60000,
-  MOAD_ENABLED: true,
-  WEB_SEARCH_ENABLED: true
+  MODE: 'offline',
+  MOAD_ENABLED: false,
+  WEB_SEARCH_ENABLED: false
 };
 
 // Store for current lesson plan (for slide generation)
@@ -65,87 +30,9 @@ let moadConnected = true;
 let currentViewContext = 'lesson';
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// API CLIENT
+// OFFLINE ENGINE - No server needed
+// All computation runs locally via NewtonOffline (newton-offline-engine.js)
 // ═══════════════════════════════════════════════════════════════════════════════
-
-async function apiRequest(endpoint, method = 'GET', data = null) {
-  const options = {
-    method,
-    headers: {
-      'Content-Type': 'application/json'
-    }
-  };
-
-  if (data) {
-    options.body = JSON.stringify(data);
-  }
-
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), CONFIG.TIMEOUT);
-  options.signal = controller.signal;
-
-  try {
-    const response = await fetch(`${CONFIG.API_BASE}${endpoint}`, options);
-    clearTimeout(timeout);
-
-    if (!response.ok) {
-      // Try to parse error details, but handle cases where response is not valid JSON
-      let errorDetail = `API request failed with status ${response.status}`;
-      try {
-        const errorBody = await response.text();
-        if (errorBody) {
-          try {
-            const errorJson = JSON.parse(errorBody);
-            errorDetail = errorJson.detail || errorDetail;
-          } catch {
-            // Response is not JSON, use the text if it's short
-            if (errorBody.length < 200) {
-              errorDetail = errorBody;
-            }
-          }
-        }
-      } catch {
-        // Could not read response body
-      }
-      throw new Error(errorDetail);
-    }
-
-    // Handle successful response - also handle empty or non-JSON responses
-    const responseText = await response.text();
-    if (!responseText) {
-      // Empty responses are acceptable for some endpoints (e.g., health checks, DELETE operations)
-      // Return empty object to allow callers to handle gracefully
-      return {};
-    }
-    try {
-      return JSON.parse(responseText);
-    } catch {
-      throw new Error('Server returned invalid JSON response');
-    }
-  } catch (error) {
-    clearTimeout(timeout);
-    if (error.name === 'AbortError') {
-      throw new Error('Request timed out - Check Mission Control for API status');
-    }
-    // Check for network-related errors (TypeError for fetch failures, or error messages)
-    if (error instanceof TypeError || error.message.includes('Failed to fetch') || error.message.includes('NetworkError') || error.message.includes('Network request failed')) {
-      throw new Error('Failed to connect to server - Check Mission Control for API diagnostics');
-    }
-    throw error;
-  }
-}
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// MISSION CONTROL INTEGRATION
-// ═══════════════════════════════════════════════════════════════════════════════
-
-function showMissionControlLink(errorMessage) {
-  const missionControlUrl = window.location.hostname === 'localhost'
-    ? 'http://localhost:8000/mission-control/'
-    : `${window.location.origin}/mission-control/`;
-  
-  return `${errorMessage}\n\n🔍 Check Mission Control for diagnostics:\n${missionControlUrl}`;
-}
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // VIEW NAVIGATION
@@ -174,17 +61,11 @@ function initNavigation() {
 // STATUS INDICATOR
 // ═══════════════════════════════════════════════════════════════════════════════
 
-async function checkStatus() {
+function checkStatus() {
   const statusEl = document.getElementById('status');
-
-  try {
-    const response = await apiRequest('/health');
-    statusEl.classList.add('online');
-    statusEl.querySelector('.status-text').textContent = 'API Connected';
-  } catch (error) {
-    statusEl.classList.remove('online');
-    statusEl.querySelector('.status-text').textContent = 'Local Mode';
-  }
+  // Always online in offline mode - everything runs locally
+  statusEl.classList.add('online');
+  statusEl.querySelector('.status-text').textContent = 'Offline Ready';
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -230,13 +111,13 @@ function initLessonPlanner() {
     submitBtn.innerHTML = '<div class="spinner"></div> Generating...';
 
     try {
-      const result = await apiRequest('/education/lesson', 'POST', {
+      const result = NewtonOffline.generateLesson(
         grade,
         subject,
         teks_codes,
         topic,
-        student_needs: Object.keys(student_needs).length > 0 ? student_needs : null
-      });
+        Object.keys(student_needs).length > 0 ? student_needs : null
+      );
 
       if (result.verified) {
         currentLessonPlan = result.lesson_plan;
@@ -245,7 +126,7 @@ function initLessonPlanner() {
         alert('Error: ' + (result.error || 'Failed to generate lesson plan'));
       }
     } catch (error) {
-      alert(showMissionControlLink('Error: ' + error.message));
+      alert('Error: ' + error.message);
     } finally {
       submitBtn.disabled = false;
       submitBtn.innerHTML = '<span class="btn-icon">✨</span> Generate Lesson Plan';
@@ -463,10 +344,7 @@ function initSlideGenerator() {
     submitBtn.innerHTML = '<div class="spinner"></div> Generating...';
 
     try {
-      const result = await apiRequest('/education/slides', 'POST', {
-        lesson_plan: lessonPlan,
-        style
-      });
+      const result = NewtonOffline.generateSlides(lessonPlan, style);
 
       if (result.verified) {
         displaySlides(result);
@@ -536,13 +414,13 @@ function initAssessmentAnalyzer() {
     submitBtn.innerHTML = '<div class="spinner"></div> Analyzing...';
 
     try {
-      const result = await apiRequest('/education/assess', 'POST', {
+      const result = NewtonOffline.analyzeAssessment(
         assessment_name,
         teks_codes,
         total_points,
         mastery_threshold,
         students
-      });
+      );
 
       if (result.verified) {
         displayAssessment(result);
@@ -682,12 +560,12 @@ function initPLCGenerator() {
     submitBtn.innerHTML = '<div class="spinner"></div> Generating...';
 
     try {
-      const result = await apiRequest('/education/plc', 'POST', {
+      const result = NewtonOffline.generatePLCReport(
         team_name,
         reporting_period,
         teks_codes,
         assessment_data
-      });
+      );
 
       if (result.verified) {
         displayPLCReport(result);
@@ -807,66 +685,32 @@ function printPLC() {
 // TEKS BROWSER
 // ═══════════════════════════════════════════════════════════════════════════════
 
-async function loadTEKS() {
+function loadTEKS() {
   const resultsEl = document.getElementById('teks-results');
-  resultsEl.innerHTML = '<div class="loading"><div class="spinner"></div> Loading TEKS...</div>';
-
-  try {
-    // Fetch from Wild Garden
-    const response = await fetch('http://localhost:8091/teks');
-    if (!response.ok) throw new Error('Failed to load TEKS');
-    const result = await response.json();
-    displayTEKS(result.teks);
-  } catch (error) {
-    resultsEl.innerHTML = `<p>Error loading TEKS: ${error.message} - Check Wild Garden server.</p>`;
-  }
+  // Load all TEKS from local offline database
+  const standards = NewtonOffline.getAllTEKS();
+  displayTEKS(standards);
 }
 
-async function searchTEKS() {
+function searchTEKS() {
   const query = document.getElementById('teks-search').value.trim();
   if (!query) {
     loadTEKS();
     return;
   }
 
-  const resultsEl = document.getElementById('teks-results');
-  resultsEl.innerHTML = '<div class="loading"><div class="spinner"></div> Searching...</div>';
-
-  try {
-    // Query Wild Garden TEKS search
-    const resp = await fetch('http://localhost:8091/teks/search', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ query })
-    });
-    if (!resp.ok) throw new Error('TEKS search failed');
-    const result = await resp.json();
-    displayTEKS(result.results || result.teks || []);
-  } catch (error) {
-    resultsEl.innerHTML = `<p>Error searching TEKS: ${error.message}</p>`;
-  }
+  // Search local offline database
+  const results = NewtonOffline.searchTEKS(query);
+  displayTEKS(results);
 }
 
-async function filterTEKS() {
+function filterTEKS() {
   const grade = document.getElementById('teks-grade-filter').value;
   const subject = document.getElementById('teks-subject-filter').value;
 
-  const resultsEl = document.getElementById('teks-results');
-  resultsEl.innerHTML = '<div class="loading"><div class="spinner"></div> Loading...</div>';
-
-  try {
-    let endpoint = 'http://localhost:8091/teks';
-    const params = new URLSearchParams();
-    if (grade) params.append('grade', grade);
-    if (subject) params.append('subject', subject);
-    if (params.toString()) endpoint += '?' + params.toString();
-    const resp = await fetch(endpoint);
-    if (!resp.ok) throw new Error('Failed to load filtered TEKS');
-    const result = await resp.json();
-    displayTEKS(result.results || result.teks || result.standards || []);
-  } catch (error) {
-    resultsEl.innerHTML = `<p>Error loading TEKS: ${error.message}</p>`;
-  }
+  // Filter local offline database
+  const results = NewtonOffline.filterTEKS(grade, subject);
+  displayTEKS(results);
 }
 
 function displayTEKS(standards) {
@@ -911,17 +755,19 @@ document.addEventListener('DOMContentLoaded', () => {
   initAssessmentAnalyzer();
   initPLCGenerator();
 
-  // Check server status
+  // Set offline status indicator
   checkStatus();
-  setInterval(checkStatus, 30000);
 
-  // Load initial TEKS
+  // Load initial TEKS from local database
   loadTEKS();
 
   // Search on Enter
   document.getElementById('teks-search').addEventListener('keypress', (e) => {
     if (e.key === 'Enter') searchTEKS();
   });
+
+  console.log(`Newton Teacher's Aide - Offline Mode (${NewtonOffline.VERSION})`);
+  console.log(`TEKS Database: ${NewtonOffline.TEKS_DATABASE.length} standards loaded`);
 });
 
 // Make functions available globally
@@ -1396,41 +1242,18 @@ async function askNewton(message) {
   // Add loading indicator
   const loadingId = addChatMessage('newton', '...', true);
 
-  try {
-    // Build context from current state
-    const context = buildNewtonContext();
+  // Generate offline response (no server needed)
+  const offlineResponse = generateOfflineResponse(message);
 
-    // Call Newton API
-    const response = await apiRequest('/newton/chat', 'POST', {
-      message,
-      context,
-      use_web_search: useWebSearch,
-      use_moad: useMoad,
-      history: chatHistory.slice(-10)  // Last 10 messages for context
-    });
+  // Remove loading indicator
+  removeChatMessage(loadingId);
 
-    // Remove loading indicator
-    removeChatMessage(loadingId);
+  // Add Newton's response
+  addChatMessage('newton', offlineResponse, false, { offline: true });
 
-    // Add Newton's response
-    addChatMessage('newton', response.response, false, {
-      verified: response.verified,
-      sources: response.sources,
-      moad_domains: response.moad_domains
-    });
-
-    // Update chat history
-    chatHistory.push({ role: 'user', content: message });
-    chatHistory.push({ role: 'assistant', content: response.response });
-
-  } catch (error) {
-    // Remove loading indicator
-    removeChatMessage(loadingId);
-
-    // Handle error gracefully - provide offline response
-    const offlineResponse = generateOfflineResponse(message);
-    addChatMessage('newton', offlineResponse, false, { offline: true });
-  }
+  // Update chat history
+  chatHistory.push({ role: 'user', content: message });
+  chatHistory.push({ role: 'assistant', content: offlineResponse });
 }
 
 /**
@@ -1641,15 +1464,15 @@ The Lesson Planner includes automatic accommodation suggestions!`;
   }
 
   // Default response
-  return `I'm Newton, your teaching assistant! I can help with:
+  return `I'm Newton, your teaching assistant running in offline mode! All features work without a server:
 
-- **TEKS Standards** - Find and understand Texas standards
-- **Lesson Planning** - Create NES-compliant lessons
+- **TEKS Standards** - Browse ${NewtonOffline.TEKS_DATABASE.length}+ Texas standards
+- **Lesson Planning** - Create NES-compliant lessons instantly
 - **Differentiation** - Strategies for diverse learners
-- **Assessments** - Exit tickets and formative checks
+- **Assessments** - Analyze scores and group students
 - **PLC Reports** - Data-driven team insights
 
-Currently online, and the full app features are available! Try the **Lesson Planner** or **TEKS Browser** to get started.`;
+Try the **Lesson Planner** or **TEKS Browser** to get started!`;
 }
 
 /**
@@ -1821,61 +1644,22 @@ function submitAssistantQuery(event) {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 /**
- * Initialize MOAD connection
+ * Initialize MOAD - offline mode, no server connection
  */
 function initMOAD() {
+  moadConnected = false;
   const moadStatus = document.getElementById('moad-status');
-
-  // Check MOAD status periodically
-  checkMOADStatus();
-  setInterval(checkMOADStatus, 60000); // Every minute
-
-  console.log('✅ MOAD integration initialized');
-}
-
-/**
- * Check MOAD connection status
- */
-async function checkMOADStatus() {
-  const moadStatus = document.getElementById('moad-status');
-
-  try {
-    const response = await apiRequest('/moad/status', 'GET');
-    moadConnected = response.connected;
-
-    if (moadStatus) {
-      moadStatus.classList.toggle('connected', moadConnected);
-      moadStatus.querySelector('.moad-text').textContent =
-        moadConnected ? 'MOAD Active' : 'MOAD Offline';
-    }
-  } catch (error) {
-    // MOAD offline - use local knowledge
-    moadConnected = false;
-    if (moadStatus) {
-      moadStatus.classList.remove('connected');
-      moadStatus.querySelector('.moad-text').textContent = 'MOAD Offline';
-    }
+  if (moadStatus) {
+    moadStatus.classList.remove('connected');
+    moadStatus.querySelector('.moad-text').textContent = 'Offline Mode';
   }
 }
 
 /**
- * Query MOAD for domain knowledge
+ * Query MOAD - returns null in offline mode
  */
-async function queryMOAD(domain, concept) {
-  if (!moadConnected) {
-    return null;
-  }
-
-  try {
-    const response = await apiRequest('/moad/query', 'POST', {
-      domain,
-      concept
-    });
-    return response;
-  } catch (error) {
-    console.warn('MOAD query failed:', error);
-    return null;
-  }
+function queryMOAD(domain, concept) {
+  return null;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -2104,79 +1888,33 @@ function formatSlideType(type) {
 }
 
 /**
- * Edit a slide with Newton's help
+ * Edit a slide with Newton's help (offline - prompt-based)
  */
-async function editSlideWithNewton(slideNumber) {
-  const instruction = prompt(`How would you like Newton to modify Slide ${slideNumber}?`);
-  if (!instruction) return;
+function editSlideWithNewton(slideNumber) {
+  showNotification('Slide editing is available in online mode. Use Print/PDF export to edit slides.', 'info');
+}
 
-  showNotification(`Newton is improving Slide ${slideNumber}...`, 'info');
-
-  try {
-    const response = await apiRequest('/education/slides/edit', 'POST', {
-      slide_number: slideNumber,
-      instruction,
-      lesson_plan: currentLessonPlan
-    });
-
-    if (response.verified) {
-      // Update the slide in the display
-      const slideCard = document.querySelector(`[data-slide="${slideNumber}"]`);
-      if (slideCard) {
-        const newContent = generateSlideContent(response.slide);
-        slideCard.querySelector('.slide-content').innerHTML = newContent;
-        showNotification(`Slide ${slideNumber} updated!`, 'success');
-      }
-    }
-  } catch (error) {
-    showNotification('Could not edit slide: ' + error.message, 'error');
+/**
+ * Regenerate a single slide (offline - regenerate entire deck)
+ */
+function regenerateSlide(slideNumber) {
+  if (!currentLessonPlan) {
+    showNotification('No lesson plan available for regeneration', 'warning');
+    return;
+  }
+  const result = NewtonOffline.generateSlides(currentLessonPlan, 'modern');
+  if (result.verified) {
+    displaySlides(result);
+    showNotification('Slides regenerated!', 'success');
   }
 }
 
 /**
- * Regenerate a single slide
+ * Export slides to PowerPoint (offline - use print)
  */
-async function regenerateSlide(slideNumber) {
-  showNotification(`Regenerating Slide ${slideNumber}...`, 'info');
-
-  try {
-    const response = await apiRequest('/education/slides/regenerate', 'POST', {
-      slide_number: slideNumber,
-      lesson_plan: currentLessonPlan
-    });
-
-    if (response.verified) {
-      const slideCard = document.querySelector(`[data-slide="${slideNumber}"]`);
-      if (slideCard) {
-        const newContent = generateSlideContent(response.slide);
-        slideCard.querySelector('.slide-content').innerHTML = newContent;
-        showNotification(`Slide ${slideNumber} regenerated!`, 'success');
-      }
-    }
-  } catch (error) {
-    showNotification('Could not regenerate slide: ' + error.message, 'error');
-  }
-}
-
-/**
- * Export slides to PowerPoint
- */
-async function exportSlidesToPPTX() {
-  showNotification('Generating PowerPoint file...', 'info');
-
-  try {
-    const response = await apiRequest('/education/slides/export', 'POST', {
-      format: 'pptx',
-      lesson_plan: currentLessonPlan
-    });
-
-    if (response.download_url) {
-      window.open(response.download_url, '_blank');
-      showNotification('PowerPoint file ready!', 'success');
-    }
-  } catch (error) {
-    showNotification('Export failed: ' + error.message, 'error');
-  }
+function exportSlidesToPPTX() {
+  showNotification('Use Print (Ctrl+P) and save as PDF for export', 'info');
+  window.print();
 }
 
 /**
@@ -2380,139 +2118,27 @@ window.exportSlidesToGoogleSlides = exportSlidesToGoogleSlides;
 
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// WILD GARDEN INTEGRATION
-// Monitor student AI interactions with Newton verification
+// WILD GARDEN - Offline Mode
 // ═══════════════════════════════════════════════════════════════════════════════
 
-const WILD_GARDEN_URL = 'http://localhost:8091';
-
-async function initWildGarden() {
-  try {
-    const response = await fetch(`${WILD_GARDEN_URL}/health`);
-    if (response.ok) {
-      const data = await response.json();
-      updateWildGardenStatus(true, data);
-      loadWildGardenData();
-    } else {
-      updateWildGardenStatus(false);
-    }
-  } catch (error) {
-    updateWildGardenStatus(false);
-  }
-}
-
-function updateWildGardenStatus(connected, data = null) {
+function initWildGarden() {
   const status = document.getElementById('wg-status');
-  if (!status) return;
-  
-  if (connected) {
+  if (status) {
     status.innerHTML = `
-      <span class="status-dot connected"></span>
-      <span class="status-text">Connected to Wild Garden | Ollama: ${data?.ollama || 'unknown'}</span>
-    `;
-  } else {
-    status.innerHTML = `
-      <span class="status-dot disconnected"></span>
-      <span class="status-text">Wild Garden not running (Start on port 8091)</span>
+      <span class="status-dot"></span>
+      <span class="status-text">Offline Mode - Wild Garden requires a server</span>
     `;
   }
 }
 
-async function loadWildGardenData() {
-  try {
-    // Load audit log
-    const auditResponse = await fetch(`${WILD_GARDEN_URL}/audit?limit=20`);
-    if (auditResponse.ok) {
-      const auditData = await auditResponse.json();
-      displayAuditLog(auditData);
-      
-      // Update stats
-      document.getElementById('wg-entries').textContent = auditData.total || 0;
-      
-      // Count blocked and verified
-      let blocked = 0, verified = 0;
-      auditData.entries.forEach(entry => {
-        if (entry.query && entry.query.includes('blocked')) blocked++;
-        entry.claims?.forEach(c => { if (c.status === 'verified') verified++; });
-      });
-      document.getElementById('wg-blocked').textContent = blocked;
-      document.getElementById('wg-verified').textContent = verified;
-    }
-    
-    // Load sessions
-    const sessionsResponse = await fetch(`${WILD_GARDEN_URL}/sessions`);
-    if (sessionsResponse.ok) {
-      const sessionsData = await sessionsResponse.json();
-      displaySessions(sessionsData);
-      document.getElementById('wg-sessions').textContent = sessionsData.total || 0;
-    }
-  } catch (error) {
-    console.error('Failed to load Wild Garden data:', error);
-  }
-}
-
-function displayAuditLog(data) {
-  const container = document.getElementById('wg-audit-log');
-  if (!container) return;
-  
-  if (!data.entries || data.entries.length === 0) {
-    container.innerHTML = '<p class="placeholder">No activity yet</p>';
-    return;
-  }
-  
-  container.innerHTML = data.entries.slice(0, 10).map(entry => {
-    const time = new Date(entry.timestamp * 1000).toLocaleTimeString();
-    const verifiedCount = entry.claims?.filter(c => c.status === 'verified').length || 0;
-    const totalClaims = entry.claims?.length || 0;
-    
-    return `
-      <div class="audit-entry">
-        <div class="audit-meta">
-          <span class="audit-time">${time}</span>
-          <span class="audit-student">Student: ${entry.student_id?.slice(0, 8) || 'anon'}</span>
-        </div>
-        <div class="audit-query">${escapeHtml(entry.query?.slice(0, 80) || '')}...</div>
-        <div class="audit-verification">
-          <span class="verification-badge ${verifiedCount === totalClaims ? 'verified' : 'partial'}">
-            ${verifiedCount}/${totalClaims} claims verified
-          </span>
-        </div>
-      </div>
-    `;
-  }).join('');
-}
-
-function displaySessions(data) {
-  const container = document.getElementById('wg-sessions-list');
-  if (!container) return;
-  
-  if (!data.sessions || data.sessions.length === 0) {
-    container.innerHTML = '<p class="placeholder">No active sessions</p>';
-    return;
-  }
-  
-  container.innerHTML = data.sessions.map(session => {
-    const started = new Date(session.started_at * 1000).toLocaleTimeString();
-    return `
-      <div class="session-entry">
-        <div class="session-id">${session.session_id?.slice(0, 12) || 'unknown'}...</div>
-        <div class="session-meta">
-          <span>Started: ${started}</span>
-          <span>${session.turns || 0} turns</span>
-        </div>
-      </div>
-    `;
-  }).join('');
+function refreshWildGarden() {
+  initWildGarden();
 }
 
 function escapeHtml(text) {
   const div = document.createElement('div');
   div.textContent = text;
   return div.innerHTML;
-}
-
-async function refreshWildGarden() {
-  await initWildGarden();
 }
 
 // Initialize Wild Garden when view is shown
