@@ -198,9 +198,10 @@ function updateStatistics() {
 async function testService(service) {
     const startTime = performance.now();
     const baseUrl = getApiBaseUrl();
-    const url = `${baseUrl}${service.path}`;
+    const requestPath = service.testPath || service.path;
+    const url = `${baseUrl}${requestPath}`;
     
-    addLog('info', `Testing ${service.method} ${service.path}`);
+    addLog('info', `Testing ${service.method} ${requestPath}`);
     
     try {
         const controller = new AbortController();
@@ -250,7 +251,7 @@ async function testService(service) {
         
         addLog(
             response.ok ? 'success' : 'error',
-            `${service.method} ${service.path} → ${response.status} (${responseTime}ms)`
+            `${service.method} ${requestPath} → ${response.status} (${responseTime}ms)`
         );
         
         return result;

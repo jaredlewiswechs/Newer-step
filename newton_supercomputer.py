@@ -4389,6 +4389,32 @@ async def get_api_endpoints():
             pass
         return {}
 
+    def select_primary_method(route_methods) -> str:
+        """Choose a deterministic, user-testable HTTP method for Mission Control."""
+        preferred_order = ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"]
+        methods = set(route_methods or [])
+        for method in preferred_order:
+            if method in methods:
+                return method
+        return "GET"
+
+    def build_test_path(path: str) -> str:
+        """Replace path params with safe sample values so endpoints are callable."""
+        sample_values = {
+            "teks_code": "5.3A",
+            "student_id": "S123",
+            "id": "test",
+            "hash": "test",
+            "key": "test",
+            "slug": "test"
+        }
+
+        def replace_param(match):
+            param_name = match.group(1)
+            return str(sample_values.get(param_name, "test"))
+
+        return re.sub(r"{([^}]+)}", replace_param, path)
+
     # Scan all routes
     for route in app.routes:
         if isinstance(route, APIRoute):
@@ -4403,7 +4429,8 @@ async def get_api_endpoints():
             # Get endpoint info
             endpoint_info = {
                 "path": path,
-                "method": methods[0] if methods else "GET",
+                "testPath": build_test_path(path),
+                "method": select_primary_method(methods),
                 "name": route.name or path.replace("/", " ").strip().title(),
                 "description": route.summary or "",
                 "sampleData": extract_sample_data(route.endpoint) if hasattr(route, 'endpoint') else {}
