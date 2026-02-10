@@ -7,14 +7,14 @@ Main class implementing the Newton-compliant symbolic language kernel.
 """
 
 import networkx as nx
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 import time
 
 from .atom import Atom
 from .transaction import Transaction
 from .ledger_entry import LedgerEntry
 from .phases import Phase, PhaseMachine
-from .invariant import canonical_hash, one_equals_one, GoalRegistry
+from .invariant import canonical_hash, GoalRegistry
 from .reversibility import Snapshot, SnapshotManager
 from .paradox import ParadoxDetector, ParadoxResult
 

@@ -13,29 +13,22 @@ Why Ada is BETTER than ChatGPT:
 5. Full audit trail of all decisions
 """
 
-import hashlib
 import time
-from datetime import datetime
 from enum import Enum
-from typing import Any, Callable, Dict, Generator, List, Optional, Union
+from typing import Any, Dict, Generator, List, Optional, Union
 
 from .schema import (
     AdaConfig,
     AdaMode,
     AdaResponse,
     AgentResult,
-    AgentStatus,
     CanvasDocument,
     CodeLanguage,
     CodeResult,
     Conversation,
-    Message,
-    MessageRole,
     MemoryType,
     ResearchReport,
     ResponseFormat,
-    Source,
-    SourceType,
 )
 
 # Import Newton's LLM constraint system

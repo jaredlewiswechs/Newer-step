@@ -6,11 +6,12 @@ This module provides a thin adapter that asks the local Ollama model to
 propose non-contentful handles (titles/section names) for a prompt. The
 response must be JSON with keys matching the deterministic handles shape.
 """
-from typing import Optional, Dict, Any
+from typing import Dict, Any
 import json
 
 try:
     from newton_agent.llm_ollama import OllamaClient
+
     _HAS_OLLAMA = True
 except Exception:
     OllamaClient = None  # type: ignore
@@ -33,7 +34,7 @@ def llm_suggest_handles(prompt: str, model: str = "qwen2.5:3b") -> Dict[str, Any
     resp = client.generate(system_prompt=system, user_prompt=user)
     text = resp.strip()
     try:
-        jstart = text.find('{')
+        jstart = text.find("{")
         jtext = text[jstart:]
         data = json.loads(jtext)
     except Exception:

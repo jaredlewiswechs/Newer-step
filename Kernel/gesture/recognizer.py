@@ -3,8 +3,9 @@
 Each recognizer receives events, maintains state, and calls a target/action
 when the gesture is recognized.
 """
+
 from __future__ import annotations
-from typing import Optional, Callable, Tuple
+from typing import Optional, Tuple
 from enum import Enum
 import time
 
@@ -188,8 +189,8 @@ class NSMagnificationGestureRecognizer(NSGestureRecognizer):
         return self._magnification
 
     def recognize(self, event: NSEvent) -> bool:
-        if event.user_info and 'magnification' in event.user_info:
-            self._magnification = event.user_info['magnification']
+        if event.user_info and "magnification" in event.user_info:
+            self._magnification = event.user_info["magnification"]
             if event.location:
                 self._location = event.location
             self._state = NSGestureRecognizerState.CHANGED
@@ -210,8 +211,8 @@ class NSRotationGestureRecognizer(NSGestureRecognizer):
         return self._rotation
 
     def recognize(self, event: NSEvent) -> bool:
-        if event.user_info and 'rotation' in event.user_info:
-            self._rotation = event.user_info['rotation']
+        if event.user_info and "rotation" in event.user_info:
+            self._rotation = event.user_info["rotation"]
             if event.location:
                 self._location = event.location
             self._state = NSGestureRecognizerState.CHANGED

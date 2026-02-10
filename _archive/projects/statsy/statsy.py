@@ -16,12 +16,10 @@ The data IS the evidence.
 """
 
 from dataclasses import dataclass, field
-from typing import List, Dict, Any, Optional, Union, Callable, Tuple
+from typing import List, Dict, Any, Optional, Union
 from enum import Enum, auto
 import math
-import re
 import sys
-import json
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -1261,7 +1259,7 @@ class StatsyInterpreter:
         if callable(func):
             try:
                 return func(*args, **kwargs)
-            except TypeError as e:
+            except TypeError:
                 # Try without kwargs
                 return func(*args)
         

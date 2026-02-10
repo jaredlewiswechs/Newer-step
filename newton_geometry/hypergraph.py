@@ -60,7 +60,7 @@ MODULE HYPERGRAPH - The 9-Node Newton Architecture
 from __future__ import annotations
 from dataclasses import dataclass, field
 from enum import Enum, auto
-from typing import List, Dict, Any, Optional, Set, Tuple, FrozenSet
+from typing import List, Dict, Any, Set, Tuple, FrozenSet
 
 
 class NewtonModule(Enum):

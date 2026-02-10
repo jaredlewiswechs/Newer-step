@@ -14,7 +14,6 @@ from typing import Any, Dict, List, Optional, Set
 import hashlib
 
 from .schema import (
-    Memory,
     MemoryEntry,
     MemoryType,
     FactStatus,

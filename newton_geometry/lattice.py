@@ -47,8 +47,8 @@ The lattice structure ensures:
 
 from __future__ import annotations
 from dataclasses import dataclass, field
-from enum import Enum, IntEnum
-from typing import List, Dict, Any, Optional, Set, FrozenSet, Tuple
+from enum import IntEnum
+from typing import List, Dict, Set, Tuple
 from .simplex import Decision
 
 

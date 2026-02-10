@@ -21,19 +21,20 @@ Cartridge Types:
 """
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 from enum import Enum
 import re
 import hashlib
 import time
 
-
 # ═══════════════════════════════════════════════════════════════════════════════
 # CARTRIDGE TYPES
 # ═══════════════════════════════════════════════════════════════════════════════
 
+
 class CartridgeType(Enum):
     """Types of media cartridges."""
+
     VISUAL = "visual"
     SOUND = "sound"
     SEQUENCE = "sequence"
@@ -44,6 +45,7 @@ class CartridgeType(Enum):
 
 class OutputFormat(Enum):
     """Output format specifications."""
+
     # Visual
     SVG = "svg"
     PNG_SPEC = "png_spec"
@@ -86,7 +88,7 @@ SAFETY_PATTERNS = {
             r"(how to )?(kill|murder|harm|hurt|injure|assassinate)",
             r"(how to )?(suicide|self.harm)",
             r"\b(i want to|i need to|help me) (kill|murder|harm|hurt)",
-        ]
+        ],
     },
     "medical": {
         "name": "Medical Bounds",
@@ -94,7 +96,7 @@ SAFETY_PATTERNS = {
             r"what (medication|drug|dosage|prescription) should (i|you) take",
             r"diagnose (my|this|the)",
             r"prescribe (me|a)",
-        ]
+        ],
     },
     "legal": {
         "name": "Legal Bounds",
@@ -102,15 +104,15 @@ SAFETY_PATTERNS = {
             r"(how to )?(evade|avoid|cheat).*(tax|irs)",
             r"(how to )?(launder|hide|offshore) money",
             r"(how to )?(forge|fake|counterfeit)",
-        ]
+        ],
     },
     "security": {
         "name": "Security",
         "patterns": [
             r"(how to )?(hack|crack|break into|exploit|bypass)",
             r"\b(steal password|phishing|malware|ransomware)\b",
-        ]
-    }
+        ],
+    },
 }
 
 # Visual-specific constraints
@@ -122,7 +124,7 @@ VISUAL_CONSTRAINTS = {
         r"\b(offensive|inappropriate|explicit|nsfw)\b.*\b(image|graphic|visual)\b",
         r"\b(copy|steal|plagiarize)\b.*\b(logo|brand|trademark)\b",
         r"\b(deepfake|fake identity|impersonate)\b",
-    ]
+    ],
 }
 
 # Sound-specific constraints
@@ -134,7 +136,7 @@ SOUND_CONSTRAINTS = {
         r"\b(subliminal|hidden)\b.*\b(message|audio)\b",
         r"\b(harmful|damaging|dangerous)\b.*\b(frequency|sound|tone)\b",
         r"\b(hypnotic|brainwash|mind control)\b",
-    ]
+    ],
 }
 
 # Sequence-specific constraints
@@ -146,7 +148,7 @@ SEQUENCE_CONSTRAINTS = {
         r"\b(seizure|epilepsy)\b.*\b(inducing|triggering|cause)\b",
         r"\b(rapid|strobing)\b.*\b(flash|flicker|strobe)\b",
         r"\b(deepfake|fake identity)\b.*\b(video|footage)\b",
-    ]
+    ],
 }
 
 # Data-specific constraints
@@ -158,12 +160,21 @@ DATA_CONSTRAINTS = {
         r"\b(fake|fabricate|falsify)\b.*\b(data|statistics|results|numbers)\b",
         r"\b(manipulate|skew|bias)\b.*\b(numbers|metrics|data)\b",
         r"\b(misleading|deceptive)\b.*\b(chart|graph|visualization)\b",
-    ]
+    ],
 }
 
 # Rosetta (code generation) constraints
 ROSETTA_CONSTRAINTS = {
-    "platforms": ["ios", "ipados", "macos", "watchos", "visionos", "tvos", "web", "android"],
+    "platforms": [
+        "ios",
+        "ipados",
+        "macos",
+        "watchos",
+        "visionos",
+        "tvos",
+        "web",
+        "android",
+    ],
     "patterns": [
         r"\b(malware|virus|trojan|backdoor|spyware)\b",
         r"\b(steal|exfiltrate)\b.*\b(data|credentials|passwords)\b",
@@ -174,7 +185,7 @@ ROSETTA_CONSTRAINTS = {
         r"\b(gambling|casino|betting)\b.*\b(real money|cash)\b",
         r"\b(cryptocurrency|crypto)\b.*\b(mining)\b",
         r"\b(adult|explicit|nsfw)\b.*\b(content)\b",
-    ]
+    ],
 }
 
 # Document Vision (expense/receipt processing) constraints
@@ -184,13 +195,44 @@ DOCUMENT_VISION_CONSTRAINTS = {
     "max_document_size_mb": 50,
     "supported_formats": ["image/jpeg", "image/png", "image/heic", "application/pdf"],
     "currencies": [
-        "USD", "EUR", "GBP", "JPY", "CAD", "AUD", "CHF", "CNY", "INR", "MXN",
-        "BRL", "KRW", "SGD", "HKD", "NOK", "SEK", "DKK", "NZD", "ZAR", "RUB"
+        "USD",
+        "EUR",
+        "GBP",
+        "JPY",
+        "CAD",
+        "AUD",
+        "CHF",
+        "CNY",
+        "INR",
+        "MXN",
+        "BRL",
+        "KRW",
+        "SGD",
+        "HKD",
+        "NOK",
+        "SEK",
+        "DKK",
+        "NZD",
+        "ZAR",
+        "RUB",
     ],
     "expense_categories": [
-        "travel", "meals", "lodging", "transportation", "supplies", "equipment",
-        "software", "services", "utilities", "communication", "entertainment",
-        "medical", "insurance", "taxes", "fees", "other"
+        "travel",
+        "meals",
+        "lodging",
+        "transportation",
+        "supplies",
+        "equipment",
+        "software",
+        "services",
+        "utilities",
+        "communication",
+        "entertainment",
+        "medical",
+        "insurance",
+        "taxes",
+        "fees",
+        "other",
     ],
     "patterns": [
         r"\b(forge|fake|fabricate)\b.*\b(receipt|invoice|expense)\b",
@@ -201,7 +243,7 @@ DOCUMENT_VISION_CONSTRAINTS = {
     "financial_limits": {
         "single_transaction_max": 100000.00,  # Alert for large transactions
         "daily_total_max": 500000.00,  # Alert for daily aggregates
-    }
+    },
 }
 
 
@@ -209,9 +251,11 @@ DOCUMENT_VISION_CONSTRAINTS = {
 # RESULT TYPES
 # ═══════════════════════════════════════════════════════════════════════════════
 
+
 @dataclass
 class ConstraintResult:
     """Result of constraint verification."""
+
     passed: bool
     constraint_name: str
     violations: List[str] = field(default_factory=list)
@@ -221,6 +265,7 @@ class ConstraintResult:
 @dataclass
 class CartridgeResult:
     """Result of cartridge compilation."""
+
     verified: bool
     cartridge_type: CartridgeType
     spec: Optional[Dict[str, Any]] = None
@@ -237,7 +282,7 @@ class CartridgeResult:
             "constraints": self.constraints,
             "fingerprint": self.fingerprint,
             "elapsed_us": self.elapsed_us,
-            "timestamp": self.timestamp
+            "timestamp": self.timestamp,
         }
 
 
@@ -245,11 +290,14 @@ class CartridgeResult:
 # CONSTRAINT CHECKER
 # ═══════════════════════════════════════════════════════════════════════════════
 
+
 class ConstraintChecker:
     """Verifies content against safety and cartridge-specific constraints."""
 
     @staticmethod
-    def check_safety(text: str, categories: Optional[List[str]] = None) -> ConstraintResult:
+    def check_safety(
+        text: str, categories: Optional[List[str]] = None
+    ) -> ConstraintResult:
         """Check text against safety patterns."""
         text_lower = text.lower()
         categories = categories or list(SAFETY_PATTERNS.keys())
@@ -269,11 +317,17 @@ class ConstraintChecker:
             passed=len(violations) == 0,
             constraint_name="safety",
             violations=violations,
-            message="Safety check passed" if not violations else f"Safety violations: {len(violations)}"
+            message=(
+                "Safety check passed"
+                if not violations
+                else f"Safety violations: {len(violations)}"
+            ),
         )
 
     @staticmethod
-    def check_patterns(text: str, patterns: List[str], constraint_name: str) -> ConstraintResult:
+    def check_patterns(
+        text: str, patterns: List[str], constraint_name: str
+    ) -> ConstraintResult:
         """Check text against a list of patterns."""
         text_lower = text.lower()
         violations = []
@@ -286,7 +340,11 @@ class ConstraintChecker:
             passed=len(violations) == 0,
             constraint_name=constraint_name,
             violations=violations,
-            message=f"{constraint_name} check passed" if not violations else f"{constraint_name} violations: {len(violations)}"
+            message=(
+                f"{constraint_name} check passed"
+                if not violations
+                else f"{constraint_name} violations: {len(violations)}"
+            ),
         )
 
 
@@ -294,9 +352,11 @@ class ConstraintChecker:
 # VISUAL CARTRIDGE
 # ═══════════════════════════════════════════════════════════════════════════════
 
+
 @dataclass
 class VisualSpec:
     """Specification for visual content."""
+
     width: int = 800
     height: int = 600
     max_elements: int = 100
@@ -350,7 +410,7 @@ class VisualCartridge:
         width: int = 800,
         height: int = 600,
         max_elements: int = 100,
-        color_palette: Optional[List[str]] = None
+        color_palette: Optional[List[str]] = None,
     ) -> CartridgeResult:
         """Compile visual intent into SVG specification."""
         start_us = time.perf_counter_ns() // 1000
@@ -361,8 +421,11 @@ class VisualCartridge:
         max_elements = min(max_elements, VISUAL_CONSTRAINTS["elements"]["max_count"])
 
         # Limit color palette
-        if color_palette and len(color_palette) > VISUAL_CONSTRAINTS["colors"]["max_palette"]:
-            color_palette = color_palette[:VISUAL_CONSTRAINTS["colors"]["max_palette"]]
+        if (
+            color_palette
+            and len(color_palette) > VISUAL_CONSTRAINTS["colors"]["max_palette"]
+        ):
+            color_palette = color_palette[: VISUAL_CONSTRAINTS["colors"]["max_palette"]]
 
         # Check constraints
         safety_check = ConstraintChecker.check_safety(intent)
@@ -393,10 +456,10 @@ class VisualCartridge:
                     "stroke": "#000000",
                     "fill": "#e0e0e0",
                     "stroke_width": 2,
-                    "color_scheme": color_scheme
+                    "color_scheme": color_scheme,
                 },
                 "palette": color_palette or self._generate_palette(color_scheme),
-                "intent_hash": hashlib.sha256(intent.encode()).hexdigest()[:16].upper()
+                "intent_hash": hashlib.sha256(intent.encode()).hexdigest()[:16].upper(),
             }
 
         elapsed_us = (time.perf_counter_ns() // 1000) - start_us
@@ -406,13 +469,25 @@ class VisualCartridge:
             cartridge_type=CartridgeType.VISUAL,
             spec=spec,
             constraints={
-                "safety": {"passed": safety_check.passed, "violations": safety_check.violations},
-                "visual": {"passed": visual_check.passed, "violations": visual_check.violations},
-                "bounds": {"width": width, "height": height, "max_elements": max_elements}
+                "safety": {
+                    "passed": safety_check.passed,
+                    "violations": safety_check.violations,
+                },
+                "visual": {
+                    "passed": visual_check.passed,
+                    "violations": visual_check.violations,
+                },
+                "bounds": {
+                    "width": width,
+                    "height": height,
+                    "max_elements": max_elements,
+                },
             },
-            fingerprint=hashlib.sha256(f"{intent}{width}{height}".encode()).hexdigest()[:12].upper(),
+            fingerprint=hashlib.sha256(f"{intent}{width}{height}".encode())
+            .hexdigest()[:12]
+            .upper(),
             elapsed_us=elapsed_us,
-            timestamp=int(time.time() * 1000)
+            timestamp=int(time.time() * 1000),
         )
 
     def _parse_elements(self, intent: str) -> List[str]:
@@ -449,9 +524,30 @@ class VisualCartridge:
     def _generate_palette(self, scheme: str) -> List[str]:
         """Generate a color palette based on scheme."""
         palettes = {
-            "monochrome": ["#000000", "#333333", "#666666", "#999999", "#CCCCCC", "#FFFFFF"],
-            "vibrant": ["#FF6B6B", "#4ECDC4", "#45B7D1", "#96CEB4", "#FFEAA7", "#DDA0DD"],
-            "pastel": ["#FFB3BA", "#BAFFC9", "#BAE1FF", "#FFFFBA", "#FFDfBA", "#E0BBE4"],
+            "monochrome": [
+                "#000000",
+                "#333333",
+                "#666666",
+                "#999999",
+                "#CCCCCC",
+                "#FFFFFF",
+            ],
+            "vibrant": [
+                "#FF6B6B",
+                "#4ECDC4",
+                "#45B7D1",
+                "#96CEB4",
+                "#FFEAA7",
+                "#DDA0DD",
+            ],
+            "pastel": [
+                "#FFB3BA",
+                "#BAFFC9",
+                "#BAE1FF",
+                "#FFFFBA",
+                "#FFDfBA",
+                "#E0BBE4",
+            ],
             "dark": ["#1A1A2E", "#16213E", "#0F3460", "#533483", "#E94560", "#000000"],
             "warm": ["#FF6B35", "#F7C59F", "#EFEFD0", "#004E89", "#1A659E", "#FF9F1C"],
             "cool": ["#0077B6", "#00B4D8", "#90E0EF", "#CAF0F8", "#03045E", "#023E8A"],
@@ -462,6 +558,7 @@ class VisualCartridge:
 # ═══════════════════════════════════════════════════════════════════════════════
 # SOUND CARTRIDGE
 # ═══════════════════════════════════════════════════════════════════════════════
+
 
 class SoundCartridge:
     """
@@ -498,7 +595,7 @@ class SoundCartridge:
         duration_ms: int = 5000,
         min_frequency: float = 20.0,
         max_frequency: float = 20000.0,
-        sample_rate: int = 44100
+        sample_rate: int = 44100,
     ) -> CartridgeResult:
         """Compile sound intent into audio specification."""
         start_us = time.perf_counter_ns() // 1000
@@ -506,7 +603,7 @@ class SoundCartridge:
         # Clamp parameters
         duration_ms = max(
             SOUND_CONSTRAINTS["duration"]["min_ms"],
-            min(duration_ms, SOUND_CONSTRAINTS["duration"]["max_ms"])
+            min(duration_ms, SOUND_CONSTRAINTS["duration"]["max_ms"]),
         )
         min_frequency = max(min_frequency, SOUND_CONSTRAINTS["frequency"]["min_hz"])
         max_frequency = min(max_frequency, SOUND_CONSTRAINTS["frequency"]["max_hz"])
@@ -536,14 +633,11 @@ class SoundCartridge:
                 "sample_rate": sample_rate,
                 "bit_depth": 16,
                 "channels": 2,
-                "frequency_range": {
-                    "min_hz": min_frequency,
-                    "max_hz": max_frequency
-                },
+                "frequency_range": {"min_hz": min_frequency, "max_hz": max_frequency},
                 "sound_types": sound_types,
                 "mood": mood,
                 "waveforms": self._suggest_waveforms(sound_types),
-                "intent_hash": hashlib.sha256(intent.encode()).hexdigest()[:16].upper()
+                "intent_hash": hashlib.sha256(intent.encode()).hexdigest()[:16].upper(),
             }
 
         elapsed_us = (time.perf_counter_ns() // 1000) - start_us
@@ -553,17 +647,25 @@ class SoundCartridge:
             cartridge_type=CartridgeType.SOUND,
             spec=spec,
             constraints={
-                "safety": {"passed": safety_check.passed, "violations": safety_check.violations},
-                "sound": {"passed": sound_check.passed, "violations": sound_check.violations},
+                "safety": {
+                    "passed": safety_check.passed,
+                    "violations": safety_check.violations,
+                },
+                "sound": {
+                    "passed": sound_check.passed,
+                    "violations": sound_check.violations,
+                },
                 "bounds": {
                     "duration_ms": duration_ms,
                     "frequency_range": [min_frequency, max_frequency],
-                    "sample_rate": sample_rate
-                }
+                    "sample_rate": sample_rate,
+                },
             },
-            fingerprint=hashlib.sha256(f"{intent}{duration_ms}{sample_rate}".encode()).hexdigest()[:12].upper(),
+            fingerprint=hashlib.sha256(f"{intent}{duration_ms}{sample_rate}".encode())
+            .hexdigest()[:12]
+            .upper(),
             elapsed_us=elapsed_us,
-            timestamp=int(time.time() * 1000)
+            timestamp=int(time.time() * 1000),
         )
 
     def _parse_sound_types(self, intent: str) -> List[str]:
@@ -610,6 +712,7 @@ class SoundCartridge:
 # SEQUENCE CARTRIDGE
 # ═══════════════════════════════════════════════════════════════════════════════
 
+
 class SequenceCartridge:
     """
     Sequence Cartridge: Video/Animation Specification Generator
@@ -644,7 +747,7 @@ class SequenceCartridge:
         fps: int = 30,
         width: int = 1920,
         height: int = 1080,
-        max_scenes: int = 10
+        max_scenes: int = 10,
     ) -> CartridgeResult:
         """Compile sequence intent into video specification."""
         start_us = time.perf_counter_ns() // 1000
@@ -652,9 +755,12 @@ class SequenceCartridge:
         # Clamp parameters
         duration_seconds = max(
             SEQUENCE_CONSTRAINTS["duration"]["min_seconds"],
-            min(duration_seconds, SEQUENCE_CONSTRAINTS["duration"]["max_seconds"])
+            min(duration_seconds, SEQUENCE_CONSTRAINTS["duration"]["max_seconds"]),
         )
-        fps = max(SEQUENCE_CONSTRAINTS["fps"]["min"], min(fps, SEQUENCE_CONSTRAINTS["fps"]["max"]))
+        fps = max(
+            SEQUENCE_CONSTRAINTS["fps"]["min"],
+            min(fps, SEQUENCE_CONSTRAINTS["fps"]["max"]),
+        )
         width = min(width, SEQUENCE_CONSTRAINTS["resolution"]["max_width"])
         height = min(height, SEQUENCE_CONSTRAINTS["resolution"]["max_height"])
         max_scenes = min(max_scenes, 100)
@@ -683,7 +789,7 @@ class SequenceCartridge:
                 "resolution": {
                     "width": width,
                     "height": height,
-                    "aspect_ratio": f"{width}:{height}"
+                    "aspect_ratio": f"{width}:{height}",
                 },
                 "max_scenes": max_scenes,
                 "transitions": transitions,
@@ -691,7 +797,7 @@ class SequenceCartridge:
                 "container": "mp4",
                 "bitrate_suggestion": self._suggest_bitrate(width, height, fps),
                 "keyframe_interval": fps * 2,  # Keyframe every 2 seconds
-                "intent_hash": hashlib.sha256(intent.encode()).hexdigest()[:16].upper()
+                "intent_hash": hashlib.sha256(intent.encode()).hexdigest()[:16].upper(),
             }
 
         elapsed_us = (time.perf_counter_ns() // 1000) - start_us
@@ -701,18 +807,28 @@ class SequenceCartridge:
             cartridge_type=CartridgeType.SEQUENCE,
             spec=spec,
             constraints={
-                "safety": {"passed": safety_check.passed, "violations": safety_check.violations},
-                "sequence": {"passed": sequence_check.passed, "violations": sequence_check.violations},
+                "safety": {
+                    "passed": safety_check.passed,
+                    "violations": safety_check.violations,
+                },
+                "sequence": {
+                    "passed": sequence_check.passed,
+                    "violations": sequence_check.violations,
+                },
                 "bounds": {
                     "duration_seconds": duration_seconds,
                     "fps": fps,
                     "resolution": f"{width}x{height}",
-                    "max_scenes": max_scenes
-                }
+                    "max_scenes": max_scenes,
+                },
             },
-            fingerprint=hashlib.sha256(f"{intent}{duration_seconds}{fps}{width}".encode()).hexdigest()[:12].upper(),
+            fingerprint=hashlib.sha256(
+                f"{intent}{duration_seconds}{fps}{width}".encode()
+            )
+            .hexdigest()[:12]
+            .upper(),
             elapsed_us=elapsed_us,
-            timestamp=int(time.time() * 1000)
+            timestamp=int(time.time() * 1000),
         )
 
     def _parse_sequence_type(self, intent: str) -> str:
@@ -760,6 +876,7 @@ class SequenceCartridge:
 # DATA CARTRIDGE
 # ═══════════════════════════════════════════════════════════════════════════════
 
+
 class DataCartridge:
     """
     Data Cartridge: Report/Data Specification Generator
@@ -796,7 +913,7 @@ class DataCartridge:
         data: Optional[Dict[str, Any]] = None,
         output_format: str = "json",
         max_rows: int = 1000,
-        include_statistics: bool = True
+        include_statistics: bool = True,
     ) -> CartridgeResult:
         """Compile data intent into report specification."""
         start_us = time.perf_counter_ns() // 1000
@@ -831,7 +948,7 @@ class DataCartridge:
                 "sections": ["header", "summary", "data", "visualizations", "footer"],
                 "visualizations": visualizations,
                 "data_provided": data is not None,
-                "intent_hash": hashlib.sha256(intent.encode()).hexdigest()[:16].upper()
+                "intent_hash": hashlib.sha256(intent.encode()).hexdigest()[:16].upper(),
             }
 
             # Calculate statistics if data provided
@@ -845,13 +962,21 @@ class DataCartridge:
             cartridge_type=CartridgeType.DATA,
             spec=spec,
             constraints={
-                "safety": {"passed": safety_check.passed, "violations": safety_check.violations},
-                "data": {"passed": data_check.passed, "violations": data_check.violations},
-                "bounds": {"max_rows": max_rows, "format": output_format}
+                "safety": {
+                    "passed": safety_check.passed,
+                    "violations": safety_check.violations,
+                },
+                "data": {
+                    "passed": data_check.passed,
+                    "violations": data_check.violations,
+                },
+                "bounds": {"max_rows": max_rows, "format": output_format},
             },
-            fingerprint=hashlib.sha256(f"{intent}{output_format}{max_rows}".encode()).hexdigest()[:12].upper(),
+            fingerprint=hashlib.sha256(f"{intent}{output_format}{max_rows}".encode())
+            .hexdigest()[:12]
+            .upper(),
             elapsed_us=elapsed_us,
-            timestamp=int(time.time() * 1000)
+            timestamp=int(time.time() * 1000),
         )
 
     def _parse_report_type(self, intent: str) -> str:
@@ -898,14 +1023,19 @@ class DataCartridge:
             "mean": round(total / n, 4),
             "min": round(min(numeric_values), 4),
             "max": round(max(numeric_values), 4),
-            "median": round(sorted_values[n // 2], 4) if n % 2 == 1 else round((sorted_values[n // 2 - 1] + sorted_values[n // 2]) / 2, 4),
-            "range": round(max(numeric_values) - min(numeric_values), 4)
+            "median": (
+                round(sorted_values[n // 2], 4)
+                if n % 2 == 1
+                else round((sorted_values[n // 2 - 1] + sorted_values[n // 2]) / 2, 4)
+            ),
+            "range": round(max(numeric_values) - min(numeric_values), 4),
         }
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # ROSETTA COMPILER
 # ═══════════════════════════════════════════════════════════════════════════════
+
 
 class RosettaCompiler:
     """
@@ -973,7 +1103,7 @@ class RosettaCompiler:
         intent: str,
         target_platform: str = "ios",
         version: str = "18.0",
-        language: str = "swift"
+        language: str = "swift",
     ) -> CartridgeResult:
         """Compile app intent into code generation prompt."""
         start_us = time.perf_counter_ns() // 1000
@@ -992,7 +1122,9 @@ class RosettaCompiler:
             intent, ROSETTA_CONSTRAINTS["app_store"], "app_store"
         )
 
-        verified = safety_check.passed and rosetta_check.passed and app_store_check.passed
+        verified = (
+            safety_check.passed and rosetta_check.passed and app_store_check.passed
+        )
 
         spec = None
         if verified:
@@ -1016,7 +1148,7 @@ class RosettaCompiler:
                 "components": parsed["components"],
                 "app_type": parsed["app_type"],
                 "warnings": self._get_warnings(intent),
-                "intent_hash": hashlib.sha256(intent.encode()).hexdigest()[:16].upper()
+                "intent_hash": hashlib.sha256(intent.encode()).hexdigest()[:16].upper(),
             }
 
         elapsed_us = (time.perf_counter_ns() // 1000) - start_us
@@ -1026,13 +1158,24 @@ class RosettaCompiler:
             cartridge_type=CartridgeType.ROSETTA,
             spec=spec,
             constraints={
-                "safety": {"passed": safety_check.passed, "violations": safety_check.violations},
-                "security": {"passed": rosetta_check.passed, "violations": rosetta_check.violations},
-                "app_store": {"passed": app_store_check.passed, "violations": app_store_check.violations}
+                "safety": {
+                    "passed": safety_check.passed,
+                    "violations": safety_check.violations,
+                },
+                "security": {
+                    "passed": rosetta_check.passed,
+                    "violations": rosetta_check.violations,
+                },
+                "app_store": {
+                    "passed": app_store_check.passed,
+                    "violations": app_store_check.violations,
+                },
             },
-            fingerprint=hashlib.sha256(f"{intent}{target_platform}{language}".encode()).hexdigest()[:12].upper(),
+            fingerprint=hashlib.sha256(f"{intent}{target_platform}{language}".encode())
+            .hexdigest()[:12]
+            .upper(),
             elapsed_us=elapsed_us,
-            timestamp=int(time.time() * 1000)
+            timestamp=int(time.time() * 1000),
         )
 
     def _parse_intent(self, intent: str) -> Dict[str, Any]:
@@ -1088,13 +1231,17 @@ class RosettaCompiler:
             "app_type": app_type,
             "components": components,
             "frameworks": frameworks,
-            "tokens": len(intent.split())
+            "tokens": len(intent.split()),
         }
 
-    def _generate_prompt(self, intent: str, parsed: Dict[str, Any], language: str) -> str:
+    def _generate_prompt(
+        self, intent: str, parsed: Dict[str, Any], language: str
+    ) -> str:
         """Generate structured code generation prompt."""
 
-        component_specs = "\n".join(f"{i+1}. {comp.title()}View" for i, comp in enumerate(parsed["components"]))
+        component_specs = "\n".join(
+            f"{i+1}. {comp.title()}View" for i, comp in enumerate(parsed["components"])
+        )
         framework_list = "\n".join(f"- {fw}" for fw in parsed["frameworks"])
 
         if language == "swift":
@@ -1206,7 +1353,7 @@ Generate complete, type-safe TypeScript code with:
         formats = {
             "swift": OutputFormat.SWIFT_PROMPT.value,
             "python": OutputFormat.PYTHON_PROMPT.value,
-            "typescript": OutputFormat.TYPESCRIPT_PROMPT.value
+            "typescript": OutputFormat.TYPESCRIPT_PROMPT.value,
         }
         return formats.get(language, OutputFormat.SWIFT_PROMPT.value)
 
@@ -1235,9 +1382,11 @@ Generate complete, type-safe TypeScript code with:
 # DOCUMENT VISION CARTRIDGE
 # ═══════════════════════════════════════════════════════════════════════════════
 
+
 @dataclass
 class ExpenseLineItem:
     """A single line item from an expense document."""
+
     description: str
     quantity: float = 1.0
     unit_price: float = 0.0
@@ -1250,6 +1399,7 @@ class ExpenseLineItem:
 @dataclass
 class DocumentVisionSpec:
     """Specification for document vision extraction."""
+
     document_type: str = "receipt"
     currency: str = "USD"
     max_line_items: int = 100
@@ -1305,9 +1455,21 @@ class DocumentVisionCartridge:
     }
 
     CURRENCY_SYMBOLS = {
-        "$": "USD", "€": "EUR", "£": "GBP", "¥": "JPY", "₹": "INR",
-        "C$": "CAD", "A$": "AUD", "Fr": "CHF", "R$": "BRL", "₩": "KRW",
-        "S$": "SGD", "HK$": "HKD", "kr": "NOK", "R": "ZAR", "₽": "RUB",
+        "$": "USD",
+        "€": "EUR",
+        "£": "GBP",
+        "¥": "JPY",
+        "₹": "INR",
+        "C$": "CAD",
+        "A$": "AUD",
+        "Fr": "CHF",
+        "R$": "BRL",
+        "₩": "KRW",
+        "S$": "SGD",
+        "HK$": "HKD",
+        "kr": "NOK",
+        "R": "ZAR",
+        "₽": "RUB",
     }
 
     def compile(
@@ -1317,7 +1479,7 @@ class DocumentVisionCartridge:
         document_type: str = "auto",
         currency: str = "USD",
         max_line_items: int = 100,
-        expense_policy: Optional[Dict[str, Any]] = None
+        expense_policy: Optional[Dict[str, Any]] = None,
     ) -> CartridgeResult:
         """
         Compile document vision extraction specification.
@@ -1336,7 +1498,9 @@ class DocumentVisionCartridge:
         start_us = time.perf_counter_ns() // 1000
 
         # Clamp parameters
-        max_line_items = min(max_line_items, DOCUMENT_VISION_CONSTRAINTS["max_line_items"])
+        max_line_items = min(
+            max_line_items, DOCUMENT_VISION_CONSTRAINTS["max_line_items"]
+        )
 
         # Validate currency
         if currency not in DOCUMENT_VISION_CONSTRAINTS["currencies"]:
@@ -1394,7 +1558,7 @@ class DocumentVisionCartridge:
                 "warnings": warnings,
                 "supported_currencies": DOCUMENT_VISION_CONSTRAINTS["currencies"],
                 "expense_categories": DOCUMENT_VISION_CONSTRAINTS["expense_categories"],
-                "intent_hash": hashlib.sha256(intent.encode()).hexdigest()[:16].upper()
+                "intent_hash": hashlib.sha256(intent.encode()).hexdigest()[:16].upper(),
             }
 
         elapsed_us = (time.perf_counter_ns() // 1000) - start_us
@@ -1404,17 +1568,25 @@ class DocumentVisionCartridge:
             cartridge_type=CartridgeType.DOCUMENT_VISION,
             spec=spec,
             constraints={
-                "safety": {"passed": safety_check.passed, "violations": safety_check.violations},
-                "expense_fraud": {"passed": fraud_check.passed, "violations": fraud_check.violations},
+                "safety": {
+                    "passed": safety_check.passed,
+                    "violations": safety_check.violations,
+                },
+                "expense_fraud": {
+                    "passed": fraud_check.passed,
+                    "violations": fraud_check.violations,
+                },
                 "bounds": {
                     "max_line_items": max_line_items,
                     "currency": currency,
-                    "document_type": document_type
-                }
+                    "document_type": document_type,
+                },
             },
-            fingerprint=hashlib.sha256(f"{intent}{document_type}{currency}".encode()).hexdigest()[:12].upper(),
+            fingerprint=hashlib.sha256(f"{intent}{document_type}{currency}".encode())
+            .hexdigest()[:12]
+            .upper(),
             elapsed_us=elapsed_us,
-            timestamp=int(time.time() * 1000)
+            timestamp=int(time.time() * 1000),
         )
 
     def _detect_document_type(self, intent: str) -> str:
@@ -1442,7 +1614,7 @@ class DocumentVisionCartridge:
             "name": None,  # To be extracted from document
             "address": None,
             "tax_id": None,
-            "confidence": 0.0
+            "confidence": 0.0,
         }
 
     def _detect_currency(self, intent: str) -> Optional[str]:
@@ -1489,12 +1661,32 @@ class DocumentVisionCartridge:
 
     def _get_extraction_fields(self, document_type: str) -> Dict[str, List[str]]:
         """Get fields to extract based on document type."""
-        common_fields = ["date", "total", "subtotal", "tax", "currency", "payment_method"]
+        common_fields = [
+            "date",
+            "total",
+            "subtotal",
+            "tax",
+            "currency",
+            "payment_method",
+        ]
 
         type_specific = {
             "receipt": ["vendor_name", "vendor_address", "line_items", "tip", "change"],
-            "invoice": ["invoice_number", "due_date", "vendor_name", "bill_to", "line_items", "terms"],
-            "expense_report": ["report_id", "employee", "period", "expenses", "approvals"],
+            "invoice": [
+                "invoice_number",
+                "due_date",
+                "vendor_name",
+                "bill_to",
+                "line_items",
+                "terms",
+            ],
+            "expense_report": [
+                "report_id",
+                "employee",
+                "period",
+                "expenses",
+                "approvals",
+            ],
             "bill": ["account_number", "service_period", "usage", "previous_balance"],
             "statement": ["account_number", "period", "transactions", "balance"],
         }
@@ -1502,10 +1694,12 @@ class DocumentVisionCartridge:
         return {
             "required": common_fields,
             "optional": type_specific.get(document_type, []),
-            "computed": ["tax_rate", "total_verified", "category"]
+            "computed": ["tax_rate", "total_verified", "category"],
         }
 
-    def _get_validation_rules(self, expense_policy: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+    def _get_validation_rules(
+        self, expense_policy: Optional[Dict[str, Any]]
+    ) -> Dict[str, Any]:
         """Get validation rules including expense policy."""
         rules = {
             "require_date": True,
@@ -1513,7 +1707,7 @@ class DocumentVisionCartridge:
             "require_vendor": True,
             "max_age_days": 90,  # Default: receipts must be within 90 days
             "duplicate_check": True,
-            "financial_limits": DOCUMENT_VISION_CONSTRAINTS["financial_limits"]
+            "financial_limits": DOCUMENT_VISION_CONSTRAINTS["financial_limits"],
         }
 
         # Apply expense policy overrides
@@ -1523,7 +1717,9 @@ class DocumentVisionCartridge:
             if "max_lodging" in expense_policy:
                 rules["max_lodging_expense"] = expense_policy["max_lodging"]
             if "require_itemization_above" in expense_policy:
-                rules["require_itemization_above"] = expense_policy["require_itemization_above"]
+                rules["require_itemization_above"] = expense_policy[
+                    "require_itemization_above"
+                ]
             if "max_age_days" in expense_policy:
                 rules["max_age_days"] = expense_policy["max_age_days"]
 
@@ -1533,7 +1729,7 @@ class DocumentVisionCartridge:
         self,
         document_data: Dict[str, Any],
         max_line_items: int,
-        expense_policy: Optional[Dict[str, Any]]
+        expense_policy: Optional[Dict[str, Any]],
     ) -> Dict[str, Any]:
         """Process pre-extracted document data with validation."""
         result = {
@@ -1541,7 +1737,7 @@ class DocumentVisionCartridge:
             "validated": {},
             "line_items": [],
             "totals": {},
-            "flags": []
+            "flags": [],
         }
 
         # Extract and validate amounts
@@ -1554,7 +1750,9 @@ class DocumentVisionCartridge:
                 category = document_data.get("category", "other")
                 limit_key = f"max_{category}"
                 if limit_key in expense_policy and total > expense_policy[limit_key]:
-                    result["flags"].append(f"Amount exceeds {category} limit: ${total:.2f}")
+                    result["flags"].append(
+                        f"Amount exceeds {category} limit: ${total:.2f}"
+                    )
 
         # Process line items
         if "line_items" in document_data:
@@ -1565,7 +1763,7 @@ class DocumentVisionCartridge:
                     "quantity": float(item.get("quantity", 1)),
                     "unit_price": float(item.get("unit_price", 0)),
                     "total": float(item.get("total", 0)),
-                    "confidence": float(item.get("confidence", 1.0))
+                    "confidence": float(item.get("confidence", 1.0)),
                 }
                 result["line_items"].append(validated_item)
 
@@ -1574,7 +1772,9 @@ class DocumentVisionCartridge:
             if "total" in result["totals"]:
                 discrepancy = abs(line_total - result["totals"]["total"])
                 if discrepancy > 0.01:
-                    result["flags"].append(f"Line items sum ({line_total:.2f}) differs from total ({result['totals']['total']:.2f})")
+                    result["flags"].append(
+                        f"Line items sum ({line_total:.2f}) differs from total ({result['totals']['total']:.2f})"
+                    )
 
         return result
 
@@ -1597,6 +1797,7 @@ class DocumentVisionCartridge:
 # ═══════════════════════════════════════════════════════════════════════════════
 # CARTRIDGE MANAGER
 # ═══════════════════════════════════════════════════════════════════════════════
+
 
 class CartridgeManager:
     """
@@ -1647,12 +1848,20 @@ class CartridgeManager:
         intent_lower = intent.lower()
 
         # Detection patterns
-        visual_patterns = r"\b(image|picture|graphic|svg|visual|icon|logo|illustration|draw|design)\b"
+        visual_patterns = (
+            r"\b(image|picture|graphic|svg|visual|icon|logo|illustration|draw|design)\b"
+        )
         sound_patterns = r"\b(sound|audio|music|tone|melody|beep|voice|sfx)\b"
         sequence_patterns = r"\b(video|animation|movie|clip|slideshow|motion|animate)\b"
-        code_patterns = r"\b(app|application|code|build|create|develop|implement|program)\b"
-        data_patterns = r"\b(report|data|analytics|statistics|chart|graph|table|csv|json)\b"
-        document_vision_patterns = r"\b(receipt|invoice|expense|bill|statement|reimburse|scan|extract)\b"
+        code_patterns = (
+            r"\b(app|application|code|build|create|develop|implement|program)\b"
+        )
+        data_patterns = (
+            r"\b(report|data|analytics|statistics|chart|graph|table|csv|json)\b"
+        )
+        document_vision_patterns = (
+            r"\b(receipt|invoice|expense|bill|statement|reimburse|scan|extract)\b"
+        )
 
         # Document vision takes priority for expense-related intents
         if re.search(document_vision_patterns, intent_lower):
@@ -1690,38 +1899,32 @@ def get_cartridge_manager() -> CartridgeManager:
 
 __all__ = [
     # Types
-    'CartridgeType',
-    'OutputFormat',
-
+    "CartridgeType",
+    "OutputFormat",
     # Results
-    'ConstraintResult',
-    'CartridgeResult',
-
+    "ConstraintResult",
+    "CartridgeResult",
     # Checker
-    'ConstraintChecker',
-
+    "ConstraintChecker",
     # Cartridges
-    'VisualCartridge',
-    'SoundCartridge',
-    'SequenceCartridge',
-    'DataCartridge',
-    'RosettaCompiler',
-    'DocumentVisionCartridge',
-
+    "VisualCartridge",
+    "SoundCartridge",
+    "SequenceCartridge",
+    "DataCartridge",
+    "RosettaCompiler",
+    "DocumentVisionCartridge",
     # Data classes
-    'ExpenseLineItem',
-    'DocumentVisionSpec',
-
+    "ExpenseLineItem",
+    "DocumentVisionSpec",
     # Manager
-    'CartridgeManager',
-    'get_cartridge_manager',
-
+    "CartridgeManager",
+    "get_cartridge_manager",
     # Constraints (for external use)
-    'SAFETY_PATTERNS',
-    'VISUAL_CONSTRAINTS',
-    'SOUND_CONSTRAINTS',
-    'SEQUENCE_CONSTRAINTS',
-    'DATA_CONSTRAINTS',
-    'ROSETTA_CONSTRAINTS',
-    'DOCUMENT_VISION_CONSTRAINTS',
+    "SAFETY_PATTERNS",
+    "VISUAL_CONSTRAINTS",
+    "SOUND_CONSTRAINTS",
+    "SEQUENCE_CONSTRAINTS",
+    "DATA_CONSTRAINTS",
+    "ROSETTA_CONSTRAINTS",
+    "DOCUMENT_VISION_CONSTRAINTS",
 ]

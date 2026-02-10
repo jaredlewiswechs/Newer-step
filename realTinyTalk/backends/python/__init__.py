@@ -5,4 +5,4 @@ Transpiles TinyTalk to Python
 
 from .emitter import PythonEmitter
 
-__all__ = ['PythonEmitter']
+__all__ = ["PythonEmitter"]

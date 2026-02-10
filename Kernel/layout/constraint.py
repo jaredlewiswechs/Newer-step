@@ -4,12 +4,13 @@ The solver is intentionally lightweight: it handles pin-to-edge, centering,
 and fixed width/height constraints. For full AutoLayout semantics, a Cassowary
 solver could be plugged in via the same API.
 """
-from __future__ import annotations
-from typing import Optional, List, Dict, Any
-from enum import Enum, IntEnum
 
+from __future__ import annotations
+from typing import Optional, List, Any
+from enum import IntEnum
 
 # ── enums ─────────────────────────────────────────────────────────
+
 
 class NSLayoutRelation(IntEnum):
     LESS_THAN_OR_EQUAL = -1
@@ -41,6 +42,7 @@ class NSLayoutPriority:
 
 # ── NSLayoutAnchor ────────────────────────────────────────────────
 
+
 class NSLayoutAnchor:
     """Base class for layout anchors that can create constraints."""
 
@@ -48,38 +50,55 @@ class NSLayoutAnchor:
         self._item = item
         self._attribute = attribute
 
-    def constraint_equal_to(self, other: NSLayoutAnchor, constant: float = 0.0) -> NSLayoutConstraint:
+    def constraint_equal_to(
+        self, other: NSLayoutAnchor, constant: float = 0.0
+    ) -> NSLayoutConstraint:
         return NSLayoutConstraint(
-            item=self._item, attribute=self._attribute,
+            item=self._item,
+            attribute=self._attribute,
             related_by=NSLayoutRelation.EQUAL,
-            to_item=other._item, to_attribute=other._attribute,
-            multiplier=1.0, constant=constant,
+            to_item=other._item,
+            to_attribute=other._attribute,
+            multiplier=1.0,
+            constant=constant,
         )
 
-    def constraint_greater_than_or_equal_to(self, other: NSLayoutAnchor, constant: float = 0.0) -> NSLayoutConstraint:
+    def constraint_greater_than_or_equal_to(
+        self, other: NSLayoutAnchor, constant: float = 0.0
+    ) -> NSLayoutConstraint:
         return NSLayoutConstraint(
-            item=self._item, attribute=self._attribute,
+            item=self._item,
+            attribute=self._attribute,
             related_by=NSLayoutRelation.GREATER_THAN_OR_EQUAL,
-            to_item=other._item, to_attribute=other._attribute,
-            multiplier=1.0, constant=constant,
+            to_item=other._item,
+            to_attribute=other._attribute,
+            multiplier=1.0,
+            constant=constant,
         )
 
-    def constraint_less_than_or_equal_to(self, other: NSLayoutAnchor, constant: float = 0.0) -> NSLayoutConstraint:
+    def constraint_less_than_or_equal_to(
+        self, other: NSLayoutAnchor, constant: float = 0.0
+    ) -> NSLayoutConstraint:
         return NSLayoutConstraint(
-            item=self._item, attribute=self._attribute,
+            item=self._item,
+            attribute=self._attribute,
             related_by=NSLayoutRelation.LESS_THAN_OR_EQUAL,
-            to_item=other._item, to_attribute=other._attribute,
-            multiplier=1.0, constant=constant,
+            to_item=other._item,
+            to_attribute=other._attribute,
+            multiplier=1.0,
+            constant=constant,
         )
 
 
 class NSLayoutXAxisAnchor(NSLayoutAnchor):
     """Anchor for horizontal positions (left, right, leading, trailing, centerX)."""
+
     pass
 
 
 class NSLayoutYAxisAnchor(NSLayoutAnchor):
     """Anchor for vertical positions (top, bottom, centerY)."""
+
     pass
 
 
@@ -88,48 +107,71 @@ class NSLayoutDimension(NSLayoutAnchor):
 
     def constraint_equal_to_constant(self, constant: float) -> NSLayoutConstraint:
         return NSLayoutConstraint(
-            item=self._item, attribute=self._attribute,
+            item=self._item,
+            attribute=self._attribute,
             related_by=NSLayoutRelation.EQUAL,
-            to_item=None, to_attribute=NSLayoutAttribute.NOT_AN_ATTRIBUTE,
-            multiplier=1.0, constant=constant,
+            to_item=None,
+            to_attribute=NSLayoutAttribute.NOT_AN_ATTRIBUTE,
+            multiplier=1.0,
+            constant=constant,
         )
 
-    def constraint_greater_than_or_equal_to_constant(self, constant: float) -> NSLayoutConstraint:
+    def constraint_greater_than_or_equal_to_constant(
+        self, constant: float
+    ) -> NSLayoutConstraint:
         return NSLayoutConstraint(
-            item=self._item, attribute=self._attribute,
+            item=self._item,
+            attribute=self._attribute,
             related_by=NSLayoutRelation.GREATER_THAN_OR_EQUAL,
-            to_item=None, to_attribute=NSLayoutAttribute.NOT_AN_ATTRIBUTE,
-            multiplier=1.0, constant=constant,
+            to_item=None,
+            to_attribute=NSLayoutAttribute.NOT_AN_ATTRIBUTE,
+            multiplier=1.0,
+            constant=constant,
         )
 
-    def constraint_less_than_or_equal_to_constant(self, constant: float) -> NSLayoutConstraint:
+    def constraint_less_than_or_equal_to_constant(
+        self, constant: float
+    ) -> NSLayoutConstraint:
         return NSLayoutConstraint(
-            item=self._item, attribute=self._attribute,
+            item=self._item,
+            attribute=self._attribute,
             related_by=NSLayoutRelation.LESS_THAN_OR_EQUAL,
-            to_item=None, to_attribute=NSLayoutAttribute.NOT_AN_ATTRIBUTE,
-            multiplier=1.0, constant=constant,
+            to_item=None,
+            to_attribute=NSLayoutAttribute.NOT_AN_ATTRIBUTE,
+            multiplier=1.0,
+            constant=constant,
         )
 
-    def constraint_equal_to_anchor(self, other: NSLayoutDimension,
-                                   multiplier: float = 1.0,
-                                   constant: float = 0.0) -> NSLayoutConstraint:
+    def constraint_equal_to_anchor(
+        self, other: NSLayoutDimension, multiplier: float = 1.0, constant: float = 0.0
+    ) -> NSLayoutConstraint:
         return NSLayoutConstraint(
-            item=self._item, attribute=self._attribute,
+            item=self._item,
+            attribute=self._attribute,
             related_by=NSLayoutRelation.EQUAL,
-            to_item=other._item, to_attribute=other._attribute,
-            multiplier=multiplier, constant=constant,
+            to_item=other._item,
+            to_attribute=other._attribute,
+            multiplier=multiplier,
+            constant=constant,
         )
 
 
 # ── NSLayoutConstraint ────────────────────────────────────────────
 
+
 class NSLayoutConstraint:
     """Represents a single constraint: item.attr = toItem.toAttr * multiplier + constant."""
 
-    def __init__(self, item: Any, attribute: NSLayoutAttribute,
-                 related_by: NSLayoutRelation,
-                 to_item: Any, to_attribute: NSLayoutAttribute,
-                 multiplier: float = 1.0, constant: float = 0.0):
+    def __init__(
+        self,
+        item: Any,
+        attribute: NSLayoutAttribute,
+        related_by: NSLayoutRelation,
+        to_item: Any,
+        to_attribute: NSLayoutAttribute,
+        multiplier: float = 1.0,
+        constant: float = 0.0,
+    ):
         self.first_item = item
         self.first_attribute = attribute
         self.relation = related_by
@@ -144,12 +186,12 @@ class NSLayoutConstraint:
     def activate(self):
         self.is_active = True
         # auto-install on the nearest common ancestor
-        if self.first_item and hasattr(self.first_item, 'add_constraint'):
+        if self.first_item and hasattr(self.first_item, "add_constraint"):
             self.first_item.add_constraint(self)
 
     def deactivate(self):
         self.is_active = False
-        if self.first_item and hasattr(self.first_item, 'remove_constraint'):
+        if self.first_item and hasattr(self.first_item, "remove_constraint"):
             self.first_item.remove_constraint(self)
 
     @staticmethod
@@ -163,12 +205,15 @@ class NSLayoutConstraint:
             c.deactivate()
 
     def __repr__(self):
-        return (f"<NSLayoutConstraint {self.first_attribute.name} "
-                f"{'=' if self.relation == 0 else '>=' if self.relation == 1 else '<='} "
-                f"{self.second_attribute.name}*{self.multiplier}+{self.constant}>")
+        return (
+            f"<NSLayoutConstraint {self.first_attribute.name} "
+            f"{'=' if self.relation == 0 else '>=' if self.relation == 1 else '<='} "
+            f"{self.second_attribute.name}*{self.multiplier}+{self.constant}>"
+        )
 
 
 # ── Simple solver ─────────────────────────────────────────────────
+
 
 def _get_attr_value(view, attr: NSLayoutAttribute) -> float:
     """Read a layout attribute value from a view's frame."""
@@ -209,7 +254,10 @@ def solve_constraints(constraints: List[NSLayoutConstraint], iterations: int = 4
                 continue
             # compute target value
             if c.second_item is not None:
-                target = _get_attr_value(c.second_item, c.second_attribute) * c.multiplier + c.constant
+                target = (
+                    _get_attr_value(c.second_item, c.second_attribute) * c.multiplier
+                    + c.constant
+                )
             else:
                 target = c.constant
 
@@ -237,6 +285,7 @@ def solve_constraints(constraints: List[NSLayoutConstraint], iterations: int = 4
 
 # ── NSLayoutGuide ─────────────────────────────────────────────────
 
+
 class NSLayoutGuide:
     """A rectangular region in a view that can participate in Auto Layout."""
 
@@ -263,8 +312,10 @@ class NSLayoutGuide:
     @property
     def frame(self):
         from Kernel.view.nsview import NSRect
-        return NSRect(self._frame_x, self._frame_y,
-                      self._frame_width, self._frame_height)
+
+        return NSRect(
+            self._frame_x, self._frame_y, self._frame_width, self._frame_height
+        )
 
     # anchors
     @property

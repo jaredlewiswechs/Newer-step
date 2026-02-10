@@ -47,9 +47,9 @@ The closest vertex determines the decision.
 """
 
 from __future__ import annotations
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import Enum, auto
-from typing import List, Dict, Any, Optional, Tuple
+from typing import Dict, Tuple
 import math
 
 

@@ -358,7 +358,7 @@ def demo_with_newton_server():
     ]}}
     response = requests.post(f"{base_url}/calculate", json=calc)
     result = response.json()
-    print(f"   Expression: (2 * 3) + (4 * 5)")
+    print("   Expression: (2 * 3) + (4 * 5)")
     print(f"   Result: {result.get('result')} (verified={result.get('verified')})")
 
     # Demo 2: Constraint evaluation (The Law)
@@ -373,8 +373,8 @@ def demo_with_newton_server():
     }
     response = requests.post(f"{base_url}/constraint", json=constraint)
     result = response.json()
-    print(f"   Constraint: balance >= 0")
-    print(f"   Object: balance = 100")
+    print("   Constraint: balance >= 0")
+    print("   Object: balance = 100")
     print(f"   Result: {result.get('result')} (terminates={result.get('terminates')})")
 
     # Demo 3: Content verification (The Audit)

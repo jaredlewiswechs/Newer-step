@@ -1,4 +1,5 @@
 """Minimal application and run loop for Kernel demo."""
+
 from typing import Optional, List
 from .event import NSEvent
 from .responder import NSResponder

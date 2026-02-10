@@ -9,13 +9,13 @@ import sys
 import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from realTinyTalk.runtime import Runtime, TinyFunction
+from realTinyTalk.runtime import Runtime
 from realTinyTalk.parser import Parser
 from realTinyTalk.lexer import Lexer
 from realTinyTalk.types import Value, ValueType
 from realTinyTalk.foghorn_stdlib import register_foghorn_stdlib, FOGHORN_BUILTINS
 
-from foghorn import get_object_store, Card
+from foghorn import get_object_store
 
 
 # ═══════════════════════════════════════════════════════════════════════════════

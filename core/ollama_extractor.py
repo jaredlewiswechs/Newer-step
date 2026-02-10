@@ -16,13 +16,16 @@ from core.schemas import Omega
 
 try:
     from newton_agent.llm_ollama import OllamaClient
+
     _HAS_OLLAMA = True
 except Exception:
     OllamaClient = None  # type: ignore
     _HAS_OLLAMA = False
 
 
-def llm_extract_omega(prompt: str, metadata: Optional[Dict] = None, model: str = "qwen2.5:3b") -> Omega:
+def llm_extract_omega(
+    prompt: str, metadata: Optional[Dict] = None, model: str = "qwen2.5:3b"
+) -> Omega:
     """Use Ollama LLM to extract an Omega JSON from `prompt`.
 
     This function expects the LLM to return a JSON blob matching `Omega`.
@@ -45,7 +48,7 @@ def llm_extract_omega(prompt: str, metadata: Optional[Dict] = None, model: str =
     text = resp.strip()
     # try to locate first JSON object in text
     try:
-        jstart = text.find('{')
+        jstart = text.find("{")
         jtext = text[jstart:]
         data = json.loads(jtext)
     except Exception:

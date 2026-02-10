@@ -1,6 +1,5 @@
 from Kernel.demo import server
 import asyncio
-from pathlib import Path
 
 
 def test_install_and_list_app():

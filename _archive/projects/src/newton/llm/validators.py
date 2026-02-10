@@ -20,8 +20,7 @@ Validators:
 """
 
 from abc import ABC, abstractmethod
-from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, List, Optional, Pattern, Set, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Pattern, Tuple
 import re
 import time
 
@@ -682,7 +681,7 @@ class PolicyValidator(DomainValidator):
                     valid=False,
                     domain=Domain.POLICY,
                     rule="forbidden_pattern",
-                    message=f"Policy violation: forbidden pattern matched",
+                    message="Policy violation: forbidden pattern matched",
                     details={"matched": match.group(), "pattern": pattern.pattern},
                 )
 

@@ -14,16 +14,14 @@ lives easier by automating grouping and tracking.
 """
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 from enum import Enum
 from datetime import datetime, date
 import json
-import hashlib
 import os
 
 from .education import (
-    Subject, CognitiveLevel, TEKSStandard, TEKSLibrary, get_teks_library,
-    StudentScore, AssessmentAnalyzer
+    Subject, get_teks_library
 )
 
 

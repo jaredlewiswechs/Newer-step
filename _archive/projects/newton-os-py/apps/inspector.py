@@ -6,7 +6,7 @@ The equivalent of a file browser, but for objects.
 ═══════════════════════════════════════════════════════════════
 """
 
-from typing import Optional, List
+from typing import Optional
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QTreeWidget, QTreeWidgetItem,
     QTextEdit, QLabel, QLineEdit, QPushButton, QSplitter, QFrame

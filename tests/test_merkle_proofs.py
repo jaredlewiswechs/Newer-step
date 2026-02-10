@@ -15,7 +15,7 @@ import time
 import tempfile
 import shutil
 from core.merkle_anchor import (
-    MerkleAnchorScheduler, MerkleAnchor, MerkleProof, verify_merkle_proof
+    MerkleAnchorScheduler, verify_merkle_proof
 )
 from core.ledger import Ledger, LedgerConfig
 

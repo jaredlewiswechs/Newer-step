@@ -61,7 +61,7 @@ Author: Jared Lewis / Newton Supercomputer
 ===========================================================================
 """
 
-from typing import List, Dict, Callable, Optional, Any, Set, Tuple, Union
+from typing import List, Dict, Callable, Optional, Any, Tuple
 from dataclasses import dataclass, field
 from enum import Enum
 import hashlib
@@ -71,9 +71,15 @@ import time
 # Import Newton core components for integration
 try:
     from .cdl import (
-        Constraint, AtomicConstraint, RatioConstraint,
-        CompositeConstraint, ConditionalConstraint,
-        Operator, Domain, EvaluationResult, CDLEvaluator
+        Constraint,
+        AtomicConstraint,
+        RatioConstraint,
+        CompositeConstraint,
+        ConditionalConstraint,
+        Operator,
+        Domain,
+        EvaluationResult,
+        CDLEvaluator,
     )
     from .ledger import LedgerEntry
 except ImportError:
@@ -94,12 +100,14 @@ except ImportError:
 # CORE CONCEPTS
 # ===========================================================================
 
+
 class TextStyle(Enum):
     """Output text style levels."""
-    FORMAL = "formal"           # Legal/contract language
-    TECHNICAL = "technical"     # Developer documentation
-    EDUCATIONAL = "educational" # Teacher-friendly explanations
-    MINIMAL = "minimal"         # Terse, code-like
+
+    FORMAL = "formal"  # Legal/contract language
+    TECHNICAL = "technical"  # Developer documentation
+    EDUCATIONAL = "educational"  # Teacher-friendly explanations
+    MINIMAL = "minimal"  # Terse, code-like
 
 
 @dataclass
@@ -108,6 +116,7 @@ class TextConstraint:
     Canonical constraint representation for text generation.
     Can be created from CDL constraints or standalone.
     """
+
     field: str
     op: str  # ge, le, eq, lt, gt, ne, ratio_le, ratio_lt, etc.
     value: Any
@@ -130,25 +139,41 @@ class TextConstraint:
         return self.canonical() == other.canonical()
 
     @classmethod
-    def from_cdl(cls, constraint: Constraint) -> 'TextConstraint':
+    def from_cdl(cls, constraint: Constraint) -> "TextConstraint":
         """Create TextConstraint from a CDL constraint."""
         if isinstance(constraint, AtomicConstraint):
             return cls(
                 field=constraint.field,
-                op=constraint.operator.value if hasattr(constraint.operator, 'value') else str(constraint.operator),
+                op=(
+                    constraint.operator.value
+                    if hasattr(constraint.operator, "value")
+                    else str(constraint.operator)
+                ),
                 value=constraint.value,
                 denominator=constraint.denominator,
-                domain=constraint.domain.value if hasattr(constraint.domain, 'value') else str(constraint.domain),
-                message=constraint.message
+                domain=(
+                    constraint.domain.value
+                    if hasattr(constraint.domain, "value")
+                    else str(constraint.domain)
+                ),
+                message=constraint.message,
             )
         elif isinstance(constraint, RatioConstraint):
             return cls(
                 field=constraint.f_field,
-                op=constraint.operator.value if hasattr(constraint.operator, 'value') else str(constraint.operator),
+                op=(
+                    constraint.operator.value
+                    if hasattr(constraint.operator, "value")
+                    else str(constraint.operator)
+                ),
                 value=constraint.threshold,
                 denominator=constraint.g_field,
-                domain=constraint.domain.value if hasattr(constraint.domain, 'value') else str(constraint.domain),
-                message=constraint.message
+                domain=(
+                    constraint.domain.value
+                    if hasattr(constraint.domain, "value")
+                    else str(constraint.domain)
+                ),
+                message=constraint.message,
             )
         else:
             raise ValueError(f"Cannot convert {type(constraint)} to TextConstraint")
@@ -164,157 +189,157 @@ TEMPLATES: Dict[str, Dict[str, List[str]]] = {
         "ge": [
             "{field} must be greater than or equal to {value}.",
             "{field} shall not be less than {value}.",
-            "The {field} is required to maintain a minimum of {value}."
+            "The {field} is required to maintain a minimum of {value}.",
         ],
         "le": [
             "{field} must be less than or equal to {value}.",
             "{field} shall not exceed {value}.",
-            "The {field} is capped at {value}."
+            "The {field} is capped at {value}.",
         ],
         "eq": [
             "{field} must equal {value}.",
             "{field} shall be exactly {value}.",
-            "The {field} is required to be {value}."
+            "The {field} is required to be {value}.",
         ],
         "lt": [
             "{field} must be less than {value}.",
             "{field} shall be strictly below {value}.",
-            "The {field} cannot reach {value}."
+            "The {field} cannot reach {value}.",
         ],
         "gt": [
             "{field} must be greater than {value}.",
             "{field} shall exceed {value}.",
-            "The {field} must be strictly above {value}."
+            "The {field} must be strictly above {value}.",
         ],
         "ne": [
             "{field} must not equal {value}.",
             "{field} shall differ from {value}.",
-            "The {field} cannot be {value}."
+            "The {field} cannot be {value}.",
         ],
         # Ratio constraints (f/g)
         "ratio_le": [
             "The ratio of {field} to {denominator} must not exceed {value}.",
             "{field}/{denominator} shall be at most {value}.",
-            "The {field} to {denominator} ratio is capped at {value}."
+            "The {field} to {denominator} ratio is capped at {value}.",
         ],
         "ratio_lt": [
             "The ratio of {field} to {denominator} must be strictly less than {value}.",
             "{field}/{denominator} shall remain below {value}.",
-            "The {field} to {denominator} ratio cannot reach {value}."
+            "The {field} to {denominator} ratio cannot reach {value}.",
         ],
         "ratio_ge": [
             "The ratio of {field} to {denominator} must be at least {value}.",
             "{field}/{denominator} shall not fall below {value}.",
-            "The {field} to {denominator} ratio is required to maintain a minimum of {value}."
+            "The {field} to {denominator} ratio is required to maintain a minimum of {value}.",
         ],
         "ratio_gt": [
             "The ratio of {field} to {denominator} must exceed {value}.",
             "{field}/{denominator} shall be strictly above {value}.",
-            "The {field} to {denominator} ratio must surpass {value}."
+            "The {field} to {denominator} ratio must surpass {value}.",
         ],
     },
     "technical": {
         "ge": [
             "{field} >= {value}",
             "assert({field} >= {value})",
-            "require: {field} >= {value}"
+            "require: {field} >= {value}",
         ],
         "le": [
             "{field} <= {value}",
             "assert({field} <= {value})",
-            "require: {field} <= {value}"
+            "require: {field} <= {value}",
         ],
         "eq": [
             "{field} == {value}",
             "assert({field} == {value})",
-            "require: {field} == {value}"
+            "require: {field} == {value}",
         ],
         "lt": [
             "{field} < {value}",
             "assert({field} < {value})",
-            "require: {field} < {value}"
+            "require: {field} < {value}",
         ],
         "gt": [
             "{field} > {value}",
             "assert({field} > {value})",
-            "require: {field} > {value}"
+            "require: {field} > {value}",
         ],
         "ne": [
             "{field} != {value}",
             "assert({field} != {value})",
-            "require: {field} != {value}"
+            "require: {field} != {value}",
         ],
         "ratio_le": [
             "{field}/{denominator} <= {value}",
             "assert({field}/{denominator} <= {value})",
-            "require: {field}/{denominator} <= {value}"
+            "require: {field}/{denominator} <= {value}",
         ],
         "ratio_lt": [
             "{field}/{denominator} < {value}",
             "assert({field}/{denominator} < {value})",
-            "require: {field}/{denominator} < {value}"
+            "require: {field}/{denominator} < {value}",
         ],
         "ratio_ge": [
             "{field}/{denominator} >= {value}",
             "assert({field}/{denominator} >= {value})",
-            "require: {field}/{denominator} >= {value}"
+            "require: {field}/{denominator} >= {value}",
         ],
         "ratio_gt": [
             "{field}/{denominator} > {value}",
             "assert({field}/{denominator} > {value})",
-            "require: {field}/{denominator} > {value}"
+            "require: {field}/{denominator} > {value}",
         ],
     },
     "educational": {
         "ge": [
             "The {field} needs to be at least {value}.",
             "Make sure {field} is {value} or more.",
-            "Remember: {field} can't go below {value}!"
+            "Remember: {field} can't go below {value}!",
         ],
         "le": [
             "The {field} can't be more than {value}.",
             "Keep {field} at {value} or less.",
-            "Remember: {field} has a limit of {value}!"
+            "Remember: {field} has a limit of {value}!",
         ],
         "eq": [
             "The {field} has to be exactly {value}.",
             "Set {field} to {value} - no more, no less.",
-            "{field} must match {value} exactly."
+            "{field} must match {value} exactly.",
         ],
         "lt": [
             "The {field} needs to stay below {value}.",
             "Keep {field} under {value}.",
-            "{field} must be less than {value}."
+            "{field} must be less than {value}.",
         ],
         "gt": [
             "The {field} needs to be more than {value}.",
             "Make {field} greater than {value}.",
-            "{field} must exceed {value}."
+            "{field} must exceed {value}.",
         ],
         "ne": [
             "The {field} can be anything except {value}.",
             "Avoid setting {field} to {value}.",
-            "{field} must differ from {value}."
+            "{field} must differ from {value}.",
         ],
         "ratio_le": [
             "The ratio of {field} to {denominator} should stay at or below {value}.",
             "When you divide {field} by {denominator}, keep it under {value}.",
-            "Think of it like a balance: {field}/{denominator} can't exceed {value}."
+            "Think of it like a balance: {field}/{denominator} can't exceed {value}.",
         ],
         "ratio_lt": [
             "The ratio of {field} to {denominator} must stay under {value}.",
             "Keep {field} divided by {denominator} below {value}.",
-            "{field}/{denominator} needs to be less than {value}."
+            "{field}/{denominator} needs to be less than {value}.",
         ],
         "ratio_ge": [
             "The ratio of {field} to {denominator} needs to be at least {value}.",
             "Make sure {field} divided by {denominator} is {value} or higher.",
-            "{field}/{denominator} should be at least {value}."
+            "{field}/{denominator} should be at least {value}.",
         ],
         "ratio_gt": [
             "The ratio of {field} to {denominator} must exceed {value}.",
             "{field} divided by {denominator} needs to be more than {value}.",
-            "Keep {field}/{denominator} above {value}."
+            "Keep {field}/{denominator} above {value}.",
         ],
     },
     "minimal": {
@@ -328,7 +353,7 @@ TEMPLATES: Dict[str, Dict[str, List[str]]] = {
         "ratio_lt": ["{field}/{denominator} < {value}"],
         "ratio_ge": ["{field}/{denominator} >= {value}"],
         "ratio_gt": ["{field}/{denominator} > {value}"],
-    }
+    },
 }
 
 
@@ -363,6 +388,7 @@ def reduce_text(text: str) -> List[TextConstraint]:
 # BUILT-IN REDUCTION RULES
 # ===========================================================================
 
+
 @register_reduction
 def reduce_ge(text: str) -> Optional[TextConstraint]:
     """Reduce 'greater than or equal to' patterns."""
@@ -381,7 +407,7 @@ def reduce_ge(text: str) -> Optional[TextConstraint]:
             return TextConstraint(
                 field=match.group(1).strip(),
                 op="ge",
-                value=match.group(2).strip().rstrip('.')
+                value=match.group(2).strip().rstrip("."),
             )
     return None
 
@@ -405,7 +431,7 @@ def reduce_le(text: str) -> Optional[TextConstraint]:
             return TextConstraint(
                 field=match.group(1).strip(),
                 op="le",
-                value=match.group(2).strip().rstrip('.')
+                value=match.group(2).strip().rstrip("."),
             )
     return None
 
@@ -430,7 +456,7 @@ def reduce_eq(text: str) -> Optional[TextConstraint]:
             return TextConstraint(
                 field=match.group(1).strip(),
                 op="eq",
-                value=match.group(2).strip().rstrip('.')
+                value=match.group(2).strip().rstrip("."),
             )
     return None
 
@@ -454,7 +480,7 @@ def reduce_lt(text: str) -> Optional[TextConstraint]:
             return TextConstraint(
                 field=match.group(1).strip(),
                 op="lt",
-                value=match.group(2).strip().rstrip('.')
+                value=match.group(2).strip().rstrip("."),
             )
     return None
 
@@ -478,7 +504,7 @@ def reduce_gt(text: str) -> Optional[TextConstraint]:
             return TextConstraint(
                 field=match.group(1).strip(),
                 op="gt",
-                value=match.group(2).strip().rstrip('.')
+                value=match.group(2).strip().rstrip("."),
             )
     return None
 
@@ -501,8 +527,8 @@ def reduce_ratio_le(text: str) -> Optional[TextConstraint]:
             return TextConstraint(
                 field=match.group(1).strip(),
                 op="ratio_le",
-                value=match.group(3).strip().rstrip('.'),
-                denominator=match.group(2).strip()
+                value=match.group(3).strip().rstrip("."),
+                denominator=match.group(2).strip(),
             )
     return None
 
@@ -524,8 +550,8 @@ def reduce_ratio_lt(text: str) -> Optional[TextConstraint]:
             return TextConstraint(
                 field=match.group(1).strip(),
                 op="ratio_lt",
-                value=match.group(3).strip().rstrip('.'),
-                denominator=match.group(2).strip()
+                value=match.group(3).strip().rstrip("."),
+                denominator=match.group(2).strip(),
             )
     return None
 
@@ -534,9 +560,11 @@ def reduce_ratio_lt(text: str) -> Optional[TextConstraint]:
 # TEXT PROJECTOR - The Core Engine
 # ===========================================================================
 
+
 @dataclass
 class ProjectionResult:
     """Result of text projection."""
+
     text: str
     constraint: TextConstraint
     fingerprint: str
@@ -551,7 +579,7 @@ class ProjectionResult:
             "fingerprint": self.fingerprint,
             "verified": self.verified,
             "style": self.style,
-            "timestamp": self.timestamp
+            "timestamp": self.timestamp,
         }
 
 
@@ -571,7 +599,9 @@ class NewtonTextProjector:
         self._projection_count = 0
         self._rejection_count = 0
 
-    def expand(self, constraints: List[TextConstraint]) -> List[Tuple[str, TextConstraint]]:
+    def expand(
+        self, constraints: List[TextConstraint]
+    ) -> List[Tuple[str, TextConstraint]]:
         """
         Expand constraints into (text, constraint) candidates.
         """
@@ -584,9 +614,7 @@ class NewtonTextProjector:
                 try:
                     if c.denominator:
                         text = t.format(
-                            field=c.field,
-                            value=c.value,
-                            denominator=c.denominator
+                            field=c.field, value=c.value, denominator=c.denominator
                         )
                     else:
                         text = t.format(field=c.field, value=c.value)
@@ -597,11 +625,7 @@ class NewtonTextProjector:
 
         return outputs
 
-    def verify_expansion(
-        self,
-        original: TextConstraint,
-        text: str
-    ) -> bool:
+    def verify_expansion(self, original: TextConstraint, text: str) -> bool:
         """
         Reduction check: expand . reduce = identity
 
@@ -617,9 +641,7 @@ class NewtonTextProjector:
         return False
 
     def generate(
-        self,
-        constraints: List[TextConstraint],
-        verify: bool = True
+        self, constraints: List[TextConstraint], verify: bool = True
     ) -> List[ProjectionResult]:
         """
         Main entrypoint - generate verified text from constraints.
@@ -645,20 +667,20 @@ class NewtonTextProjector:
             else:
                 verified = False
 
-            results.append(ProjectionResult(
-                text=text,
-                constraint=constraint,
-                fingerprint=text_fingerprint(text),
-                verified=verified,
-                style=self.style
-            ))
+            results.append(
+                ProjectionResult(
+                    text=text,
+                    constraint=constraint,
+                    fingerprint=text_fingerprint(text),
+                    verified=verified,
+                    style=self.style,
+                )
+            )
 
         return results
 
     def project_one(
-        self,
-        constraint: TextConstraint,
-        verify: bool = True
+        self, constraint: TextConstraint, verify: bool = True
     ) -> Optional[ProjectionResult]:
         """
         Project a single constraint to text.
@@ -674,9 +696,11 @@ class NewtonTextProjector:
             "projections": self._projection_count,
             "rejections": self._rejection_count,
             "acceptance_rate": (
-                (self._projection_count - self._rejection_count) / self._projection_count
-                if self._projection_count > 0 else 1.0
-            )
+                (self._projection_count - self._rejection_count)
+                / self._projection_count
+                if self._projection_count > 0
+                else 1.0
+            ),
         }
 
 
@@ -684,14 +708,14 @@ class NewtonTextProjector:
 # LEDGER INTEGRATION - Fingerprinting & Provenance
 # ===========================================================================
 
+
 def text_fingerprint(text: str) -> str:
     """Generate SHA-256 fingerprint for text (truncated to 16 chars)."""
     return hashlib.sha256(text.encode()).hexdigest()[:16].upper()
 
 
 def create_text_ledger_entry(
-    result: ProjectionResult,
-    prev_hash: str = "GENESIS"
+    result: ProjectionResult, prev_hash: str = "GENESIS"
 ) -> Dict[str, Any]:
     """
     Create a ledger entry for a text projection.
@@ -707,8 +731,8 @@ def create_text_ledger_entry(
         "metadata": {
             "constraint": result.constraint.canonical(),
             "style": result.style,
-            "fingerprint": result.fingerprint
-        }
+            "fingerprint": result.fingerprint,
+        },
     }
 
 
@@ -716,12 +740,13 @@ def create_text_ledger_entry(
 # CDL SYNTAX SUGAR - For Integration
 # ===========================================================================
 
+
 def project(
     field: str,
     op: str,
     value: Any,
     denominator: Optional[str] = None,
-    style: str = "formal"
+    style: str = "formal",
 ) -> Optional[str]:
     """
     One-liner text projection from constraint parameters.
@@ -734,10 +759,7 @@ def project(
         "The ratio of debt to equity must not exceed 3.0."
     """
     constraint = TextConstraint(
-        field=field,
-        op=op,
-        value=value,
-        denominator=denominator
+        field=field, op=op, value=value, denominator=denominator
     )
     projector = NewtonTextProjector(style=style)
     result = projector.project_one(constraint)
@@ -769,8 +791,7 @@ def project_cdl(constraint: Constraint, style: str = "formal") -> Optional[str]:
 
 
 def explain_constraints(
-    constraints: List[TextConstraint],
-    style: str = "educational"
+    constraints: List[TextConstraint], style: str = "educational"
 ) -> List[str]:
     """
     Generate educational explanations for a list of constraints.
@@ -793,9 +814,11 @@ def explain_constraints(
 # DOCUMENT GENERATION - Multi-Constraint Documents
 # ===========================================================================
 
+
 @dataclass
 class TextDocument:
     """A document composed of multiple projected constraints."""
+
     title: str
     sections: List[ProjectionResult]
     fingerprint: str = ""
@@ -820,14 +843,12 @@ class TextDocument:
             "title": self.title,
             "sections": [s.to_dict() for s in self.sections],
             "fingerprint": self.fingerprint,
-            "timestamp": self.timestamp
+            "timestamp": self.timestamp,
         }
 
 
 def generate_document(
-    title: str,
-    constraints: List[TextConstraint],
-    style: str = "formal"
+    title: str, constraints: List[TextConstraint], style: str = "formal"
 ) -> TextDocument:
     """
     Generate a complete document from constraints.
@@ -849,9 +870,9 @@ def generate_document(
 # JESTER INTEGRATION - Code Analysis -> Text
 # ===========================================================================
 
+
 def project_jester_constraints(
-    jester_output: List[Dict[str, Any]],
-    style: str = "technical"
+    jester_output: List[Dict[str, Any]], style: str = "technical"
 ) -> List[ProjectionResult]:
     """
     Convert JESTER constraint extraction output to text.
@@ -881,11 +902,13 @@ def project_jester_constraints(
         }
         op = op_map.get(kind, "eq")
 
-        constraints.append(TextConstraint(
-            field=j.get("field", j.get("variable", "unknown")),
-            op=op,
-            value=j.get("value", j.get("bound", "valid"))
-        ))
+        constraints.append(
+            TextConstraint(
+                field=j.get("field", j.get("variable", "unknown")),
+                op=op,
+                value=j.get("value", j.get("bound", "valid")),
+            )
+        )
 
     projector = NewtonTextProjector(style=style)
     return projector.generate(constraints, verify=True)

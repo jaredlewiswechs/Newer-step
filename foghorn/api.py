@@ -23,7 +23,6 @@ Routes:
 
 import time
 from typing import List, Optional, Dict, Any
-from dataclasses import asdict
 
 from fastapi import APIRouter, HTTPException, Query as QueryParam
 from pydantic import BaseModel, Field
@@ -34,7 +33,7 @@ from pydantic import BaseModel, Field
 # ═══════════════════════════════════════════════════════════════════════════════
 
 from foghorn import (
-    Card, Query, ResultSet, LinkCurve, ObjectType,
+    Card, Query, LinkCurve, ObjectType,
     get_object_store, add_object, delete_object,
     get_service_registry, execute_service,
     get_command_bus, undo, redo,

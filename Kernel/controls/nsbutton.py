@@ -1,11 +1,12 @@
 """NSButton — a standard push button control."""
+
 from __future__ import annotations
 from typing import Optional
 from enum import Enum
 
 from .nscontrol import NSControl
 from Kernel.view.nsview import NSRect
-from Kernel.runtime.event import NSEvent, NSEventType
+from Kernel.runtime.event import NSEvent
 
 
 class NSButtonType(Enum):
@@ -127,16 +128,20 @@ class NSButton(NSControl):
     def handle_mouse_down(self, event: NSEvent) -> bool:
         if not self._is_enabled:
             return False
-        if self._button_type in (NSButtonType.TOGGLE, NSButtonType.SWITCH,
-                                  NSButtonType.RADIO, NSButtonType.PUSH_ON_PUSH_OFF,
-                                  NSButtonType.ON_OFF):
+        if self._button_type in (
+            NSButtonType.TOGGLE,
+            NSButtonType.SWITCH,
+            NSButtonType.RADIO,
+            NSButtonType.PUSH_ON_PUSH_OFF,
+            NSButtonType.ON_OFF,
+        ):
             self.set_next_state()
         self.send_action()
         return True
 
     def handle_key_down(self, event: NSEvent) -> bool:
         if self._key_equivalent and event.user_info:
-            key = event.user_info.get('key', '')
+            key = event.user_info.get("key", "")
             if key == self._key_equivalent:
                 self.handle_mouse_down(event)
                 return True

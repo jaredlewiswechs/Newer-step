@@ -17,7 +17,7 @@ This is NOT a neural guesser - it's rule-based extraction using AST parsing.
 import re
 import json
 from typing import Optional
-from dataclasses import dataclass, field, asdict
+from dataclasses import dataclass, field
 from enum import Enum
 
 # Try to import tree-sitter for real parsing
@@ -391,7 +391,7 @@ class ControlFlowAnalyzer:
                 # Check if we're still at same or deeper indentation
                 if cls._is_dead_code(line, lines, i):
                     unreachable.append(UnreachableState(
-                        description=f"Code after unconditional exit",
+                        description="Code after unconditional exit",
                         line_number=line_num,
                         reason=f"Unreachable: follows return/raise at line {exit_line}",
                         category="dead_code"
@@ -409,14 +409,14 @@ class ControlFlowAnalyzer:
             if tautology is not None:
                 if tautology:
                     unreachable.append(UnreachableState(
-                        description=f"Condition is always true",
+                        description="Condition is always true",
                         line_number=line_num,
                         reason="Tautological condition - else branch unreachable",
                         category="impossible_condition"
                     ))
                 else:
                     unreachable.append(UnreachableState(
-                        description=f"Condition is always false",
+                        description="Condition is always false",
                         line_number=line_num,
                         reason="Contradictory condition - then branch unreachable",
                         category="impossible_condition"
@@ -428,7 +428,7 @@ class ControlFlowAnalyzer:
                 contradiction = cls._check_contradiction(guard, guard_stack)
                 if contradiction:
                     unreachable.append(UnreachableState(
-                        description=f"Guard contradicts earlier guard",
+                        description="Guard contradicts earlier guard",
                         line_number=line_num,
                         reason=f"Contradicts: {contradiction}",
                         category="contradictory_guards"
@@ -1015,7 +1015,7 @@ class TreeSitterExtractor:
             constraints.extend(cls._extract_early_returns(tree, code, language))
 
             return constraints
-        except Exception as e:
+        except Exception:
             # Fall back to regex if tree-sitter fails
             return []
 

@@ -6,7 +6,7 @@ Prevent unit confusion like the Mars Climate Orbiter disaster.
 Matter types ensure you can't accidentally mix incompatible units.
 """
 
-from newton import Money, Mass, Distance, Temperature, Celsius, Fahrenheit
+from newton import Celsius, Distance, Fahrenheit, Mass, Money
 
 
 def main():

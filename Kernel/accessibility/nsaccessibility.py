@@ -4,12 +4,14 @@ Provides a mirroring accessibility tree that can be built from
 the view hierarchy. Each NSAccessibilityElement exposes role,
 label, value, children, and supported actions.
 """
+
 from __future__ import annotations
 from typing import Optional, List, Any, Tuple
 
 
 class NSAccessibilityRole:
     """Standard accessibility roles."""
+
     APPLICATION = "AXApplication"
     WINDOW = "AXWindow"
     SHEET = "AXSheet"
@@ -46,6 +48,7 @@ class NSAccessibilityRole:
 
 class NSAccessibilityAction:
     """Standard accessibility actions."""
+
     PRESS = "AXPress"
     INCREMENT = "AXIncrement"
     DECREMENT = "AXDecrement"
@@ -201,22 +204,24 @@ class NSAccessibilityElement:
     def perform_action(self, action: str) -> bool:
         if action not in self._actions:
             return False
-        if self._source_view and hasattr(self._source_view, 'accessibility_perform_action'):
+        if self._source_view and hasattr(
+            self._source_view, "accessibility_perform_action"
+        ):
             return self._source_view.accessibility_perform_action(action)
         return False
 
     def to_dict(self) -> dict:
         """Serialize the element tree to a dictionary."""
         return {
-            'role': self._role,
-            'label': self._label,
-            'value': self._value,
-            'title': self._title,
-            'enabled': self._enabled,
-            'focused': self._focused,
-            'frame': self._frame,
-            'actions': self._actions,
-            'children': [c.to_dict() for c in self._children],
+            "role": self._role,
+            "label": self._label,
+            "value": self._value,
+            "title": self._title,
+            "enabled": self._enabled,
+            "focused": self._focused,
+            "frame": self._frame,
+            "actions": self._actions,
+            "children": [c.to_dict() for c in self._children],
         }
 
     def __repr__(self):
@@ -227,18 +232,18 @@ def _role_for_view(view) -> str:
     """Infer accessibility role from view class name."""
     cls_name = type(view).__name__
     role_map = {
-        'NSButton': NSAccessibilityRole.BUTTON,
-        'NSTextField': NSAccessibilityRole.TEXT_FIELD,
-        'NSTextView': NSAccessibilityRole.TEXT_AREA,
-        'NSSlider': NSAccessibilityRole.SLIDER,
-        'NSTableView': NSAccessibilityRole.TABLE,
-        'NSOutlineView': NSAccessibilityRole.OUTLINE,
-        'NSScrollView': NSAccessibilityRole.SCROLL_AREA,
-        'NSStackView': NSAccessibilityRole.GROUP,
-        'NSGridView': NSAccessibilityRole.GROUP,
-        'NSSplitView': NSAccessibilityRole.SPLITTER,
-        'NSSegmentedControl': NSAccessibilityRole.GROUP,
-        'NSCollectionView': NSAccessibilityRole.LIST,
+        "NSButton": NSAccessibilityRole.BUTTON,
+        "NSTextField": NSAccessibilityRole.TEXT_FIELD,
+        "NSTextView": NSAccessibilityRole.TEXT_AREA,
+        "NSSlider": NSAccessibilityRole.SLIDER,
+        "NSTableView": NSAccessibilityRole.TABLE,
+        "NSOutlineView": NSAccessibilityRole.OUTLINE,
+        "NSScrollView": NSAccessibilityRole.SCROLL_AREA,
+        "NSStackView": NSAccessibilityRole.GROUP,
+        "NSGridView": NSAccessibilityRole.GROUP,
+        "NSSplitView": NSAccessibilityRole.SPLITTER,
+        "NSSegmentedControl": NSAccessibilityRole.GROUP,
+        "NSCollectionView": NSAccessibilityRole.LIST,
     }
     return role_map.get(cls_name, NSAccessibilityRole.GROUP)
 
@@ -258,21 +263,21 @@ def accessibility_tree_from_view(view) -> NSAccessibilityElement:
     else:
         elem.role = _role_for_view(view)
         # try to extract useful info
-        if hasattr(view, 'title'):
-            elem.label = getattr(view, 'title', None)
+        if hasattr(view, "title"):
+            elem.label = getattr(view, "title", None)
             if callable(elem.label):
                 try:
                     elem.label = elem.label()
                 except TypeError:
                     elem.label = None
-        elif hasattr(view, 'string_value'):
-            elem.value = getattr(view, 'string_value', None)
-        if hasattr(view, '_frame'):
+        elif hasattr(view, "string_value"):
+            elem.value = getattr(view, "string_value", None)
+        if hasattr(view, "_frame"):
             f = view._frame
             elem.frame = (f.x, f.y, f.width, f.height)
 
     # recurse into subviews
-    if hasattr(view, '_subviews'):
+    if hasattr(view, "_subviews"):
         for sv in view._subviews:
             child = accessibility_tree_from_view(sv)
             elem.add_child(child)

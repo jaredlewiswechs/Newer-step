@@ -5,16 +5,15 @@ The main shell that holds everything together.
 ═══════════════════════════════════════════════════════════════
 """
 
-from typing import Optional, Dict, List, Callable, Type
+from typing import Optional, Dict, List, Type
 from PyQt6.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
     QLabel, QApplication
 )
-from PyQt6.QtCore import Qt, QTimer, QRect, pyqtSignal
-from PyQt6.QtGui import QColor, QPalette, QScreen
+from PyQt6.QtCore import Qt, QTimer, pyqtSignal
+from PyQt6.QtGui import QColor
 
 from core.nobject import NObject
-from core.graph import TheGraph
 from .window import NWindow
 from .dock import NDock
 from .menubar import NMenuBar

@@ -21,9 +21,7 @@ Run: python -m newton.stress_test
 import sys
 import os
 import time
-import random
-import math
-from typing import List, Tuple
+from typing import List
 from dataclasses import dataclass
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
@@ -31,12 +29,9 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # Import Newton SDK
-import newton
 from newton import (
     verify, check, calc, ti_calc,
-    gt, lt, eq, between, all_of, contains,
-    LogicEngine, ExecutionBounds, execute, run_program,
-    verified, bounded, constrained,
+    gt, between, LogicEngine, ExecutionBounds, verified, bounded, constrained,
 )
 
 

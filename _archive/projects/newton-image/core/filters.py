@@ -6,7 +6,7 @@ Every filter terminates. Every result is deterministic.
 ═══════════════════════════════════════════════════════════════
 """
 
-from typing import Optional, Dict, Any, Tuple, List
+from typing import Optional, Dict, Any, List
 from enum import Enum
 from PyQt6.QtCore import QObject, pyqtSignal
 from PyQt6.QtGui import QImage, QColor

@@ -6,13 +6,13 @@ Liquid Glass. Symbols without borders. Proper spacing.
 ═══════════════════════════════════════════════════════════════
 """
 
-from typing import Optional, Dict, Callable
+from typing import Optional, Dict
 from PyQt6.QtWidgets import (
-    QWidget, QHBoxLayout, QVBoxLayout, QToolButton, 
-    QButtonGroup, QFrame, QLabel, QSizePolicy
+    QWidget, QHBoxLayout, QToolButton, 
+    QButtonGroup, QFrame, QLabel
 )
-from PyQt6.QtCore import Qt, pyqtSignal, QSize
-from PyQt6.QtGui import QIcon, QColor, QPainter, QFont
+from PyQt6.QtCore import Qt, pyqtSignal
+from PyQt6.QtGui import QColor, QPainter, QFont
 
 import sys
 sys.path.insert(0, '..')

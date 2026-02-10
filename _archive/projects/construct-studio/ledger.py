@@ -184,7 +184,7 @@ class Ledger:
         try:
             from .core import Capacity, Floor
         except ImportError:
-            from core import Capacity, Floor
+            pass
 
         target_name = self._get_target_name(target)
         capacity = self._get_capacity(target)
@@ -220,7 +220,7 @@ class Ledger:
         try:
             from .core import Capacity, Floor
         except ImportError:
-            from core import Capacity, Floor
+            pass
 
         target_name = self._get_target_name(target)
         capacity = self._get_capacity(target)
@@ -390,14 +390,14 @@ class Ledger:
     def print_summary(self) -> None:
         """Print a summary of the ledger."""
         stats = self.stats
-        print(f"\n╔══════════════════════════════════════════╗")
+        print("\n╔══════════════════════════════════════════╗")
         print(f"║  LEDGER: {self.name:^30} ║")
-        print(f"╠══════════════════════════════════════════╣")
+        print("╠══════════════════════════════════════════╣")
         print(f"║  Total Entries:  {stats['total_entries']:>22} ║")
         print(f"║  Successes:      {stats['successes']:>22} ║")
         print(f"║  Deaths:         {stats['deaths']:>22} ║")
         print(f"║  Death Rate:     {stats['death_rate']:>21.1%} ║")
-        print(f"╚══════════════════════════════════════════╝\n")
+        print("╚══════════════════════════════════════════╝\n")
 
     def print_recent(self, n: int = 5) -> None:
         """Print recent entries."""

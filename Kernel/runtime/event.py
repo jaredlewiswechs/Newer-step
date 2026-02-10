@@ -22,10 +22,10 @@ class NSEvent:
 
     def to_dict(self):
         return {
-            'type': self.type.name,
-            'location': self.location,
-            'button': self.button,
-            'modifiers': self.modifiers,
-            'timestamp': self.timestamp,
-            'user_info': self.user_info,
+            "type": self.type.name,
+            "location": self.location,
+            "button": self.button,
+            "modifiers": self.modifiers,
+            "timestamp": self.timestamp,
+            "user_info": self.user_info,
         }

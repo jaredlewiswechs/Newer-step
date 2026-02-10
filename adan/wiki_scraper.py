@@ -23,7 +23,7 @@ import re
 import hashlib
 import time
 from dataclasses import dataclass, field
-from typing import List, Dict, Set, Optional, Tuple, Any
+from typing import List, Dict, Set, Optional, Tuple
 from pathlib import Path
 from collections import deque
 import sys
@@ -31,7 +31,7 @@ import sys
 # Add parent path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from adan.knowledge_store import get_knowledge_store, StoredFact
+from adan.knowledge_store import get_knowledge_store
 from adan.language_mechanics import get_language_mechanics
 
 # Try to import kinematic analyzer
@@ -464,7 +464,7 @@ class NewtonWikiScraper:
         queue = deque([(seed_title, 0)])
         
         print(f"\n{'='*60}")
-        print(f"NEWTON WIKI SCRAPER")
+        print("NEWTON WIKI SCRAPER")
         print(f"Seed: {seed_title}")
         print(f"Max Depth: {max_depth}, Max Pages: {max_pages}")
         print(f"{'='*60}\n")
@@ -498,7 +498,7 @@ class NewtonWikiScraper:
         """Print scraping statistics."""
         s = self.stats
         print(f"\n{'='*60}")
-        print(f"SCRAPING COMPLETE")
+        print("SCRAPING COMPLETE")
         print(f"{'='*60}")
         print(f"Pages Scraped:    {s.pages_scraped}")
         print(f"Facts Extracted:  {s.facts_extracted}")

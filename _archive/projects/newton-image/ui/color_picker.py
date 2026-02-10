@@ -11,12 +11,10 @@ from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, 
     QSlider, QLineEdit, QFrame, QGridLayout
 )
-from PyQt6.QtCore import Qt, pyqtSignal, QPointF, QRectF
+from PyQt6.QtCore import Qt, pyqtSignal, QPointF
 from PyQt6.QtGui import (
-    QColor, QPainter, QLinearGradient, QConicalGradient,
-    QRadialGradient, QMouseEvent, QPaintEvent, QImage
+    QColor, QPainter, QLinearGradient, QMouseEvent, QPaintEvent
 )
-import math
 
 
 class NColorSpectrum(QWidget):

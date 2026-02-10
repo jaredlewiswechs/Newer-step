@@ -14,12 +14,9 @@ Run with: python tests/test_voice_interface.py
 
 import sys
 import time
-import json
 import random
-import hashlib
 from dataclasses import dataclass
-from typing import List, Dict, Any, Tuple
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from typing import List, Dict, Any
 import traceback
 
 # Add parent to path for imports
@@ -111,8 +108,7 @@ def demo_tests() -> TestReport:
         IntentParser, IntentType, DomainCategory,
         PatternLibrary, CDLGenerator,
         ConversationMemory, MemoryType,
-        SessionManager, NewtonVoiceInterface,
-        parse_intent, find_pattern, ask_newton
+        SessionManager, NewtonVoiceInterface
     )
 
     # Demo 1: Intent Recognition
@@ -376,7 +372,7 @@ def simulation_tests() -> TestReport:
                 if actual is None:
                     return False, f"Missing entity '{key}' in '{text}'", None
 
-        return True, f"All entities extracted correctly", {"cases": len(cases)}
+        return True, "All entities extracted correctly", {"cases": len(cases)}
 
     report.add(run_test("Entity Extraction", test_entity_extraction))
 
@@ -643,7 +639,6 @@ def acid_tests() -> TestReport:
 
     # ACID 5: Memory persistence
     def test_memory_persistence():
-        from core.voice_interface import ConversationMemory, MemoryType
 
         memory = ConversationMemory("persistence_test")
 

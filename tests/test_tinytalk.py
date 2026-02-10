@@ -16,7 +16,7 @@ Run with: pytest tests/test_tinytalk.py -v
 import pytest
 import time
 import statistics
-from typing import Callable, Any, Dict, List
+from typing import Callable, Any, Dict
 from dataclasses import dataclass
 
 # Import tinyTalk components
@@ -25,10 +25,9 @@ sys.path.insert(0, str(__file__).rsplit('/', 2)[0])
 
 from tinytalk_py import (
     Blueprint, field, law, forge, when, finfr, fin,
-    LawViolation, FinClosure, LawResult,
-    KineticEngine, Presence, Delta, motion,
+    LawViolation, FinClosure, KineticEngine, Presence, motion,
     Money, Mass, Distance, Temperature, Pressure, FlowRate,
-    Celsius, Fahrenheit, PSI, Meters, Liters, Kilograms
+    Celsius, Fahrenheit
 )
 
 

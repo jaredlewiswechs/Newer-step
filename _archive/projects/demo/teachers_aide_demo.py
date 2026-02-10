@@ -17,20 +17,17 @@ Usage:
 import sys
 import os
 import time
-import json
 
 # Add parent directory to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from tinytalk_py.education import (
-    TEKSLibrary, TEKSStandard, AssessmentAnalyzer,
-    LessonPlanGenerator, NESPhase, get_teks_library
+    get_teks_library
 )
 from tinytalk_py.teachers_aide_db import (
-    TeachersAideDB, Student, Classroom, Assessment,
-    MasteryLevel, AccommodationType
+    TeachersAideDB
 )
-from tinytalk_py.core import Blueprint, field, law, forge, when, finfr
+from tinytalk_py.core import Blueprint, field, law, when, finfr
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -80,14 +77,14 @@ def demo_primitive():
     print("  Live verification:")
 
     constraint_1 = (5 + 5 == 10)
-    print(f"\n    Constraint: 5 + 5 == 10")
+    print("\n    Constraint: 5 + 5 == 10")
     if constraint_1:
         print_verified()
     else:
         print_forbidden()
 
     constraint_2 = (5 + 5 == 11)
-    print(f"\n    Constraint: 5 + 5 == 11")
+    print("\n    Constraint: 5 + 5 == 11")
     if constraint_2:
         print_verified()
     else:
@@ -360,7 +357,7 @@ def demo_teks_library():
     # Show a specific standard
     standard = teks.get("5.3A")
     if standard:
-        print(f"  TEKS 5.3A:")
+        print("  TEKS 5.3A:")
         print_result("Code", standard.code)
         print_result("Grade", standard.grade)
         print_result("Subject", standard.subject.value)
@@ -384,7 +381,7 @@ def demo_teks_library():
     # Show search
     print("\n  Semantic Search:")
     results = teks.search("fractions")
-    print(f"    Query: 'fractions'")
+    print("    Query: 'fractions'")
     print(f"    Results: {len(results)} standards")
     for r in results[:3]:
         print(f"      • {r.code}: {r.skill_statement[:60]}...")
@@ -409,20 +406,20 @@ def final_summary():
     print(f"  {Colors.GREEN}✓{Colors.END} TEKS as Objects: Standards are constraint graphs")
 
     print("\n  Performance:")
-    print(f"    • Median latency: 2.31ms")
-    print(f"    • P99 latency: <10ms")
-    print(f"    • Throughput: 605 req/sec (52M/day)")
+    print("    • Median latency: 2.31ms")
+    print("    • P99 latency: <10ms")
+    print("    • Throughput: 605 req/sec (52M/day)")
 
     print("\n  Security:")
-    print(f"    • AES-256-GCM encryption")
-    print(f"    • PBKDF2-HMAC-SHA256 key derivation (100k iterations)")
-    print(f"    • Identity-derived keys (key = ownership)")
+    print("    • AES-256-GCM encryption")
+    print("    • PBKDF2-HMAC-SHA256 key derivation (100k iterations)")
+    print("    • Identity-derived keys (key = ownership)")
 
     print("\n  Guarantees:")
-    print(f"    • Determinism: Same input → same output, always")
-    print(f"    • Termination: HaltChecker proves termination before execution")
-    print(f"    • Consistency: No constraint can both pass and fail")
-    print(f"    • Auditability: Hash-chained ledger, Merkle proofs")
+    print("    • Determinism: Same input → same output, always")
+    print("    • Termination: HaltChecker proves termination before execution")
+    print("    • Consistency: No constraint can both pass and fail")
+    print("    • Auditability: Hash-chained ledger, Merkle proofs")
 
     print("\n  ┌──────────────────────────────────────────────────────────────┐")
     print("  │                                                              │")

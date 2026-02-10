@@ -24,10 +24,8 @@ Newton Principles:
 import pytest
 import time
 from newton_tlm import (
-    NewtonTLM, Atom, Transaction, LedgerEntry,
-    Phase, PhaseMachine,
-    canonical_hash, one_equals_one, GoalRegistry,
-    Snapshot
+    NewtonTLM, Atom, Phase, PhaseMachine,
+    canonical_hash, one_equals_one, GoalRegistry
 )
 
 

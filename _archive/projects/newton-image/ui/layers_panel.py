@@ -10,10 +10,10 @@ from typing import Optional, List
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, 
     QPushButton, QScrollArea, QFrame, QSlider,
-    QComboBox, QLineEdit, QSizePolicy
+    QComboBox
 )
-from PyQt6.QtCore import Qt, pyqtSignal, QMimeData, QSize
-from PyQt6.QtGui import QColor, QPainter, QPixmap, QDrag, QFont
+from PyQt6.QtCore import Qt, pyqtSignal
+from PyQt6.QtGui import QColor, QPainter
 
 import sys
 sys.path.insert(0, '..')

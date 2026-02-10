@@ -11,7 +11,6 @@ No speculation. Only evidence.
 from dataclasses import dataclass
 from typing import List, Dict
 from enum import Enum
-import os
 import glob
 
 
@@ -315,7 +314,7 @@ def main():
         print(f"   Evidence sources: {len(domain.evidence)}")
 
         if domain.capabilities:
-            print(f"   Actual capabilities:")
+            print("   Actual capabilities:")
             for cap in domain.capabilities[:5]:  # Top 5
                 print(f"      • {cap}")
             if len(domain.capabilities) > 5:

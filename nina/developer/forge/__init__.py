@@ -13,7 +13,7 @@ from .knowledge import NinaKnowledge, NinaFact, get_nina_knowledge
 __all__ = [
     "Regime",
     "RegimeType",
-    "TrustLabel", 
+    "TrustLabel",
     "TrustLattice",
     "DistortionMetric",
     "GeometryMismatchError",

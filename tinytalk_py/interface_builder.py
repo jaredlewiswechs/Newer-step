@@ -13,13 +13,12 @@ ensures every UI component passes constraint verification before generation.
 """
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Tuple, Callable
+from typing import Any, Dict, List, Optional
 from enum import Enum
-from .core import Blueprint, field as tt_field, forge, law, when, finfr, LawViolation, ratio
+from .core import Blueprint, field as tt_field, forge, law, when, finfr, LawViolation
 import hashlib
 import time
 import json
-import re
 
 
 # ═══════════════════════════════════════════════════════════════════════════════

@@ -1,4 +1,5 @@
 """NSSegmentedControl — a horizontal control with multiple segments."""
+
 from __future__ import annotations
 from typing import Optional, List
 
@@ -10,7 +11,9 @@ from Kernel.runtime.event import NSEvent
 class NSSegmentedControl(NSControl):
     """A segmented button bar."""
 
-    def __init__(self, frame: Optional[NSRect] = None, labels: Optional[List[str]] = None):
+    def __init__(
+        self, frame: Optional[NSRect] = None, labels: Optional[List[str]] = None
+    ):
         super().__init__(frame)
         self._labels: List[str] = labels or []
         self._selected_segment: int = 0
@@ -93,9 +96,13 @@ class NSSegmentedControl(NSControl):
         for i, label in enumerate(self._labels):
             sx = i * seg_w
             fill = "#a0c0ff" if i == self._selected_segment else "#e0e0e0"
-            parts.append(f'<rect x="{sx}" y="0" width="{seg_w}" height="{h}" '
-                         f'fill="{fill}" stroke="#888" stroke-width="0.5" />')
-            parts.append(f'<text x="{sx + seg_w / 2}" y="{h / 2 + 4}" '
-                         f'text-anchor="middle" font-size="12" '
-                         f'font-family="sans-serif">{label}</text>')
+            parts.append(
+                f'<rect x="{sx}" y="0" width="{seg_w}" height="{h}" '
+                f'fill="{fill}" stroke="#888" stroke-width="0.5" />'
+            )
+            parts.append(
+                f'<text x="{sx + seg_w / 2}" y="{h / 2 + 4}" '
+                f'text-anchor="middle" font-size="12" '
+                f'font-family="sans-serif">{label}</text>'
+            )
         return "\n".join(parts)

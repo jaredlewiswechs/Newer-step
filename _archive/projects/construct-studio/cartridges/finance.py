@@ -16,9 +16,7 @@ There is no "approval workflow" - there is only physics.
 
 from __future__ import annotations
 from typing import Optional, Dict, Any, List
-from dataclasses import dataclass
 from datetime import datetime
-from enum import Enum
 
 try:
     from ..core import Matter, Floor, Construct, Force, attempt, ConstructError
@@ -26,7 +24,7 @@ except ImportError:
     import sys
     import os
     sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    from core import Matter, Floor, Construct, Force, attempt, ConstructError
+    from core import Matter, Floor, Construct, attempt
 
 
 # ============================================================================

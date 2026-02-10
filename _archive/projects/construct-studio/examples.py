@@ -15,7 +15,6 @@ import os
 _dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, _dir)
 
-from datetime import datetime
 
 # Import compatibility - works whether installed or run directly
 try:
@@ -98,7 +97,7 @@ def example_2_ontological_death():
     print("EXAMPLE 2: Ontological Death")
     print("="*60 + "\n")
 
-    from construct_studio import Matter, Floor, attempt, OntologicalDeath
+    from construct_studio import Matter, Floor, attempt
 
     class SmallBudget(Floor):
         limit = Matter(100, "USD")
@@ -121,7 +120,7 @@ def example_2_ontological_death():
             print("ONTOLOGICAL DEATH")
             print(f"  Overflow: {result.ratio.overflow} USD")
             print(f"  Available: {budget._capacities['limit'].remaining}")
-            print(f"  The illegal state cannot exist.")
+            print("  The illegal state cannot exist.")
 
 
 def example_3_corporate_card_simulation():

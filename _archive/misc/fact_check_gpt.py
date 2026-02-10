@@ -19,9 +19,9 @@ import os
 # Add paths for imports
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from tinytalk_py.core import Blueprint, field, law, forge, when, finfr, ratio, LawViolation
+from tinytalk_py.core import Blueprint, field, law, forge, when, finfr
 from dataclasses import dataclass
-from typing import List, Dict, Optional
+from typing import List, Dict
 from enum import Enum
 
 

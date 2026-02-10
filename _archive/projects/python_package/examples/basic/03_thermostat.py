@@ -6,7 +6,7 @@ A thermostat that cannot be set to dangerous temperatures.
 Demonstrates multiple laws working together.
 """
 
-from newton import Blueprint, field, law, forge, when, finfr, LawViolation
+from newton import Blueprint, LawViolation, field, finfr, forge, law, when
 
 
 class Thermostat(Blueprint):

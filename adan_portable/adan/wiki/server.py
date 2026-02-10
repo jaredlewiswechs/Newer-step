@@ -8,16 +8,15 @@ Import facts from Wikipedia, browse the KB like an encyclopedia.
 ═══════════════════════════════════════════════════════════════════════════════
 """
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse, FileResponse
+from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
-from typing import Optional, List, Dict, Any
+from typing import List, Dict
 from pathlib import Path
 import httpx
 import re
 import sys
-import os
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # USE CANONICAL NEWTON CONFIGURATION
@@ -35,7 +34,6 @@ except ImportError:
     pass  # Fallback handled by individual modules
 
 from adan.knowledge_base import (
-    get_knowledge_base, 
     COUNTRY_CAPITALS, 
     COUNTRY_POPULATIONS,
     COUNTRY_LANGUAGES,
@@ -49,10 +47,9 @@ from adan.knowledge_base import (
     SI_UNITS,
     PHYSICS_LAWS,
     CHEMICAL_FORMULAS,
-    HISTORICAL_DATES,
-    VerifiedFact
+    HISTORICAL_DATES
 )
-from adan.knowledge_store import get_knowledge_store, StoredFact
+from adan.knowledge_store import get_knowledge_store
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # APP
@@ -343,7 +340,6 @@ async def root():
     
     # Build facts and embed as JSON in the page
     import json
-    import html as html_module
     
     facts = build_facts_list()
     categories = get_categories(facts)

@@ -6,10 +6,7 @@ A trading desk with position limits and risk controls.
 Demonstrates real-world financial constraints.
 """
 
-from newton import (
-    Blueprint, field, law, forge, when, finfr,
-    Money, ratio, LawViolation
-)
+from newton import Blueprint, LawViolation, field, finfr, forge, law, ratio, when
 
 
 class TradingDesk(Blueprint):

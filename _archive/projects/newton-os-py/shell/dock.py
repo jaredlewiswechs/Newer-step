@@ -6,10 +6,10 @@ Each dock item is an NObject.
 ═══════════════════════════════════════════════════════════════
 """
 
-from typing import Optional, List, Callable, Dict, Any
-from PyQt6.QtWidgets import QWidget, QHBoxLayout, QLabel, QFrame
-from PyQt6.QtCore import Qt, QRectF, QPropertyAnimation, QEasingCurve, pyqtSignal, QPoint, QSize
-from PyQt6.QtGui import QPainter, QColor, QPainterPath, QMouseEvent, QPaintEvent, QFont, QPixmap, QIcon
+from typing import Optional, List, Callable, Any
+from PyQt6.QtWidgets import QWidget, QHBoxLayout
+from PyQt6.QtCore import Qt, QRectF, pyqtSignal
+from PyQt6.QtGui import QPainter, QColor, QMouseEvent, QPaintEvent, QFont
 
 from core.nobject import NObject
 from core.shapes import dock_shape, icon_shape

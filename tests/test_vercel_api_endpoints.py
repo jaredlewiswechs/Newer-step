@@ -527,7 +527,7 @@ class TestEndpointCoverage:
         r = client.get("/api/endpoints")
         data = r.json()
         total = data["total_endpoints"]
-        print(f"\n=== ENDPOINT DISCOVERY REPORT ===")
+        print("\n=== ENDPOINT DISCOVERY REPORT ===")
         print(f"Total endpoints discovered: {total}")
         for cat_name, cat_data in data["endpoints"].items():
             print(f"  {cat_name}: {len(cat_data['endpoints'])} endpoints")

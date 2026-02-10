@@ -6,9 +6,9 @@ QObject provides signals/slots for true reactivity.
 ═══════════════════════════════════════════════════════════════
 """
 
-from typing import Any, Dict, List, Optional, Callable
+from typing import Any, Dict, List, Optional
 from dataclasses import dataclass, field
-from PyQt6.QtCore import QObject, pyqtSignal, pyqtSlot
+from PyQt6.QtCore import QObject, pyqtSignal
 import uuid
 import time
 

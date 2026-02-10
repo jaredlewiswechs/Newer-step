@@ -9,8 +9,6 @@ Automated Testing for the Spatial Notebook
 
 import httpx
 import asyncio
-import json
-from datetime import datetime
 
 BASE_URL = "http://localhost:8080"
 
@@ -38,7 +36,7 @@ class TestResult:
         print(f"\n{'═' * 60}")
         print(f"  RESULTS: {self.passed}/{total} passed")
         if self.errors:
-            print(f"  ERRORS:")
+            print("  ERRORS:")
             for e in self.errors:
                 print(f"    - {e}")
         print(f"{'═' * 60}\n")
@@ -386,9 +384,9 @@ async def test_ui_bot():
                 if resp.status_code == 200:
                     results.add_pass(f"🤖 Bot adds card: '{card['claim'][:30]}...'")
                 else:
-                    results.add_fail(f"Add card", f"Status {resp.status_code}")
+                    results.add_fail("Add card", f"Status {resp.status_code}")
             except Exception as e:
-                results.add_fail(f"Add card", str(e))
+                results.add_fail("Add card", str(e))
 
         # Step 5: User adds a VoicePath cartridge
         try:
@@ -467,7 +465,7 @@ async def main():
             await client.get(f"{BASE_URL}/api/info")
     except:
         print("  ✗ parcStation server not running!")
-        print(f"    Start it with: python server.py")
+        print("    Start it with: python server.py")
         print(f"    Expected at: {BASE_URL}")
         return
     
@@ -496,7 +494,7 @@ async def main():
     
     print(f"\n  API Tests:  {api_results.passed} passed, {api_results.failed} failed")
     print(f"  UI Bot:     {ui_results.passed} passed, {ui_results.failed} failed")
-    print(f"  ─────────────────────────────")
+    print("  ─────────────────────────────")
     print(f"  TOTAL:      {total_passed} passed, {total_failed} failed")
     
     if total_failed == 0:

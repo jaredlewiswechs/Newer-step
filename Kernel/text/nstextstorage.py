@@ -1,6 +1,7 @@
 """NSTextStorage — the mutable attributed string backing a text view."""
+
 from __future__ import annotations
-from typing import Dict, Any, Optional, List, Tuple
+from typing import Dict, Any, List, Tuple
 
 
 class NSTextStorage:
@@ -64,7 +65,7 @@ class NSTextStorage:
 
     def _notify_layout_managers(self):
         for lm in self._layout_managers:
-            if hasattr(lm, 'text_storage_did_change'):
+            if hasattr(lm, "text_storage_did_change"):
                 lm.text_storage_did_change(self)
 
     # ── text mutations ────────────────────────────────────────────
@@ -72,7 +73,7 @@ class NSTextStorage:
     def replace_characters_in_range(self, start: int, length: int, string: str):
         self.begin_editing()
         old_len = len(self._string)
-        self._string = self._string[:start] + string + self._string[start + length:]
+        self._string = self._string[:start] + string + self._string[start + length :]
         self._edited(old_len, len(self._string))
         self.end_editing()
 
@@ -88,14 +89,17 @@ class NSTextStorage:
     # ── attributes ────────────────────────────────────────────────
 
     def add_attribute(self, name: str, value: Any, range_start: int, range_length: int):
-        self._attributes.append((range_start, range_start + range_length, {name: value}))
+        self._attributes.append(
+            (range_start, range_start + range_length, {name: value})
+        )
 
-    def set_attributes(self, attrs: Dict[str, Any], range_start: int, range_length: int):
+    def set_attributes(
+        self, attrs: Dict[str, Any], range_start: int, range_length: int
+    ):
         # remove existing overlapping, then add new
         end = range_start + range_length
         self._attributes = [
-            (s, e, a) for (s, e, a) in self._attributes
-            if e <= range_start or s >= end
+            (s, e, a) for (s, e, a) in self._attributes if e <= range_start or s >= end
         ]
         self._attributes.append((range_start, end, dict(attrs)))
 
@@ -112,7 +116,7 @@ class NSTextStorage:
     # ── substring ─────────────────────────────────────────────────
 
     def substring_with_range(self, start: int, length: int) -> str:
-        return self._string[start:start + length]
+        return self._string[start : start + length]
 
     @property
     def words(self) -> List[str]:
@@ -120,7 +124,7 @@ class NSTextStorage:
 
     @property
     def lines(self) -> List[str]:
-        return self._string.split('\n')
+        return self._string.split("\n")
 
     def __repr__(self):
         preview = self._string[:40] + "..." if len(self._string) > 40 else self._string

@@ -17,8 +17,6 @@ Open: http://localhost:5000
 import sys
 import os
 import io
-import json
-import traceback
 from contextlib import redirect_stdout, redirect_stderr
 
 # Add parent to path for imports

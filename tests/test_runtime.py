@@ -1,4 +1,3 @@
-import time
 from Kernel.runtime.app import NSApplication
 from Kernel.runtime.responder import NSResponder
 from Kernel.runtime.event import NSEvent, NSEventType

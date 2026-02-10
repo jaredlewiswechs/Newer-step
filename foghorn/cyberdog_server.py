@@ -14,37 +14,25 @@ Then visit: http://localhost:8080
 """
 
 import sys
-import json
-import time
 from pathlib import Path
 from typing import Optional, List, Dict, Any
-from dataclasses import asdict
 
 # Add parent to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 import uvicorn
 
 # Import CyberDog/OpenDoc
 from foghorn.opendoc import (
-    Part, PartType, PartState, CompoundDocument,
-    create_document, create_part, embed_part,
-    get_document_store, BentoSerializer,
+    Part, PartType, CompoundDocument,
+    create_document, create_part, get_document_store,
 )
 from foghorn.cyberdog import (
-    CyberDogSuite, CyberDogComponent,
-    WebBrowserPart, WebResource,
-    EmailClientPart, EmailMessage,
-    NewsReaderPart, NewsFeed, NewsItem,
-    FTPClientPart,
-    AddressBookPart, Contact,
-    BookmarksPart, Bookmark,
-    create_cyberdog, create_web_browser, create_email_client,
-    create_news_reader, create_ftp_client, create_address_book, create_bookmarks,
+    create_cyberdog,
 )
 
 

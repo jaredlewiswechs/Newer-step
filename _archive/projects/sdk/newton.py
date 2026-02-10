@@ -42,15 +42,10 @@ Installation:
 """
 
 import requests
-import json
 import re
-import hashlib
 import time
-from typing import Any, Dict, List, Optional, Union, Callable
+from typing import Any, Dict, List, Optional, Callable
 from dataclasses import dataclass, field
-from functools import wraps
-import threading
-from datetime import datetime
 
 __version__ = "3.0.0"
 __author__ = "Newton Verified Computation Engine"
@@ -1199,7 +1194,7 @@ def main():
 
         caps = n.capabilities()
         print(f"\nNamespaces: {', '.join(caps['namespaces'].keys())}")
-        print(f"\nType 'n.help()' for usage information")
+        print("\nType 'n.help()' for usage information")
     else:
         print(f"✗ Could not connect to {n.base_url}")
         print("  Newton might be cold-starting (free tier)")

@@ -25,7 +25,7 @@ The mesh IS the verification.
 """
 
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Set, Tuple, Any
+from typing import Dict, List, Optional, Any
 from enum import Enum
 from datetime import datetime
 import re
@@ -675,7 +675,7 @@ if __name__ == "__main__":
     
     # Stats
     stats = mesh.get_stats()
-    print(f"\n📊 MESH STATS")
+    print("\n📊 MESH STATS")
     print(f"   Facts: {stats['total_facts']}")
     print(f"   Categories: {stats['categories']}")
     print(f"   Sources: {stats['sources']}")

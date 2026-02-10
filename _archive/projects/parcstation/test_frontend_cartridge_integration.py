@@ -18,7 +18,6 @@ import requests
 import sys
 import os
 import re
-import json
 
 G = "\033[92m"
 R = "\033[91m"

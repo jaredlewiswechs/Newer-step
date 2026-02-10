@@ -10,7 +10,7 @@ Run `ollama pull llama3` to download a model first.
 """
 
 import json
-from typing import List, Dict, Optional, Generator
+from typing import List, Dict, Generator
 from dataclasses import dataclass
 
 try:

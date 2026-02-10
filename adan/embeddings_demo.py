@@ -108,7 +108,7 @@ def main():
         elapsed = (time.time() - start) * 1000
         
         print(f"   ⏱️  Search time: {elapsed:.1f}ms")
-        print(f"   📊 Top matches:")
+        print("   📊 Top matches:")
         for i, (fact, sim) in enumerate(results[:3], 1):
             marker = "✓" if sim > 0.7 else "○" if sim > 0.5 else "·"
             print(f"      {marker} [{sim:.3f}] {fact[:60]}...")

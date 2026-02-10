@@ -15,8 +15,19 @@ Subpackages:
   menu         – Menus and toolbars
   demo         – FastAPI demo server
 """
+
 __all__ = [
-    "gui", "runtime", "view", "window", "layout", "gesture",
-    "controls", "text", "data", "pasteboard", "accessibility",
-    "menu", "demo",
+    "gui",
+    "runtime",
+    "view",
+    "window",
+    "layout",
+    "gesture",
+    "controls",
+    "text",
+    "data",
+    "pasteboard",
+    "accessibility",
+    "menu",
+    "demo",
 ]

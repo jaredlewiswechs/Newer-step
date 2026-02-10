@@ -25,7 +25,7 @@ except ImportError:
     import sys
     import os
     sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    from core import Matter, Floor, Construct, Force, attempt, ConstructError
+    from core import Matter, Floor, Construct, attempt, ConstructError
 
 
 # ============================================================================

@@ -1,4 +1,5 @@
-import requests, json
+import requests
+import json
 url='http://127.0.0.1:8088/logic/evaluate'
 headers={'x-api-key':'demo-key'}
 payload={"expr":{"type":"add","args":[{"type":"literal","args":[1]},{"type":"literal","args":[2]}]}}

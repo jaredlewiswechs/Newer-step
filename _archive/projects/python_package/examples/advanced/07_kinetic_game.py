@@ -54,7 +54,7 @@ def main():
     )
 
     print(f"Game world: {WORLD_WIDTH}x{WORLD_HEIGHT}")
-    print(f"Boundaries: LeftWall, RightWall, TopWall, BottomWall, MaxSpeed")
+    print("Boundaries: LeftWall, RightWall, TopWall, BottomWall, MaxSpeed")
     print()
 
     # Initial player position
@@ -110,7 +110,7 @@ def main():
     end = Presence({'x': 200, 'y': 200})
 
     frames = engine.interpolate(start, end, steps=5)
-    print(f"Moving from (100,100) to (200,200) in 5 steps:")
+    print("Moving from (100,100) to (200,200) in 5 steps:")
     for i, frame in enumerate(frames):
         print(f"  Frame {i}: ({frame.state['x']:.1f}, {frame.state['y']:.1f})")
 

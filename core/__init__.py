@@ -7,8 +7,12 @@ and other consumers. Each submodule can also be imported directly.
 
 # ─── CDL (Constraint Definition Language) ─────────────────────────────────────
 from .cdl import (
-    CDLEvaluator, CDLParser,
-    verify, verify_and, verify_or, newton,
+    CDLEvaluator,
+    CDLParser,
+    verify,
+    verify_and,
+    verify_or,
+    newton,
 )
 
 # Convenience alias used by some workspace scripts
@@ -48,7 +52,13 @@ from .logic import LogicEngine, ExecutionBounds, calculate
 
 # ─── Glass Box Components ─────────────────────────────────────────────────────
 from .vault_client import get_vault_client
-from .policy_engine import PolicyEngine, Policy, PolicyType, PolicyAction, get_policy_engine
+from .policy_engine import (
+    PolicyEngine,
+    Policy,
+    PolicyType,
+    PolicyAction,
+    get_policy_engine,
+)
 from .negotiator import Negotiator, ApprovalStatus, RequestPriority, get_negotiator
 from .merkle_anchor import MerkleAnchorScheduler
 
@@ -70,30 +80,62 @@ from .gumroad import GumroadConfig, get_gumroad_service
 
 __all__ = [
     # CDL
-    "CDL", "CDLEvaluator", "CDLParser",
-    "verify", "verify_and", "verify_or", "newton",
+    "CDL",
+    "CDLEvaluator",
+    "CDLParser",
+    "verify",
+    "verify_and",
+    "verify_or",
+    "newton",
     # Forge
-    "Forge", "ForgeConfig", "get_forge", "VerificationEngine",
+    "Forge",
+    "ForgeConfig",
+    "get_forge",
+    "VerificationEngine",
     # Vault
-    "Vault", "VaultConfig", "get_vault", "EncryptedStorage",
+    "Vault",
+    "VaultConfig",
+    "get_vault",
+    "EncryptedStorage",
     # Ledger
-    "Ledger", "LedgerConfig", "get_ledger", "ImmutableLedger",
+    "Ledger",
+    "LedgerConfig",
+    "get_ledger",
+    "ImmutableLedger",
     # Bridge
-    "LocalBridge", "NodeIdentity", "DistributedProtocol",
+    "LocalBridge",
+    "NodeIdentity",
+    "DistributedProtocol",
     # Robust
-    "RobustVerifier", "RobustConfig", "mad", "modified_zscore", "AdversarialStatistics",
+    "RobustVerifier",
+    "RobustConfig",
+    "mad",
+    "modified_zscore",
+    "AdversarialStatistics",
     # Grounding
     "GroundingEngine",
     # Logic
-    "LogicEngine", "ExecutionBounds", "calculate",
+    "LogicEngine",
+    "ExecutionBounds",
+    "calculate",
     # Glass Box
-    "get_vault_client", "PolicyEngine", "Policy", "PolicyType", "PolicyAction", "get_policy_engine",
-    "Negotiator", "ApprovalStatus", "RequestPriority", "get_negotiator",
+    "get_vault_client",
+    "PolicyEngine",
+    "Policy",
+    "PolicyType",
+    "PolicyAction",
+    "get_policy_engine",
+    "Negotiator",
+    "ApprovalStatus",
+    "RequestPriority",
+    "get_negotiator",
     "MerkleAnchorScheduler",
     # Cartridges
-    "CartridgeType", "get_cartridge_manager",
+    "CartridgeType",
+    "get_cartridge_manager",
     # Gumroad
-    "GumroadConfig", "get_gumroad_service",
+    "GumroadConfig",
+    "get_gumroad_service",
 ]
 
 __version__ = "1.0.0"

@@ -9,15 +9,12 @@ import argparse
 import json
 import os
 import readline
-import sys
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import List, Optional
 
 from .schema import (
     AdaConfig,
     AdaMode,
-    CodeLanguage,
-    ResponseFormat,
 )
 
 

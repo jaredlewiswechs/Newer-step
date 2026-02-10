@@ -20,7 +20,7 @@ Usage:
 ═══════════════════════════════════════════════════════════════════════════════
 """
 
-from typing import Any, Dict, List, Optional, Union, Callable
+from typing import Any, Dict, List, Callable
 from dataclasses import dataclass
 import re
 from datetime import datetime

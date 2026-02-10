@@ -19,8 +19,6 @@ Test Categories:
 """
 
 import pytest
-import json
-from typing import Dict, Any
 
 from newton.llm import (
     # Schema
@@ -28,10 +26,8 @@ from newton.llm import (
     Claim,
     ClaimBatch,
     ValidationResult,
-    BatchValidationResult,
     LLM_SYSTEM_PROMPT,
     # Validators
-    DomainValidator,
     PhysicsValidator,
     MathValidator,
     LogicValidator,

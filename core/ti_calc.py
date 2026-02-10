@@ -5,10 +5,13 @@ the live constraint checker. This is a compact, deterministic implementation
 suitable for integration and unit testing; it can be replaced by a fuller
 TI-Calc backend later.
 """
+
 from typing import Optional
 
 
-def bounded_normalized_distance(value: Optional[int], lo: Optional[int], hi: Optional[int]) -> float:
+def bounded_normalized_distance(
+    value: Optional[int], lo: Optional[int], hi: Optional[int]
+) -> float:
     """Return a normalized score in [0,1] representing how well `value` fits
     within [lo, hi]. 1.0 means fully inside; 0.0 means maximally outside.
 

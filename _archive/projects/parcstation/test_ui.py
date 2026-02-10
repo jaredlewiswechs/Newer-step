@@ -22,7 +22,6 @@ Tests how users actually interact with parcStation.
 ═══════════════════════════════════════════════════════════════════════════════
 """
 
-import re
 import sys
 from pathlib import Path
 

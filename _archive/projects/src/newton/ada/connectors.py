@@ -10,13 +10,11 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field as dataclass_field
 from datetime import datetime
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, Type
+from typing import Any, Dict, List, Optional, Type
 import json
 import os
-import re
 
 from .schema import (
-    Connector,
     ConnectorType,
 )
 

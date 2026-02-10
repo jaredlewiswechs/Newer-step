@@ -61,9 +61,9 @@ from typing import List, Dict, Any, Optional, Tuple
 from .polytope import ConstraintPolytope, FeasibilityRegion, Boundary
 from .simplex import DecisionSimplex, Decision, RiskLevel, SimplexPoint
 from .lattice import GovernanceLattice, SafetyLevel
-from .manifold import ExpandReduceManifold, ConstraintPoint, TextPoint, ProjectionStatus
-from .graph import ComputationGraph, RequestType, PathResult
-from .hypergraph import ModuleHypergraph, NewtonModule, Channel
+from .manifold import ExpandReduceManifold, TextPoint, ProjectionStatus
+from .graph import ComputationGraph, RequestType
+from .hypergraph import ModuleHypergraph
 
 
 class TopologyRegion(Enum):

@@ -24,23 +24,15 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from core.qap import (
     # Field arithmetic
-    FieldElement, F, BN254_PRIME, TEST_PRIME,
+    F, BN254_PRIME, TEST_PRIME,
     # Lexer
-    Lexer, Token, TokenType,
+    Lexer, TokenType,
     # Parser
-    Parser, Program, Rule, BinaryOp, Comparison, Identifier, Literal, InExpr,
+    Parser, Program, BinaryOp, Comparison, Identifier, Literal, InExpr,
     # Symbol table
-    SymbolTable, EnumTable, SetTable,
-    # IR
-    IRBuilder, IRConst, IRSub, IRMul, IRIsZero, IRNot, IRMembership, IRAssert,
-    # R1CS
-    R1CSBuilder, R1CSConstraint,
-    # QAP
-    QAPBuilder, QAPPolynomial,
+    SymbolTable, EnumTable, IRMembership, QAPPolynomial,
     # Compiler
-    QAPCompiler, compile_to_qap, CompilationResult,
-    # Formatting
-    format_compilation_output
+    QAPCompiler, compile_to_qap, format_compilation_output
 )
 
 

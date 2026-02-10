@@ -3,14 +3,14 @@
 This is a compact FastAPI app intended for local demo and integration with the
 existing `adanpedia`/`adan_portable` and `newton` core components.
 """
-from typing import Optional, List, Dict, Any
+from typing import Optional, Dict, Any
 
 # Monkey patch to fix Pydantic v1.10.x compatibility with FastAPI
 import pydantic
 if hasattr(pydantic, 'VERSION') and pydantic.VERSION.startswith('1.'):
     # Fix for Contact model in FastAPI openapi
     try:
-        from pydantic import BaseModel, Field
+        from pydantic import BaseModel
         class Contact(BaseModel):
             name: Optional[str] = None
             url: Optional[str] = None
@@ -24,7 +24,7 @@ if hasattr(pydantic, 'VERSION') and pydantic.VERSION.startswith('1.'):
     except Exception:
         pass
 
-from fastapi import FastAPI, HTTPException, Query, Depends, Header, Request
+from fastapi import FastAPI, HTTPException, Query, Depends, Header
 from pydantic import BaseModel
 
 from tinytalk_py.education import get_teks_library

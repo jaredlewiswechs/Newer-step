@@ -32,9 +32,6 @@ Sources:
 import pytest
 from core.chatbot_compiler import (
     compile_request,
-    classify_only,
-    get_chatbot_compiler,
-    get_chatbot_governor,
     RequestType,
     RiskLevel,
     CompilerDecision,

@@ -22,10 +22,10 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from cad.core import (
-    Building, Level, Space, Zone, SpaceType, Rect, space, level, building
+    Building, Level, Space, SpaceType, Rect
 )
 from cad.renderer import (
-    CADRenderer, RenderConfig, RenderStyle, export_png, export_all_levels
+    RenderConfig, RenderStyle, export_all_levels
 )
 
 

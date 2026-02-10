@@ -36,8 +36,7 @@ The Fundamental Law:
 from __future__ import annotations
 from dataclasses import dataclass, field
 from enum import Enum, auto
-from typing import List, Dict, Any, Optional, Tuple, Set, FrozenSet
-import math
+from typing import List, Dict, Any, Optional, Tuple
 
 
 class FeasibilityRegion(Enum):

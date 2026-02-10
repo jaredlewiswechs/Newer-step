@@ -7,11 +7,9 @@ This is BETTER than ChatGPT because every claim is verified
 against multiple sources before being included in reports.
 """
 
-import hashlib
 import time
 from dataclasses import dataclass, field as dataclass_field
-from datetime import datetime
-from typing import Any, Callable, Dict, List, Optional, Set
+from typing import Any, Dict, List, Optional
 from urllib.parse import urlparse
 import re
 

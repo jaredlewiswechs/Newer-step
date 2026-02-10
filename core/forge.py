@@ -32,42 +32,42 @@ See: docs/NEWTON_CLP_SYSTEM_DEFINITION.md for full historical context.
 """
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Callable
+from typing import Any, Dict, List, Optional
 from enum import Enum
 import time
 import hashlib
 import threading
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import ThreadPoolExecutor
 import re
 
-from .cdl import (
-    Constraint, AtomicConstraint, CompositeConstraint, ConditionalConstraint,
-    CDLEvaluator, CDLParser, EvaluationResult, Domain, Operator
-)
-
+from .cdl import Constraint, CDLEvaluator, CDLParser
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # FORGE CONFIGURATION
 # ═══════════════════════════════════════════════════════════════════════════════
 
+
 @dataclass
 class ForgeConfig:
     """Configuration for the Forge."""
-    max_workers: int = 8                    # Parallel evaluation threads
-    timeout_ms: int = 1000                  # Max time per evaluation
-    enable_metrics: bool = True             # Track performance metrics
-    enable_caching: bool = True             # Cache repeated evaluations
-    cache_ttl_seconds: int = 300            # Cache TTL
-    strict_mode: bool = True                # Fail on any error
+
+    max_workers: int = 8  # Parallel evaluation threads
+    timeout_ms: int = 1000  # Max time per evaluation
+    enable_metrics: bool = True  # Track performance metrics
+    enable_caching: bool = True  # Cache repeated evaluations
+    cache_ttl_seconds: int = 300  # Cache TTL
+    strict_mode: bool = True  # Fail on any error
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # FORGE METRICS
 # ═══════════════════════════════════════════════════════════════════════════════
 
+
 @dataclass
 class ForgeMetrics:
     """Performance metrics for the Forge."""
+
     total_evaluations: int = 0
     passed_evaluations: int = 0
     failed_evaluations: int = 0
@@ -101,7 +101,7 @@ class ForgeMetrics:
             "avg_time_us": round(self.avg_time_us, 2),
             "min_time_us": self.min_time_us,
             "max_time_us": self.max_time_us,
-            "pass_rate": round(self.pass_rate * 100, 2)
+            "pass_rate": round(self.pass_rate * 100, 2),
         }
 
 
@@ -109,9 +109,11 @@ class ForgeMetrics:
 # VERIFICATION RESULT - Extended with timing
 # ═══════════════════════════════════════════════════════════════════════════════
 
+
 @dataclass
 class VerificationResult:
     """Complete result of Forge verification."""
+
     passed: bool
     constraint_id: str
     message: Optional[str] = None
@@ -133,7 +135,7 @@ class VerificationResult:
             "timestamp": self.timestamp,
             "elapsed_us": self.elapsed_us,
             "fingerprint": self.fingerprint,
-            "from_cache": self.from_cache
+            "from_cache": self.from_cache,
         }
 
 
@@ -149,7 +151,7 @@ SAFETY_PATTERNS = {
             r"(how to )?(kill|murder|harm|hurt|injure|assassinate)",
             r"(how to )?(suicide|self.harm)",
             r"\b(i want to|i need to|help me) (kill|murder|harm|hurt)",
-        ]
+        ],
     },
     "medical": {
         "name": "Medical Bounds",
@@ -157,7 +159,7 @@ SAFETY_PATTERNS = {
             r"what (medication|drug|dosage|prescription) should (i|you) take",
             r"diagnose (my|this|the)",
             r"prescribe (me|a)",
-        ]
+        ],
     },
     "legal": {
         "name": "Legal Bounds",
@@ -165,21 +167,22 @@ SAFETY_PATTERNS = {
             r"(how to )?(evade|avoid|cheat).*(tax|irs)",
             r"(how to )?(launder|hide|offshore) money",
             r"(how to )?(forge|fake|counterfeit)",
-        ]
+        ],
     },
     "security": {
         "name": "Security",
         "patterns": [
             r"(how to )?(hack|crack|break into|exploit|bypass)",
             r"\b(steal password|phishing|malware|ransomware)\b",
-        ]
-    }
+        ],
+    },
 }
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # THE FORGE
 # ═══════════════════════════════════════════════════════════════════════════════
+
 
 class Forge:
     """
@@ -200,7 +203,7 @@ class Forge:
         self._cache: Dict[str, tuple] = {}  # {cache_key: (result, timestamp)}
         self._cache_lock = threading.Lock()
         self._executor = ThreadPoolExecutor(max_workers=self.config.max_workers)
-        
+
         # Glass Box components (lazy initialization)
         self._vault_client = None
         self._policy_engine = None
@@ -212,10 +215,7 @@ class Forge:
     # ─────────────────────────────────────────────────────────────────────────
 
     def verify(
-        self,
-        constraint: Any,
-        obj: Dict[str, Any],
-        use_cache: bool = True
+        self, constraint: Any, obj: Dict[str, Any], use_cache: bool = True
     ) -> VerificationResult:
         """
         Verify a single constraint against an object.
@@ -239,7 +239,7 @@ class Forge:
                     constraint_id=cached.constraint_id,
                     message=cached.message,
                     elapsed_us=0,
-                    from_cache=True
+                    from_cache=True,
                 )
             self.metrics.cache_misses += 1
 
@@ -252,7 +252,7 @@ class Forge:
                 passed=result.passed,
                 constraint_id=result.constraint_id,
                 message=result.message,
-                elapsed_us=elapsed_us
+                elapsed_us=elapsed_us,
             )
 
             # Update metrics
@@ -269,16 +269,13 @@ class Forge:
             self.metrics.error_evaluations += 1
             return VerificationResult(
                 passed=False if self.config.strict_mode else True,
-                constraint_id=getattr(constraint, 'id', 'UNKNOWN'),
+                constraint_id=getattr(constraint, "id", "UNKNOWN"),
                 message=f"Evaluation error: {str(e)}",
-                elapsed_us=elapsed_us
+                elapsed_us=elapsed_us,
             )
 
     def verify_all(
-        self,
-        constraints: List[Any],
-        obj: Dict[str, Any],
-        parallel: bool = True
+        self, constraints: List[Any], obj: Dict[str, Any], parallel: bool = True
     ) -> List[VerificationResult]:
         """
         Verify multiple constraints against an object.
@@ -288,17 +285,11 @@ class Forge:
             return [self.verify(c, obj) for c in constraints]
 
         # Parallel verification
-        futures = [
-            self._executor.submit(self.verify, c, obj)
-            for c in constraints
-        ]
+        futures = [self._executor.submit(self.verify, c, obj) for c in constraints]
         return [f.result() for f in futures]
 
     def verify_and(
-        self,
-        constraints: List[Any],
-        obj: Dict[str, Any],
-        parallel: bool = True
+        self, constraints: List[Any], obj: Dict[str, Any], parallel: bool = True
     ) -> VerificationResult:
         """All constraints must pass."""
         start_us = time.perf_counter_ns() // 1000
@@ -313,14 +304,11 @@ class Forge:
             passed=passed,
             constraint_id=f"AND_{len(results)}",
             message="; ".join(failed_messages) if not passed else None,
-            elapsed_us=elapsed_us
+            elapsed_us=elapsed_us,
         )
 
     def verify_or(
-        self,
-        constraints: List[Any],
-        obj: Dict[str, Any],
-        parallel: bool = True
+        self, constraints: List[Any], obj: Dict[str, Any], parallel: bool = True
     ) -> VerificationResult:
         """At least one constraint must pass."""
         start_us = time.perf_counter_ns() // 1000
@@ -333,7 +321,7 @@ class Forge:
             passed=passed,
             constraint_id=f"OR_{len(results)}",
             message="All constraints failed" if not passed else None,
-            elapsed_us=elapsed_us
+            elapsed_us=elapsed_us,
         )
 
     # ─────────────────────────────────────────────────────────────────────────
@@ -341,9 +329,7 @@ class Forge:
     # ─────────────────────────────────────────────────────────────────────────
 
     def verify_content(
-        self,
-        text: str,
-        categories: Optional[List[str]] = None
+        self, text: str, categories: Optional[List[str]] = None
     ) -> VerificationResult:
         """
         Verify text content against safety patterns.
@@ -383,8 +369,10 @@ class Forge:
         result = VerificationResult(
             passed=passed,
             constraint_id=f"CONTENT_{len(categories)}",
-            message=f"Violations: {', '.join(failed_categories)}" if not passed else None,
-            elapsed_us=elapsed_us
+            message=(
+                f"Violations: {', '.join(failed_categories)}" if not passed else None
+            ),
+            elapsed_us=elapsed_us,
         )
 
         self._update_metrics(result)
@@ -407,7 +395,7 @@ class Forge:
         start_us = time.perf_counter_ns() // 1000
 
         # Melt text to signal
-        cleaned = re.sub(r'[^a-z0-9\s]', '', text.lower())
+        cleaned = re.sub(r"[^a-z0-9\s]", "", text.lower())
         tokens = cleaned.split()
 
         signal = self.DW_AXIS
@@ -423,15 +411,21 @@ class Forge:
         # Check crystalline alignment
         distance = abs(signal - self.DW_AXIS)
         crystalline = distance <= self.THRESHOLD
-        confidence = round((1 - distance / self.THRESHOLD) * 100, 1) if crystalline else 0
+        confidence = (
+            round((1 - distance / self.THRESHOLD) * 100, 1) if crystalline else 0
+        )
 
         elapsed_us = (time.perf_counter_ns() // 1000) - start_us
 
         result = VerificationResult(
             passed=crystalline,
             constraint_id=f"SIGNAL_{signal}",
-            message=f"Signal {signal}, distance {distance} (threshold {self.THRESHOLD})" if not crystalline else None,
-            elapsed_us=elapsed_us
+            message=(
+                f"Signal {signal}, distance {distance} (threshold {self.THRESHOLD})"
+                if not crystalline
+                else None
+            ),
+            elapsed_us=elapsed_us,
         )
 
         self._update_metrics(result)
@@ -446,7 +440,7 @@ class Forge:
         text: str,
         constraints: Optional[List[Any]] = None,
         obj: Optional[Dict[str, Any]] = None,
-        safety_categories: Optional[List[str]] = None
+        safety_categories: Optional[List[str]] = None,
     ) -> Dict[str, Any]:
         """
         Full Newton verification pipeline.
@@ -489,7 +483,7 @@ class Forge:
             "timestamp": int(time.time() * 1000),
             "fingerprint": f"N2_{hashlib.sha256(text.encode()).hexdigest()[:16]}",
             "results": results,
-            "engine": "Newton Forge 1.0.0"
+            "engine": "Newton Forge 1.0.0",
         }
 
     # ─────────────────────────────────────────────────────────────────────────
@@ -498,7 +492,7 @@ class Forge:
 
     def _cache_key(self, constraint: Constraint, obj: Dict[str, Any]) -> str:
         """Generate cache key from constraint and object."""
-        c_str = str(constraint.id if hasattr(constraint, 'id') else constraint)
+        c_str = str(constraint.id if hasattr(constraint, "id") else constraint)
         o_str = str(sorted(obj.items()))
         return hashlib.sha256(f"{c_str}:{o_str}".encode()).hexdigest()[:16]
 
@@ -540,7 +534,10 @@ class Forge:
 
         self.metrics.total_time_us += result.elapsed_us
 
-        if self.metrics.min_time_us == 0 or result.elapsed_us < self.metrics.min_time_us:
+        if (
+            self.metrics.min_time_us == 0
+            or result.elapsed_us < self.metrics.min_time_us
+        ):
             self.metrics.min_time_us = result.elapsed_us
         if result.elapsed_us > self.metrics.max_time_us:
             self.metrics.max_time_us = result.elapsed_us
@@ -560,38 +557,35 @@ class Forge:
     def shutdown(self):
         """Graceful shutdown of the Forge."""
         self._executor.shutdown(wait=True)
-    
+
     # ─────────────────────────────────────────────────────────────────────────
     # GLASS BOX ACTIVATION
     # ─────────────────────────────────────────────────────────────────────────
-    
-    def enable_glass_box(
-        self,
-        vault_client=None,
-        policy_engine=None,
-        negotiator=None
-    ):
+
+    def enable_glass_box(self, vault_client=None, policy_engine=None, negotiator=None):
         """
         Enable Glass Box mode with full transparency and human oversight.
-        
+
         Args:
             vault_client: VaultClient instance for provenance logging
             policy_engine: PolicyEngine instance for policy enforcement
             negotiator: Negotiator instance for HITL
         """
         self._glass_box_enabled = True
-        
+
         # Import here to avoid circular dependencies
         if vault_client:
             self._vault_client = vault_client
-        
+
         if policy_engine:
             self._policy_engine = policy_engine
-        
+
         if negotiator:
             self._negotiator = negotiator
-    
-    def clip(self, request: str, context: Optional[Dict[str, Any]] = None) -> 'ClipResult':
+
+    def clip(
+        self, request: str, context: Optional[Dict[str, Any]] = None
+    ) -> "ClipResult":
         """
         Apply Cohen-Sutherland constraint clipping to a request.
 
@@ -612,11 +606,11 @@ class Forge:
         constraint: Any,
         obj: Dict[str, Any],
         operation: str = "verify",
-        require_approval: bool = False
+        require_approval: bool = False,
     ) -> VerificationResult:
         """
         Verify with full Glass Box transparency.
-        
+
         This method:
         1. Evaluates input policies
         2. Logs to vault (provenance)
@@ -624,20 +618,20 @@ class Forge:
         4. Performs verification
         5. Evaluates output policies
         6. Emits provenance record
-        
+
         Args:
             constraint: Constraint to verify
             obj: Object to verify against
             operation: Operation name for logging
             require_approval: Force human approval
-        
+
         Returns:
             VerificationResult with full provenance
         """
         if not self._glass_box_enabled:
             # Fall back to regular verify
             return self.verify(constraint, obj)
-        
+
         # 1. Evaluate input policies
         if self._policy_engine:
             policy_results = self._policy_engine.evaluate_input(obj, operation)
@@ -645,34 +639,36 @@ class Forge:
                 return VerificationResult(
                     passed=False,
                     constraint_id="POLICY_VIOLATION",
-                    message=f"Input policy violation: {policy_results[0].message}"
+                    message=f"Input policy violation: {policy_results[0].message}",
                 )
-        
+
         # 2. Request approval if needed
         if require_approval and self._negotiator:
             from .negotiator import RequestPriority
+
             request = self._negotiator.request_approval(
                 operation=operation,
                 input_data=str(obj),
                 reason="Glass Box verification requires approval",
-                priority=RequestPriority.MEDIUM
+                priority=RequestPriority.MEDIUM,
             )
             # Note: In real usage, this would wait or return pending status
             # For now, we proceed without blocking
-        
+
         # 3. Perform verification
         result = self.verify(constraint, obj)
-        
+
         # 4. Evaluate output policies
         if self._policy_engine:
             output_policies = self._policy_engine.evaluate_output(
-                result.to_dict(),
-                operation
+                result.to_dict(), operation
             )
             if self._policy_engine.check_enforcement_needed(output_policies):
                 result.passed = False
-                result.message = f"Output policy violation: {output_policies[0].message}"
-        
+                result.message = (
+                    f"Output policy violation: {output_policies[0].message}"
+                )
+
         # 5. Log to vault for provenance
         if self._vault_client:
             try:
@@ -683,12 +679,12 @@ class Forge:
                     metadata={
                         "constraint_id": result.constraint_id,
                         "elapsed_us": result.elapsed_us,
-                        "fingerprint": result.fingerprint
-                    }
+                        "fingerprint": result.fingerprint,
+                    },
                 )
             except Exception:
                 pass  # Don't fail verification if logging fails
-        
+
         return result
 
 
@@ -706,15 +702,17 @@ class Forge:
 # This is the Cohen-Sutherland algorithm applied to semantic space.
 # ═══════════════════════════════════════════════════════════════════════════════
 
+
 class ClipState(Enum):
     """
     Cohen-Sutherland inspired constraint states.
 
     Not just pass/fail - but what CAN we do?
     """
-    GREEN = "green"    # Fully within constraints - execute entirely
+
+    GREEN = "green"  # Fully within constraints - execute entirely
     YELLOW = "yellow"  # Partially valid - clip to boundary, offer valid portion
-    RED = "red"        # Fully outside constraints - finfr, truly impossible
+    RED = "red"  # Fully outside constraints - finfr, truly impossible
 
 
 @dataclass
@@ -725,6 +723,7 @@ class ClipResult:
     Like Cohen-Sutherland finds the visible portion of a line,
     Newton finds the executable portion of a request.
     """
+
     state: ClipState
     original_request: str
     clipped_request: Optional[str] = None  # The valid portion
@@ -769,7 +768,7 @@ class ClipResult:
             "execution_scope": self.execution_scope,
             "suggestions": self.suggestions,
             "timestamp": self.timestamp,
-            "fingerprint": self.fingerprint
+            "fingerprint": self.fingerprint,
         }
 
 
@@ -783,8 +782,8 @@ CLIP_PATTERNS = {
             "general chemistry principles",
             "safety protocols",
             "historical context",
-            "educational overview"
-        ]
+            "educational overview",
+        ],
     },
     "medical": {
         "boundary": "professional_advice",
@@ -794,8 +793,8 @@ CLIP_PATTERNS = {
             "general health information",
             "when to see a doctor",
             "wellness tips",
-            "medical terminology explanation"
-        ]
+            "medical terminology explanation",
+        ],
     },
     "legal": {
         "boundary": "professional_advice",
@@ -805,8 +804,8 @@ CLIP_PATTERNS = {
             "general legal concepts",
             "how to find a lawyer",
             "legal terminology",
-            "court process overview"
-        ]
+            "court process overview",
+        ],
     },
     "security": {
         "boundary": "ethics",
@@ -816,9 +815,9 @@ CLIP_PATTERNS = {
             "security best practices",
             "how to protect yourself",
             "understanding threats",
-            "security education"
-        ]
-    }
+            "security education",
+        ],
+    },
 }
 
 
@@ -829,10 +828,12 @@ class ConstraintClipper:
     Doesn't just reject - finds the valid portion and offers it.
     """
 
-    def __init__(self, forge: 'Forge'):
+    def __init__(self, forge: "Forge"):
         self.forge = forge
 
-    def clip(self, request: str, context: Optional[Dict[str, Any]] = None) -> ClipResult:
+    def clip(
+        self, request: str, context: Optional[Dict[str, Any]] = None
+    ) -> ClipResult:
         """
         Apply Cohen-Sutherland style clipping to a request.
 
@@ -854,7 +855,7 @@ class ConstraintClipper:
                 clipped_request=request,
                 message="Request fully within constraints. Execute.",
                 can_execute=True,
-                execution_scope="full"
+                execution_scope="full",
             )
 
         # Determine which boundaries were crossed
@@ -871,17 +872,21 @@ class ConstraintClipper:
             return ClipResult(
                 state=ClipState.RED,
                 original_request=request,
-                boundary_crossed=", ".join(violated_categories) if violated_categories else "content",
+                boundary_crossed=(
+                    ", ".join(violated_categories) if violated_categories else "content"
+                ),
                 message="Request cannot be satisfied. finfr.",
                 can_execute=False,
                 execution_scope="none",
-                suggestions=["Please rephrase your request within safe boundaries."]
+                suggestions=["Please rephrase your request within safe boundaries."],
             )
 
         # YELLOW: Find the valid portion and clip
         return self._clip_to_boundary(request, violated_categories, signal_result)
 
-    def _is_fundamentally_red(self, request: str, violated_categories: List[str]) -> bool:
+    def _is_fundamentally_red(
+        self, request: str, violated_categories: List[str]
+    ) -> bool:
         """
         Check if request is fundamentally unsatisfiable.
 
@@ -906,7 +911,7 @@ class ConstraintClipper:
         self,
         request: str,
         violated_categories: List[str],
-        signal_result: VerificationResult
+        signal_result: VerificationResult,
     ) -> ClipResult:
         """
         Find the boundary intersection and clip the request.
@@ -928,24 +933,30 @@ class ConstraintClipper:
 
         if safe_portion:
             clipped_request = safe_portion
-            message = f"I've clipped to the valid portion. Here's what I CAN help with."
+            message = "I've clipped to the valid portion. Here's what I CAN help with."
         else:
             # Suggest alternatives based on detected intent
             clipped_request = self._generate_alternative(request, violated_categories)
-            message = f"The specific request crosses safety boundaries. Here's an alternative within constraints."
+            message = "The specific request crosses safety boundaries. Here's an alternative within constraints."
 
         return ClipResult(
             state=ClipState.YELLOW,
             original_request=request,
             clipped_request=clipped_request,
-            boundary_crossed=", ".join(violated_categories) if violated_categories else "signal_threshold",
+            boundary_crossed=(
+                ", ".join(violated_categories)
+                if violated_categories
+                else "signal_threshold"
+            ),
             message=message,
             can_execute=True,
             execution_scope="partial",
-            suggestions=suggestions[:5]  # Top 5 suggestions
+            suggestions=suggestions[:5],  # Top 5 suggestions
         )
 
-    def _extract_safe_portion(self, request: str, violated_categories: List[str]) -> Optional[str]:
+    def _extract_safe_portion(
+        self, request: str, violated_categories: List[str]
+    ) -> Optional[str]:
         """
         Extract the portions of the request that don't violate constraints.
 
@@ -953,7 +964,9 @@ class ConstraintClipper:
         """
         # Split request into components
         # Look for patterns like "X and Y" or "X but also Y"
-        components = re.split(r'\s+(?:and|but|also|then|after)\s+', request, flags=re.IGNORECASE)
+        components = re.split(
+            r"\s+(?:and|but|also|then|after)\s+", request, flags=re.IGNORECASE
+        )
 
         safe_components = []
         for component in components:
@@ -967,7 +980,9 @@ class ConstraintClipper:
 
         return None
 
-    def _generate_alternative(self, request: str, violated_categories: List[str]) -> str:
+    def _generate_alternative(
+        self, request: str, violated_categories: List[str]
+    ) -> str:
         """
         Generate a safe alternative that addresses the user's underlying intent.
 
@@ -978,24 +993,15 @@ class ConstraintClipper:
         # Detect underlying intent and map to safe alternatives
         intent_map = {
             # Chemistry/science intent
-            r"(chemistry|chemical|compound|molecule)":
-                "I can explain chemistry concepts, safety protocols, and educational material about chemical processes.",
-
+            r"(chemistry|chemical|compound|molecule)": "I can explain chemistry concepts, safety protocols, and educational material about chemical processes.",
             # Security intent
-            r"(hack|security|password|protect)":
-                "I can help with security best practices, protecting your accounts, and understanding cybersecurity concepts.",
-
+            r"(hack|security|password|protect)": "I can help with security best practices, protecting your accounts, and understanding cybersecurity concepts.",
             # Medical intent
-            r"(health|medical|symptom|treatment|medicine)":
-                "I can provide general health information and help you understand when to consult a healthcare provider.",
-
+            r"(health|medical|symptom|treatment|medicine)": "I can provide general health information and help you understand when to consult a healthcare provider.",
             # Legal intent
-            r"(legal|law|court|sue|rights)":
-                "I can explain general legal concepts and help you understand when to consult a lawyer.",
-
+            r"(legal|law|court|sue|rights)": "I can explain general legal concepts and help you understand when to consult a lawyer.",
             # Writing/essay intent (for long-form requests)
-            r"(write|essay|article|paper|explain)":
-                "I can write about this topic from an educational, historical, or safety-focused perspective.",
+            r"(write|essay|article|paper|explain)": "I can write about this topic from an educational, historical, or safety-focused perspective.",
         }
 
         for pattern, alternative in intent_map.items():
@@ -1012,6 +1018,7 @@ class ConstraintClipper:
 
 _default_forge: Optional[Forge] = None
 
+
 def get_forge(config: Optional[ForgeConfig] = None) -> Forge:
     """Get the default Forge instance."""
     global _default_forge
@@ -1024,17 +1031,23 @@ def get_forge(config: Optional[ForgeConfig] = None) -> Forge:
 # CONVENIENCE FUNCTIONS
 # ═══════════════════════════════════════════════════════════════════════════════
 
+
 def verify(constraint: Any, obj: Dict[str, Any]) -> VerificationResult:
     """One-liner verification using default Forge."""
     return get_forge().verify(constraint, obj)
 
-def verify_content(text: str, categories: Optional[List[str]] = None) -> VerificationResult:
+
+def verify_content(
+    text: str, categories: Optional[List[str]] = None
+) -> VerificationResult:
     """One-liner content safety check."""
     return get_forge().verify_content(text, categories)
+
 
 def verify_signal(text: str) -> VerificationResult:
     """One-liner signal verification."""
     return get_forge().verify_signal(text)
+
 
 def verify_full(text: str, **kwargs) -> Dict[str, Any]:
     """One-liner full verification pipeline."""
@@ -1064,14 +1077,16 @@ if __name__ == "__main__":
     constraint = {"field": "amount", "operator": "lt", "value": 1000}
     obj = {"amount": 500}
     result = forge.verify(constraint, obj)
-    print(f"  amount < 1000 where amount=500 -> {result.passed} ({result.elapsed_us}μs)")
+    print(
+        f"  amount < 1000 where amount=500 -> {result.passed} ({result.elapsed_us}μs)"
+    )
 
     # Test full pipeline
     print("\n[Full Pipeline]")
     full = forge.verify_full(
         "Process this payment",
         constraints=[{"field": "amount", "operator": "lt", "value": 1000}],
-        obj={"amount": 500}
+        obj={"amount": 500},
     )
     print(f"  Overall: {full['passed']} ({full['elapsed_us']}μs)")
 

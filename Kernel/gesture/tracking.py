@@ -1,4 +1,5 @@
 """NSTrackingArea — defines a region for mouse-tracking events."""
+
 from __future__ import annotations
 from typing import Optional, Any
 from enum import IntFlag
@@ -22,9 +23,14 @@ class NSTrackingAreaOptions(IntFlag):
 class NSTrackingArea:
     """Defines a region of a view that generates mouse-tracking events."""
 
-    def __init__(self, rect: Optional[NSRect] = None,
-                 options: int = NSTrackingAreaOptions.MOUSE_ENTERED_AND_EXITED | NSTrackingAreaOptions.ACTIVE_ALWAYS,
-                 owner: Any = None, user_info: Any = None):
+    def __init__(
+        self,
+        rect: Optional[NSRect] = None,
+        options: int = NSTrackingAreaOptions.MOUSE_ENTERED_AND_EXITED
+        | NSTrackingAreaOptions.ACTIVE_ALWAYS,
+        owner: Any = None,
+        user_info: Any = None,
+    ):
         self._rect = rect or NSRect()
         self._options = options
         self._owner = owner  # typically the view, set by NSView.add_tracking_area
@@ -58,14 +64,16 @@ class NSTrackingArea:
         inside = self.contains_point(x, y)
         if inside and not self._mouse_inside:
             self._mouse_inside = True
-            return 'entered'
+            return "entered"
         elif not inside and self._mouse_inside:
             self._mouse_inside = False
-            return 'exited'
+            return "exited"
         elif inside and (self._options & NSTrackingAreaOptions.MOUSE_MOVED):
-            return 'moved'
+            return "moved"
         return None
 
     def __repr__(self):
-        return (f"<NSTrackingArea rect=({self._rect.x},{self._rect.y},"
-                f"{self._rect.width},{self._rect.height}) options={self._options}>")
+        return (
+            f"<NSTrackingArea rect=({self._rect.x},{self._rect.y},"
+            f"{self._rect.width},{self._rect.height}) options={self._options}>"
+        )

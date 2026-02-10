@@ -24,17 +24,15 @@ Served locally on port 5050.
 
 import sys
 import os
-import json
 import time
 import uuid
-import traceback
 from pathlib import Path
 from datetime import datetime
 
 # Add parent to path so we can import adan, core, realTinyTalk
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from flask import Flask, request, jsonify, send_from_directory, render_template
+from flask import Flask, request, jsonify, render_template
 
 app = Flask(__name__, static_folder='static', template_folder='templates')
 app.secret_key = os.environ.get('SECRET_KEY', 'projectada-dev')

@@ -16,16 +16,13 @@ No embeddings - uses fuzzy matching and semantic field resolution instead.
 
 import pytest
 import os
-import json
 import tempfile
-from pathlib import Path
-from datetime import datetime
 
 # Test the knowledge store directly
-from .knowledge_store import KnowledgeStore, StoredFact, get_knowledge_store
+from .knowledge_store import KnowledgeStore
 
 # Test the knowledge base integration
-from .knowledge_base import KnowledgeBase, get_knowledge_base, VerifiedFact
+from .knowledge_base import KnowledgeBase
 
 
 class TestKnowledgeStore:

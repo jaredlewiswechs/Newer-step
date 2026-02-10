@@ -16,12 +16,11 @@ Core Philosophy: We must move from probabilistic AI to geometric AI.
 
 import time
 import hashlib
-from dataclasses import dataclass, field as dataclass_field
+from dataclasses import dataclass
 from typing import Dict, List, Optional, Tuple, Set
 from enum import Enum
 
 from .matter import (
-    GlyphMechanics,
     GlyphRegistry,
     PhonosemanticsRegistry,
     PhonosemanticsCluster,

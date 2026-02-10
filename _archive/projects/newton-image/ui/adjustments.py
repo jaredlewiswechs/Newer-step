@@ -6,19 +6,17 @@ All filters are Newton-bounded computations.
 ═══════════════════════════════════════════════════════════════
 """
 
-from typing import Optional, List, Callable
+from typing import Optional
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, 
-    QSlider, QPushButton, QFrame, QScrollArea
+    QSlider, QPushButton, QFrame
 )
 from PyQt6.QtCore import Qt, pyqtSignal
 
 import sys
 sys.path.insert(0, '..')
 from core.filters import (
-    FilterType, BrightnessFilter, ContrastFilter, 
-    SaturationFilter, GrayscaleFilter, InvertFilter,
-    SepiaFilter, BlurFilter, PosterizeFilter
+    FilterType
 )
 
 

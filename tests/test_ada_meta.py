@@ -14,17 +14,14 @@ Run: pytest tests/test_ada_meta.py -v
 """
 
 import pytest
-from hypothesis import given, settings, assume
+from hypothesis import given, settings
 from hypothesis import strategies as st
-from datetime import datetime, timedelta
 
 from adan.ada import (
-    Ada, AlertLevel, DriftType, Anomaly, Whisper, Baseline,
-    DriftDetector, SensePattern, get_ada
+    Ada, AlertLevel, DriftType, Whisper, DriftDetector, SensePattern, get_ada
 )
 from adan.meta_newton import (
-    MetaNewton, MetaVerification, VerificationLevel, ConstraintStatus,
-    MetaConstraint, get_meta_newton
+    MetaNewton, MetaVerification, get_meta_newton
 )
 from adan.knowledge_sources import (
     KnowledgeMesh, MeshFact, SourceTier, SOURCES, get_knowledge_mesh

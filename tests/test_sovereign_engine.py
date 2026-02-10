@@ -20,14 +20,13 @@ Run with: pytest tests/test_sovereign_engine.py -v
 
 import pytest
 import time
-from typing import Dict, Any
+from typing import Dict
 
 import sys
 sys.path.insert(0, str(__file__).rsplit('/', 2)[0])
 
 from tinytalk_py import (
-    Blueprint, field, law, forge, when, finfr,
-    LawViolation, Presence, Delta
+    field, LawViolation, Presence, Delta
 )
 from tinytalk_py.sovereign import (
     SovereignEngine,
@@ -36,7 +35,6 @@ from tinytalk_py.sovereign import (
     Boundary,
     BoundaryType,
     BoundaryRegistry,
-    PresenceState,
     PresenceManager,
     project_future,
     calculate_fg_ratio,

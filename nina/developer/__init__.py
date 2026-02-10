@@ -19,18 +19,18 @@ from .forge import (
     GeometryMismatchError,
     Pipeline,
     PipelineResult,
-    ExecutionBounds
+    ExecutionBounds,
 )
 
 __version__ = "0.1.0"
 __all__ = [
     "Regime",
-    "RegimeType", 
+    "RegimeType",
     "TrustLabel",
     "TrustLattice",
     "DistortionMetric",
     "GeometryMismatchError",
     "Pipeline",
     "PipelineResult",
-    "ExecutionBounds"
+    "ExecutionBounds",
 ]

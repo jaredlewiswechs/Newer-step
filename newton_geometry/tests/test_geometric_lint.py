@@ -7,9 +7,7 @@ Validates that the geometric-semantic alignment analysis works correctly.
 import pytest
 
 from newton_geometry.geometric_lint import (
-    GeometricFeatures,
     LintReport,
-    LintWarning,
     SemanticType,
     Severity,
     VisualDensity,

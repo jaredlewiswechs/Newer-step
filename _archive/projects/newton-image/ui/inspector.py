@@ -9,13 +9,13 @@ Apple HIG compliant inspector panel.
 from typing import Optional
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, 
-    QSlider, QSpinBox, QCheckBox, QFrame, QStackedWidget
+    QSlider, QCheckBox, QFrame, QStackedWidget
 )
 from PyQt6.QtCore import Qt, pyqtSignal
 
 import sys
 sys.path.insert(0, '..')
-from core.tools import NTool, ToolType, NBrushTool, NEraserTool, BrushSettings
+from core.tools import NTool, ToolType
 
 
 class NBrushOptionsPanel(QWidget):

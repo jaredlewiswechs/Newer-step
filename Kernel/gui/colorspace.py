@@ -1,5 +1,7 @@
 """Simple NSColorSpace shim supporting basic color spaces."""
+
 from dataclasses import dataclass
+
 
 @dataclass
 class NSColorSpace:
@@ -7,11 +9,11 @@ class NSColorSpace:
 
     @classmethod
     def device_rgb(cls):
-        return cls('deviceRGB')
+        return cls("deviceRGB")
 
     @classmethod
     def generic_rgb(cls):
-        return cls('sRGB')
+        return cls("sRGB")
 
     def __repr__(self):
         return f"NSColorSpace({self.name})"

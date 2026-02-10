@@ -39,10 +39,8 @@ from datetime import datetime
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from tinytalk_py.gradebook import (
-    Gradebook,
     get_gradebook,
     get_gradebook_constraints,
-    GradeStatus,
     MIN_GRADE,
     MAX_GRADE,
 )
@@ -113,12 +111,12 @@ def main():
     instantiation_time = time.time() - start_time
     
     print(f"  ✓ Gradebook instantiated in {instantiation_time:.4f} seconds")
-    print(f"  ✓ Target: < 60 seconds")
+    print("  ✓ Target: < 60 seconds")
     print(f"  ✓ Result: {'PASS' if instantiation_time < 60 else 'FAIL'}")
     print()
     print("  Constraints enforced:")
     print(f"    - Grade range: {MIN_GRADE} <= grade <= {MAX_GRADE}")
-    print(f"    - Final grade immutability: submitted grades cannot be changed")
+    print("    - Final grade immutability: submitted grades cannot be changed")
     
     # =========================================================================
     # PHASE 2: CONSTRAINT DEMONSTRATION
@@ -155,7 +153,7 @@ def main():
         try:
             gradebook.add_grade(student, assignment, grade)
             print(f"    ✗ FAILED: Grade {grade} should have been rejected")
-        except LawViolation as e:
+        except LawViolation:
             print(f"    ✓ BLOCKED: Grade {grade} rejected ({reason})")
     
     # Test boundary values
@@ -173,7 +171,7 @@ def main():
                 print(f"    ✓ PASS: Grade {grade} accepted (boundary)")
             else:
                 print(f"    ✗ FAILED: Grade {grade} should have been rejected")
-        except LawViolation as e:
+        except LawViolation:
             if not should_pass:
                 print(f"    ✓ BLOCKED: Grade {grade} rejected")
             else:
@@ -189,7 +187,7 @@ def main():
     print("\n  [3.1] Submitting a grade (making it final)...")
     
     result = gradebook.submit_grade("alice", "Math Quiz 1")
-    print(f"    ✓ Submitted: alice/Math Quiz 1")
+    print("    ✓ Submitted: alice/Math Quiz 1")
     print(f"    ✓ Grade: {result['entry']['grade']}")
     print(f"    ✓ Status: {result['entry']['status']}")
     print(f"    ✓ Is Final: {result['entry']['is_final']}")
@@ -202,14 +200,14 @@ def main():
         gradebook.update_grade("alice", "Math Quiz 1", 98)
         print("    ✗ FAILED: Should not be able to modify submitted grade")
     except LawViolation as e:
-        print(f"    ✓ BLOCKED: Cannot modify submitted grade")
+        print("    ✓ BLOCKED: Cannot modify submitted grade")
         print(f"    ✓ Law enforced: {e.law_name}")
     
     # Modify a draft grade (should work)
     print("\n  [3.3] Modifying a draft grade (should work)...")
     
     result = gradebook.update_grade("bob", "Math Quiz 1", 89)
-    print(f"    ✓ Updated: bob/Math Quiz 1")
+    print("    ✓ Updated: bob/Math Quiz 1")
     print(f"    ✓ Old Grade: {result['old_grade']}")
     print(f"    ✓ New Grade: {result['new_grade']}")
     
@@ -244,7 +242,7 @@ def main():
     
     integrity = gradebook.verify_integrity()
     
-    print(f"\n  Integrity Check Results:")
+    print("\n  Integrity Check Results:")
     print(f"    Verified: {'✓ PASS' if integrity['verified'] else '✗ FAIL'}")
     print(f"    Total Entries: {integrity['total_entries']}")
     print(f"    Valid Entries: {integrity['valid_entries']}")
@@ -265,13 +263,13 @@ def main():
     
     stats = gradebook.get_statistics()
     
-    print(f"\n  Summary:")
+    print("\n  Summary:")
     print(f"    Total Entries: {stats['total_entries']}")
     print(f"    Submitted (Final): {stats['submitted_count']}")
     print(f"    Drafts: {stats['draft_count']}")
     print(f"    Unique Students: {stats['unique_students']}")
     print(f"    Unique Assignments: {stats['unique_assignments']}")
-    print(f"\n  Grade Statistics:")
+    print("\n  Grade Statistics:")
     print(f"    Average: {stats['average']}")
     print(f"    Min: {stats['min']}")
     print(f"    Max: {stats['max']}")

@@ -58,10 +58,10 @@ def test(name, code, check_match=True):
     
     if check_match:
         if py_norm == js_norm:
-            print(f"✅ MATCH")
+            print("✅ MATCH")
             return True
         else:
-            print(f"❌ MISMATCH")
+            print("❌ MISMATCH")
             return False
     return True
 

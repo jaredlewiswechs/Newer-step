@@ -32,7 +32,6 @@ from newton.cinema import (
     # Core types
     ForgeResult,
     KinematicProof,
-    SpeechEvent,
     SceneType,
     # Engines
     KinematicLinguistics,

@@ -26,15 +26,21 @@ class NotesView(NSView):
         h = self.frame.height
         parts = [f'<g class="notes-view" data-view-id="{id(self)}">']
         # background
-        parts.append(f'<rect x="0" y="0" width="{w}" height="{h}" fill="#fff8e1" stroke="#ddd" rx="6" />')
+        parts.append(
+            f'<rect x="0" y="0" width="{w}" height="{h}" fill="#fff8e1" stroke="#ddd" rx="6" />'
+        )
         # title area
-        parts.append(f'<text x="12" y="22" font-size="14" font-family="sans-serif" font-weight="bold">{self.title}</text>')
+        parts.append(
+            f'<text x="12" y="22" font-size="14" font-family="sans-serif" font-weight="bold">{self.title}</text>'
+        )
         # content (simple, no wrapping beyond newlines)
-        lines = (self.content or "").split('\n')
+        lines = (self.content or "").split("\n")
         y = 46
         for line in lines[:20]:
-            safe = (line.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;'))
-            parts.append(f'<text x="12" y="{y}" font-size="12" font-family="monospace">{safe}</text>')
+            safe = line.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+            parts.append(
+                f'<text x="12" y="{y}" font-size="12" font-family="monospace">{safe}</text>'
+            )
             y += 16
-        parts.append('</g>')
+        parts.append("</g>")
         return "\n".join(parts)

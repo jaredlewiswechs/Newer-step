@@ -24,14 +24,13 @@ import sys
 import os
 import re
 import json
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 # Add project root
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from foghorn import (
-    Card, Query, ResultSet, Task, Receipt, LinkCurve, Rule,
-    ObjectType, FoghornObject,
+    Card, Query, ResultSet, Receipt, LinkCurve, FoghornObject,
     service, ServiceCategory, get_object_store,
 )
 
@@ -154,7 +153,7 @@ def _safe_eval(expr: str) -> Any:
     
     try:
         return eval(expr, {"__builtins__": {}}, safe_dict)
-    except Exception as e:
+    except Exception:
         raise ValueError(f"Cannot evaluate: {expr}")
 
 
@@ -231,7 +230,7 @@ def verify_claim_service(obj: FoghornObject, constraints: List[Dict] = None) -> 
     content = f"Claim: {claim}\n\nStatus: {status}"
     
     if violations:
-        content += f"\n\nViolations:\n" + "\n".join(f"- {v}" for v in violations)
+        content += "\n\nViolations:\n" + "\n".join(f"- {v}" for v in violations)
     
     return [Card(
         title=f"Verification: {status}",

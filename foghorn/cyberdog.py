@@ -58,8 +58,8 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.header import decode_header as email_decode_header
 from dataclasses import dataclass, field
-from enum import Enum, auto
-from typing import Any, Callable, Dict, List, Optional, Set
+from enum import Enum
+from typing import Any, Callable, Dict, List, Optional
 import sys
 import os
 import requests
@@ -67,17 +67,11 @@ import requests
 # Add parent to path for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from foghorn.objects import (
-    FoghornObject, ObjectType, Card, Query, ResultSet,
-    FileAsset, Task, Receipt,
-)
-from foghorn.commands import add_object
 from foghorn.opendoc import (
-    Part, PartType, PartState, CompoundDocument,
-    PartHandler, PartRegistry, get_part_registry,
-    get_document_store, create_document, create_part, embed_part
+    Part, PartType, CompoundDocument,
+    PartHandler, get_part_registry,
+    get_document_store
 )
-from core.cdl import CDLEvaluator
 
 
 # ═══════════════════════════════════════════════════════════════════════════════

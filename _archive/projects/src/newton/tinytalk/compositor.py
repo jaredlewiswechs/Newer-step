@@ -19,7 +19,7 @@ You can't draw invalid states. The GPU becomes a proof-carrying renderer.
 """
 
 from dataclasses import dataclass, field as dataclass_field
-from typing import Any, Dict, List, Optional, Set, Tuple, Callable, Union
+from typing import Any, Dict, List, Optional, Set, Tuple
 from enum import Enum
 from abc import ABC, abstractmethod
 import hashlib
@@ -27,10 +27,10 @@ import time
 import math
 
 from .core import (
-    Blueprint, Field, field, Law, LawResult, LawViolation,
-    when, finfr, ratio, law, forge
+    Blueprint, field, LawViolation,
+    when, finfr, law, forge
 )
-from .engine import Presence, Delta, KineticEngine
+from .engine import Presence, KineticEngine
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -249,7 +249,7 @@ class NoOverlap(VisualConstraint):
             return ConstraintResult(
                 status=ConstraintStatus.UNKNOWN,
                 constraint_name=self.name,
-                message=f"Element not found",
+                message="Element not found",
                 affected_elements=[self.element_a, self.element_b]
             )
 

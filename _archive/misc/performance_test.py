@@ -76,7 +76,7 @@ def run_benchmark(name, endpoint, method, payload, iterations=20):
         stats["internal_min_us"] = min(internal_times)
         stats["internal_max_us"] = max(internal_times)
 
-    print(f"\nResults:")
+    print("\nResults:")
     print(f"  Min:    {stats['min_ms']:.2f}ms")
     print(f"  Max:    {stats['max_ms']:.2f}ms")
     print(f"  Mean:   {stats['mean_ms']:.2f}ms")
@@ -85,7 +85,7 @@ def run_benchmark(name, endpoint, method, payload, iterations=20):
     print(f"  StdDev: {stats['stdev_ms']:.2f}ms")
 
     if internal_times:
-        print(f"\n  Internal Processing:")
+        print("\n  Internal Processing:")
         print(f"    Mean:   {stats['internal_mean_us']:.1f}μs ({stats['internal_mean_us']/1000:.3f}ms)")
         print(f"    Median: {stats['internal_median_us']:.1f}μs")
         print(f"    Min:    {stats['internal_min_us']:.1f}μs")
@@ -130,11 +130,11 @@ def run_load_test(endpoint, method, payload, concurrent_requests=20):
         "median_response_ms": statistics.median(response_times),
     }
 
-    print(f"\nResults:")
+    print("\nResults:")
     print(f"  Total time: {stats['total_time_ms']:.2f}ms")
     print(f"  Throughput: {stats['requests_per_second']:.1f} req/sec")
     print(f"  Successful: {stats['successful']}/{concurrent_requests}")
-    print(f"  Response times:")
+    print("  Response times:")
     print(f"    Min:    {stats['min_response_ms']:.2f}ms")
     print(f"    Max:    {stats['max_response_ms']:.2f}ms")
     print(f"    Mean:   {stats['mean_response_ms']:.2f}ms")
@@ -314,11 +314,11 @@ def main():
     verify_median = all_stats["verify_simple"]["median_ms"]
     internal_us = all_stats["verify_simple"].get("internal_median_us", 0)
 
-    print(f"\n### Claimed: '35-45ms end-to-end'")
+    print("\n### Claimed: '35-45ms end-to-end'")
     print(f"    Measured median: {verify_median:.2f}ms")
     print(f"    Status: {'✓ VERIFIED' if verify_median <= 50 else '✗ NOT VERIFIED'}")
 
-    print(f"\n### Claimed: '42 microseconds internal processing'")
+    print("\n### Claimed: '42 microseconds internal processing'")
     print(f"    Measured median: {internal_us:.1f}μs")
     print(f"    Status: {'✓ VERIFIED' if internal_us <= 1000 else '⚠ HIGHER THAN CLAIMED'}")
 
@@ -344,7 +344,7 @@ def main():
     with open("performance_results.json", "w") as f:
         json.dump(results, f, indent=2)
 
-    print(f"\n\nResults saved to: performance_results.json")
+    print("\n\nResults saved to: performance_results.json")
     print(f"Completed: {datetime.now().isoformat()}")
 
     return all_stats

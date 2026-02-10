@@ -26,25 +26,27 @@ import math
 from collections import deque
 from threading import Lock
 
-
 # ═══════════════════════════════════════════════════════════════════════════════
 # CONFIGURATION
 # ═══════════════════════════════════════════════════════════════════════════════
 
+
 @dataclass
 class RobustConfig:
     """Configuration for robust statistics."""
-    mad_threshold: float = 3.5               # Modified Z-score threshold
-    min_baseline_size: int = 30              # Min samples for baseline
-    max_window_size: int = 10000             # Max samples in window
-    temporal_decay_hours: float = 24.0       # Half-life for temporal decay
-    byzantine_threshold: float = 0.33        # Max fraction of suspicious sources
-    enable_source_tracking: bool = True      # Track data sources
+
+    mad_threshold: float = 3.5  # Modified Z-score threshold
+    min_baseline_size: int = 30  # Min samples for baseline
+    max_window_size: int = 10000  # Max samples in window
+    temporal_decay_hours: float = 24.0  # Half-life for temporal decay
+    byzantine_threshold: float = 0.33  # Max fraction of suspicious sources
+    enable_source_tracking: bool = True  # Track data sources
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # LOCKED BASELINE
 # ═══════════════════════════════════════════════════════════════════════════════
+
 
 @dataclass
 class LockedBaseline:
@@ -54,6 +56,7 @@ class LockedBaseline:
     Once locked, the baseline cannot be influenced by new data.
     This prevents attackers from gradually shifting the reference point.
     """
+
     median: float
     mad: float
     n_samples: int
@@ -64,7 +67,7 @@ class LockedBaseline:
     percentiles: Dict[int, float] = field(default_factory=dict)
 
     @classmethod
-    def from_values(cls, values: List[float]) -> 'LockedBaseline':
+    def from_values(cls, values: List[float]) -> "LockedBaseline":
         """Create a locked baseline from values."""
         if not values:
             raise ValueError("Cannot create baseline from empty values")
@@ -110,7 +113,7 @@ class LockedBaseline:
             fingerprint=fingerprint,
             min_value=min(values),
             max_value=max(values),
-            percentiles=percentiles
+            percentiles=percentiles,
         )
 
     def modified_zscore(self, value: float) -> float:
@@ -124,7 +127,7 @@ class LockedBaseline:
         - Uses MAD instead of std dev (resistant to variance inflation)
         """
         if self.mad == 0:
-            return 0.0 if value == self.median else float('inf')
+            return 0.0 if value == self.median else float("inf")
         return 0.6745 * (value - self.median) / self.mad
 
     def is_anomaly(self, value: float, threshold: float = 3.5) -> bool:
@@ -140,13 +143,14 @@ class LockedBaseline:
             "fingerprint": self.fingerprint,
             "min_value": self.min_value,
             "max_value": self.max_value,
-            "percentiles": self.percentiles
+            "percentiles": self.percentiles,
         }
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # TEMPORAL DECAY
 # ═══════════════════════════════════════════════════════════════════════════════
+
 
 class TemporalDecay:
     """
@@ -172,8 +176,7 @@ class TemporalDecay:
         return math.exp(-self.decay_constant * age_seconds)
 
     def weighted_values(
-        self,
-        values_with_timestamps: List[Tuple[float, int]]
+        self, values_with_timestamps: List[Tuple[float, int]]
     ) -> List[Tuple[float, float]]:
         """Return values with their weights."""
         now = int(time.time())
@@ -184,9 +187,11 @@ class TemporalDecay:
 # SOURCE TRACKER - Byzantine detection
 # ═══════════════════════════════════════════════════════════════════════════════
 
+
 @dataclass
 class SourceStats:
     """Statistics for a single data source."""
+
     source_id: str
     n_submissions: int = 0
     n_anomalies: int = 0
@@ -228,7 +233,10 @@ class SourceTracker:
             stats.last_submission = int(time.time())
 
             # Flag if anomaly rate too high
-            if stats.n_submissions >= 10 and stats.anomaly_rate > self.byzantine_threshold:
+            if (
+                stats.n_submissions >= 10
+                and stats.anomaly_rate > self.byzantine_threshold
+            ):
                 stats.flagged = True
 
     def is_trusted(self, source_id: str) -> bool:
@@ -255,16 +263,17 @@ class SourceTracker:
                 sid: {
                     "submissions": s.n_submissions,
                     "anomaly_rate": round(s.anomaly_rate, 3),
-                    "flagged": s.flagged
+                    "flagged": s.flagged,
                 }
                 for sid, s in self._sources.items()
-            }
+            },
         }
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # ROBUST VERIFIER
 # ═══════════════════════════════════════════════════════════════════════════════
+
 
 class RobustVerifier:
     """
@@ -290,7 +299,12 @@ class RobustVerifier:
     # BASELINE MANAGEMENT
     # ─────────────────────────────────────────────────────────────────────────
 
-    def collect(self, value: float, source_id: Optional[str] = None, timestamp: Optional[int] = None):
+    def collect(
+        self,
+        value: float,
+        source_id: Optional[str] = None,
+        timestamp: Optional[int] = None,
+    ):
         """
         Collect a value for baseline building.
         Only works before baseline is locked.
@@ -314,7 +328,9 @@ class RobustVerifier:
                 raise RuntimeError("Baseline already locked")
 
             if len(self._window) < min_samples:
-                raise ValueError(f"Need at least {min_samples} samples, have {len(self._window)}")
+                raise ValueError(
+                    f"Need at least {min_samples} samples, have {len(self._window)}"
+                )
 
             values = [v for v, _, _ in self._window]
             self._baseline = LockedBaseline.from_values(values)
@@ -345,7 +361,7 @@ class RobustVerifier:
         self,
         value: float,
         source_id: Optional[str] = None,
-        threshold: Optional[float] = None
+        threshold: Optional[float] = None,
     ) -> Dict[str, Any]:
         """
         Verify a value against the locked baseline.
@@ -395,13 +411,11 @@ class RobustVerifier:
             "source_id": source_id,
             "source_trusted": source_trusted,
             "reason": reason,
-            "timestamp": int(time.time() * 1000)
+            "timestamp": int(time.time() * 1000),
         }
 
     def verify_batch(
-        self,
-        values: List[float],
-        source_id: Optional[str] = None
+        self, values: List[float], source_id: Optional[str] = None
     ) -> Dict[str, Any]:
         """Verify a batch of values."""
         results = [self.verify(v, source_id) for v in values]
@@ -415,7 +429,7 @@ class RobustVerifier:
             "failed": len(values) - n_passed,
             "anomalies": n_anomalies,
             "pass_rate": round(n_passed / len(values) * 100, 2) if values else 0,
-            "results": results
+            "results": results,
         }
 
     # ─────────────────────────────────────────────────────────────────────────
@@ -472,7 +486,11 @@ class RobustVerifier:
             "indicators": attack_indicators,
             "anomaly_rate": round(anomaly_rate, 3),
             "flagged_sources": list(flagged_sources),
-            "recommendation": "Reject all submissions" if attack_detected else "Continue normal operation"
+            "recommendation": (
+                "Reject all submissions"
+                if attack_detected
+                else "Continue normal operation"
+            ),
         }
 
     # ─────────────────────────────────────────────────────────────────────────
@@ -485,7 +503,7 @@ class RobustVerifier:
             "baseline_locked": self._baseline_locked,
             "baseline": self._baseline.to_dict() if self._baseline else None,
             "window_size": len(self._window),
-            "sources": self._source_tracker.stats()
+            "sources": self._source_tracker.stats(),
         }
 
     def export_baseline(self) -> Dict[str, Any]:
@@ -498,9 +516,9 @@ class RobustVerifier:
             "baseline": self._baseline.to_dict(),
             "config": {
                 "mad_threshold": self.config.mad_threshold,
-                "min_baseline_size": self.config.min_baseline_size
+                "min_baseline_size": self.config.min_baseline_size,
             },
-            "exported_at": int(time.time() * 1000)
+            "exported_at": int(time.time() * 1000),
         }
 
 
@@ -508,15 +526,24 @@ class RobustVerifier:
 # CONVENIENCE FUNCTIONS
 # ═══════════════════════════════════════════════════════════════════════════════
 
+
 def mad(values: List[float]) -> float:
     """Calculate Median Absolute Deviation."""
     if not values:
         return 0.0
     sorted_v = sorted(values)
     n = len(sorted_v)
-    median = sorted_v[n // 2] if n % 2 == 1 else (sorted_v[n // 2 - 1] + sorted_v[n // 2]) / 2
+    median = (
+        sorted_v[n // 2]
+        if n % 2 == 1
+        else (sorted_v[n // 2 - 1] + sorted_v[n // 2]) / 2
+    )
     deviations = sorted([abs(x - median) for x in sorted_v])
-    mad_val = deviations[n // 2] if n % 2 == 1 else (deviations[n // 2 - 1] + deviations[n // 2]) / 2
+    mad_val = (
+        deviations[n // 2]
+        if n % 2 == 1
+        else (deviations[n // 2 - 1] + deviations[n // 2]) / 2
+    )
     return mad_val * 1.4826  # Scale for normal distribution
 
 
@@ -526,10 +553,14 @@ def modified_zscore(value: float, values: List[float]) -> float:
         return 0.0
     sorted_v = sorted(values)
     n = len(sorted_v)
-    median = sorted_v[n // 2] if n % 2 == 1 else (sorted_v[n // 2 - 1] + sorted_v[n // 2]) / 2
+    median = (
+        sorted_v[n // 2]
+        if n % 2 == 1
+        else (sorted_v[n // 2 - 1] + sorted_v[n // 2]) / 2
+    )
     mad_val = mad(values)
     if mad_val == 0:
-        return 0.0 if value == median else float('inf')
+        return 0.0 if value == median else float("inf")
     return 0.6745 * (value - median) / mad_val
 
 
@@ -552,6 +583,7 @@ if __name__ == "__main__":
     # Collect normal data
     print("\n[Collecting Baseline Data]")
     import random
+
     random.seed(42)
 
     normal_data = [100 + random.gauss(0, 5) for _ in range(100)]
@@ -568,14 +600,14 @@ if __name__ == "__main__":
     # Verify normal value
     print("\n[Verify Normal Value]")
     result = verifier.verify(102.5, source_id="trusted_sensor")
-    print(f"  Value: 102.5")
+    print("  Value: 102.5")
     print(f"  Passed: {result['passed']}")
     print(f"  Modified Z-score: {result['modified_zscore']}")
 
     # Verify anomaly
     print("\n[Verify Anomaly]")
     result = verifier.verify(150.0, source_id="trusted_sensor")
-    print(f"  Value: 150.0")
+    print("  Value: 150.0")
     print(f"  Passed: {result['passed']}")
     print(f"  Modified Z-score: {result['modified_zscore']}")
     print(f"  Reason: {result['reason']}")
@@ -591,7 +623,9 @@ if __name__ == "__main__":
     print("\n[Source Tracking]")
     source_stats = verifier._source_tracker.stats()
     for sid, s in source_stats["sources"].items():
-        print(f"  {sid}: {s['submissions']} submissions, {s['anomaly_rate']:.1%} anomaly rate, flagged={s['flagged']}")
+        print(
+            f"  {sid}: {s['submissions']} submissions, {s['anomaly_rate']:.1%} anomaly rate, flagged={s['flagged']}"
+        )
 
     print("\n" + "=" * 60)
     print("Resistant to outliers. Resistant to drift. Resistant to attackers.")

@@ -25,16 +25,14 @@ License: MIT
 """
 
 from dataclasses import dataclass, field as dc_field
-from typing import Any, Dict, Optional, List, Callable, Tuple, Union
+from typing import Any, Dict, Optional, List, Callable, Tuple
 from enum import Enum
 import time
 import hashlib
 import copy
 
 from .core import (
-    Blueprint, Law, LawResult, LawViolation, FinClosure,
-    field, law, forge, when, finfr, fin,
-    ratio, RatioResult, finfr_if_undefined
+    LawViolation, field, law, forge, when, finfr, ratio, RatioResult
 )
 from .engine import Presence, Delta, KineticEngine
 

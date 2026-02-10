@@ -12,11 +12,10 @@ The verification IS the computation.
 import time
 import statistics
 from dataclasses import dataclass
-from typing import List, Dict, Tuple, Optional
+from typing import List, Dict, Tuple
 import sys
 
 from adan import NewtonAgent, AgentConfig
-from adan.kinematic_linguistics import KinematicAnalyzer
 from adan.trajectory_verifier import TrajectoryVerifier
 
 
@@ -167,7 +166,7 @@ def run_trajectory_test(verifier: TrajectoryVerifier, tests: List[TestCase]) -> 
     results: List[TestResult] = []
     
     print(f"\n{'═' * 70}")
-    print(f"  TRAJECTORY VERIFICATION (Grammar Ω)")
+    print("  TRAJECTORY VERIFICATION (Grammar Ω)")
     print(f"{'═' * 70}")
     
     for test in tests:
@@ -233,7 +232,7 @@ def run_throughput_test(agent: NewtonAgent, iterations: int = 20) -> Dict:
         if i < 5 or i == iterations - 1:
             print(f"  [{i+1:2d}] {elapsed:>6.1f}ms - Verified: {response.verified}")
         elif i == 5:
-            print(f"  ...")
+            print("  ...")
     
     stats = {
         "iterations": iterations,
@@ -284,7 +283,7 @@ def main():
     
     # Summary
     print(f"\n{'═' * 70}")
-    print(f"  SUMMARY")
+    print("  SUMMARY")
     print(f"{'═' * 70}")
     
     total_passed = sum(s["passed"] for s in all_stats)

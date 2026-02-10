@@ -21,15 +21,14 @@ This is the "glass box" principle in action.
 """
 
 from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, List, Optional, Type
+from typing import Any, Callable, Dict, List, Optional
 from enum import Enum
 
 from .objects import (
-    FoghornObject, ObjectType, Card, Query, ResultSet,
-    FileAsset, Task, Receipt, LinkCurve, Rule,
-    get_object_store
+    FoghornObject, ObjectType, Card, ResultSet,
+    LinkCurve, get_object_store
 )
-from .services import get_service_registry, ServiceCategory
+from .services import get_service_registry
 
 
 class InspectorTab(Enum):

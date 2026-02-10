@@ -6,7 +6,6 @@ def test_notes_save_list_load_flow():
     # Launch a notes app process using the example script
     class Req:
         async def json(self):
-            import json
             from pathlib import Path
             script = Path('realTinyTalk/examples/notes_app.tt').read_text(encoding='utf-8')
             return {'script': script, 'title': 'NotesUI'}

@@ -11,18 +11,14 @@ The Trust IS the light.
 ═══════════════════════════════════════════════════════════════════════════════
 """
 
-import os
-import json
-import asyncio
 from pathlib import Path
 from typing import Optional, Dict, Any, List
-from dataclasses import dataclass, field, asdict
 from datetime import datetime
 import hashlib
 
 from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 

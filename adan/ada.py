@@ -18,13 +18,11 @@ The whisper IS the early warning.
 """
 
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Set, Tuple, Any, Callable
+from typing import Dict, List, Optional, Tuple, Any, Callable
 from enum import Enum
 from datetime import datetime, timedelta
 import hashlib
-import math
 import re
-import time
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -663,7 +661,7 @@ if __name__ == "__main__":
         sources=[]
     )
     if result:
-        print(f"⚠ Unverified confident response detected")
+        print("⚠ Unverified confident response detected")
         print(f"   Level: {result.level.value}")
         print(f"   Recommendation: {result.recommendation}")
     

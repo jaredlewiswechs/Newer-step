@@ -24,19 +24,13 @@ Or use the API directly:
 ═══════════════════════════════════════════════════════════════════════════════
 """
 
-import json
 import time
-from typing import Optional
 
 # Import Newton Voice Interface
 from core.voice_interface import (
     ask_newton,
     parse_intent,
-    find_pattern,
-    get_voice_interface,
     get_streaming_interface,
-    IntentType,
-    DomainCategory,
     PatternLibrary,
 )
 
@@ -60,18 +54,18 @@ def print_result(response, show_cdl: bool = False, show_proof: bool = False):
     print(f"⏱️  Time: {response.elapsed_us / 1000:.2f}ms")
 
     if response.suggestions:
-        print(f"\n💡 Suggestions:")
+        print("\n💡 Suggestions:")
         for s in response.suggestions:
             print(f"   → {s}")
 
     if show_cdl and response.cdl:
-        print(f"\n📋 CDL Generated:")
+        print("\n📋 CDL Generated:")
         print(f"   ID: {response.cdl.get('id')}")
         print(f"   Pattern: {response.cdl.get('pattern_id')}")
         print(f"   Constraints: {len(response.cdl.get('constraints', []))}")
 
     if show_proof and response.proof:
-        print(f"\n🔐 Cryptographic Proof:")
+        print("\n🔐 Cryptographic Proof:")
         print(f"   Result Hash: {response.proof.get('result_hash', '')[:32]}...")
         print(f"   CDL Hash: {response.proof.get('cdl_hash', '')[:32]}...")
         print(f"   Signature: {response.proof.get('signature', '')[:32]}...")

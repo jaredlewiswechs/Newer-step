@@ -13,32 +13,24 @@ Tests all Ada capabilities:
 - Connectors
 """
 
-import json
 import os
 import pytest
 import tempfile
-from datetime import datetime, timedelta
-from unittest.mock import MagicMock, patch
+from datetime import datetime
 
 # Import Ada components
 from newton.ada.schema import (
     AdaConfig,
     AdaMode,
     AdaResponse,
-    AgentAction,
-    AgentPlan,
-    AgentResult,
     AgentStatus,
     CanvasDocument,
     CanvasType,
     CodeLanguage,
-    CodeResult,
-    Connector,
     ConnectorType,
     Conversation,
     FactStatus,
     Memory,
-    MemoryEntry,
     MemoryType,
     Message,
     MessageRole,
@@ -48,16 +40,14 @@ from newton.ada.schema import (
     Source,
     SourceType,
     TaskFrequency,
-    TaskResult,
-    TaskStatus,
 )
-from newton.ada.engine import Ada, AdaEngine, IntelligenceMode, LLMClient
+from newton.ada.engine import Ada, AdaEngine, LLMClient
 from newton.ada.research import DeepResearch, ClaimExtractor, SourceRanker, ClaimVerifier, ResearchConfig
 from newton.ada.memory import MemoryStore, VerifiedFact
 from newton.ada.agent import AdaAgent, Tool, ToolRegistry, ActionType, Planner, Executor
-from newton.ada.canvas import Canvas, ContentGenerator, ContentVerifier, EditOperation
+from newton.ada.canvas import Canvas, ContentGenerator, ContentVerifier
 from newton.ada.sandbox import CodeSandbox, SecurityChecker, SandboxConfig
-from newton.ada.tasks import TaskScheduler, CronParser, TaskRunner, TaskStore
+from newton.ada.tasks import TaskScheduler, CronParser, TaskStore
 from newton.ada.connectors import ConnectorRegistry, WebConnector, FileConnector, APIConnector, ConnectionStatus
 
 

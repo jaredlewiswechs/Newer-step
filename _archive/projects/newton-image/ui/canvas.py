@@ -6,18 +6,17 @@ Smooth pan, zoom, and infinite creativity.
 ═══════════════════════════════════════════════════════════════
 """
 
-from typing import Optional, Tuple, List
-from PyQt6.QtWidgets import QWidget, QApplication
-from PyQt6.QtCore import Qt, QPointF, QRectF, pyqtSignal, QSize
+from typing import Optional
+from PyQt6.QtWidgets import QWidget
+from PyQt6.QtCore import Qt, QPointF, QRectF, pyqtSignal
 from PyQt6.QtGui import (
-    QPainter, QColor, QPen, QBrush, QImage, QPixmap,
-    QMouseEvent, QWheelEvent, QPaintEvent, QKeyEvent,
-    QTransform, QCursor
+    QPainter, QColor, QPen, QImage, QMouseEvent, QWheelEvent, QPaintEvent, QKeyEvent,
+    QCursor
 )
 
 import sys
 sys.path.insert(0, '..')
-from core.document import NDocument, NLayer
+from core.document import NDocument
 from core.tools import NTool, ToolType, NBrushTool, NEraserTool, NEyedropperTool
 
 

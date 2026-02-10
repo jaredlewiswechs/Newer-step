@@ -6,18 +6,17 @@ These tests verify the fundamental physics of constraint satisfaction.
 """
 
 import pytest
-from datetime import datetime
 
 import sys
 import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from core import (
-    Matter, Floor, Capacity, Force, Ratio,
+    Matter, Floor, Capacity, Ratio,
     Construct, ConstructError, OntologicalDeath,
     attempt, MatterState
 )
-from ledger import Ledger, LedgerEntry, EntryType, global_ledger
+from ledger import Ledger, global_ledger
 
 
 class TestMatter:

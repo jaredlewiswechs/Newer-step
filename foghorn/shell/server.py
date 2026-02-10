@@ -6,7 +6,6 @@ Serves the shell + exposes Foghorn API with Nina kernel integration
 ═══════════════════════════════════════════════════════════════════════════════
 """
 
-import os
 import sys
 import json
 import time
@@ -15,7 +14,7 @@ import math
 import re
 from pathlib import Path
 from http.server import HTTPServer, SimpleHTTPRequestHandler
-from urllib.parse import urlparse, parse_qs
+from urllib.parse import urlparse
 
 # Add project root and nina to path (PROJECT_ROOT must come first for core.*)
 PROJECT_ROOT = Path(__file__).parent.parent.parent
@@ -23,9 +22,9 @@ sys.path.insert(0, str(PROJECT_ROOT / "adan_portable"))
 sys.path.insert(0, str(PROJECT_ROOT / "nina"))
 sys.path.insert(0, str(PROJECT_ROOT))  # Must be first so core.logic finds core.cdl
 
-from foghorn import Card, Query, ResultSet, FileAsset, Task, Receipt, LinkCurve, Rule
-from foghorn import MapPlace, Route, Automation
-from foghorn.objects import ObjectStore, get_object_store
+from foghorn import Card, Query, ResultSet, Receipt
+from foghorn import MapPlace
+from foghorn.objects import get_object_store
 
 # Import Nina kernel services
 try:
@@ -700,7 +699,7 @@ def main():
     # Start server
     print(f"\n🖥️  Starting Nina Desktop at http://{HOST}:{PORT}/index.html")
     print(f"   API available at http://{HOST}:{PORT}/foghorn/*")
-    print(f"   Press Ctrl+C to stop\n")
+    print("   Press Ctrl+C to stop\n")
     
     server = HTTPServer((HOST, PORT), NinaHandler)
     try:

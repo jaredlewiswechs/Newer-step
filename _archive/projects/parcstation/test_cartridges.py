@@ -8,7 +8,6 @@ Tests all cartridge endpoints
 
 import requests
 import sys
-import time
 import re
 import os
 

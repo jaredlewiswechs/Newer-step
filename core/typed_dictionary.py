@@ -62,16 +62,16 @@ This module provides the missing layer: math + typing.
 ═══════════════════════════════════════════════════════════════════════════════
 """
 
-from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Union
-from enum import Enum, auto
+from dataclasses import dataclass
+from typing import Any, Dict, List, Optional, Set, Tuple
+from enum import Enum
 import hashlib
 import json
-
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # SEMANTIC TYPES - Words must choose a role
 # ═══════════════════════════════════════════════════════════════════════════════
+
 
 class SemanticType(Enum):
     """
@@ -84,26 +84,27 @@ class SemanticType(Enum):
     - Actions can be forbidden BEFORE they happen
     - States can be detected AFTER they exist
     """
+
     # Fundamental types
-    ACTION = "action"           # A verb - something that happens
-    STATE = "state"             # A noun - something that exists
-    INVARIANT = "invariant"     # A property that must always hold
-    TRANSITION = "transition"   # A change from one state to another
+    ACTION = "action"  # A verb - something that happens
+    STATE = "state"  # A noun - something that exists
+    INVARIANT = "invariant"  # A property that must always hold
+    TRANSITION = "transition"  # A change from one state to another
 
     # Constraint types
-    BOUNDARY = "boundary"       # A limit that cannot be crossed
-    THRESHOLD = "threshold"     # A value that triggers behavior
-    CONDITION = "condition"     # A boolean test
+    BOUNDARY = "boundary"  # A limit that cannot be crossed
+    THRESHOLD = "threshold"  # A value that triggers behavior
+    CONDITION = "condition"  # A boolean test
 
     # Relation types
-    PREREQUISITE = "prerequisite"   # Must happen before
-    CONSEQUENCE = "consequence"     # Happens after
-    EXCLUSION = "exclusion"         # Cannot coexist
+    PREREQUISITE = "prerequisite"  # Must happen before
+    CONSEQUENCE = "consequence"  # Happens after
+    EXCLUSION = "exclusion"  # Cannot coexist
 
     # Entity types
-    AGENT = "agent"             # Who does the action
-    PATIENT = "patient"         # What receives the action
-    RESOURCE = "resource"       # What is consumed/produced
+    AGENT = "agent"  # Who does the action
+    PATIENT = "patient"  # What receives the action
+    RESOURCE = "resource"  # What is consumed/produced
 
 
 class ConstraintRole(Enum):
@@ -115,16 +116,18 @@ class ConstraintRole(Enum):
     - REQUIRED: authentication must exist
     - CONDITIONAL: approval needed if amount > threshold
     """
-    FORBIDDEN = "forbidden"     # finfr if this occurs
-    REQUIRED = "required"       # finfr if this doesn't occur
-    CONDITIONAL = "conditional" # depends on context
-    OBSERVABLE = "observable"   # can be measured but not constrained
-    DERIVED = "derived"         # computed from other values
+
+    FORBIDDEN = "forbidden"  # finfr if this occurs
+    REQUIRED = "required"  # finfr if this doesn't occur
+    CONDITIONAL = "conditional"  # depends on context
+    OBSERVABLE = "observable"  # can be measured but not constrained
+    DERIVED = "derived"  # computed from other values
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # TYPED CONCEPT - A word with mathematical meaning
 # ═══════════════════════════════════════════════════════════════════════════════
+
 
 @dataclass(frozen=True)
 class TypedConcept:
@@ -143,26 +146,27 @@ class TypedConcept:
     The word now has mathematical meaning - it's not just a label,
     it's a typed object that can participate in constraint logic.
     """
+
     # Identity
-    word: str                           # The natural language word
-    lemma: str                          # Base form (overdraw, not overdrew)
+    word: str  # The natural language word
+    lemma: str  # Base form (overdraw, not overdrew)
 
     # Type information
-    semantic_type: SemanticType         # What role does this play?
-    constraint_role: ConstraintRole     # How does it participate in constraints?
+    semantic_type: SemanticType  # What role does this play?
+    constraint_role: ConstraintRole  # How does it participate in constraints?
 
     # Domain binding
-    domain: str = "general"             # Which domain does this belong to?
+    domain: str = "general"  # Which domain does this belong to?
 
     # Mathematical binding (the key insight)
     predicate_template: Optional[str] = None  # e.g., "{field} / {reference} > 1.0"
-    default_field: Optional[str] = None       # e.g., "withdrawal"
-    default_reference: Optional[str] = None   # e.g., "balance"
-    threshold: Optional[float] = None         # e.g., 1.0
+    default_field: Optional[str] = None  # e.g., "withdrawal"
+    default_reference: Optional[str] = None  # e.g., "balance"
+    threshold: Optional[float] = None  # e.g., 1.0
 
     # Metadata
-    definition: Optional[str] = None    # Natural language definition
-    examples: Tuple[str, ...] = ()      # Usage examples
+    definition: Optional[str] = None  # Natural language definition
+    examples: Tuple[str, ...] = ()  # Usage examples
 
     def __hash__(self):
         return hash((self.word, self.lemma, self.semantic_type, self.domain))
@@ -192,7 +196,9 @@ class TypedConcept:
         if self.default_field:
             template = template.replace(f"{{{self.default_field}}}", self.default_field)
         if self.default_reference:
-            template = template.replace(f"{{{self.default_reference}}}", self.default_reference)
+            template = template.replace(
+                f"{{{self.default_reference}}}", self.default_reference
+            )
 
         # Also support generic {field} and {reference} placeholders
         if self.default_field:
@@ -206,6 +212,7 @@ class TypedConcept:
 # ═══════════════════════════════════════════════════════════════════════════════
 # SEMANTIC RELATIONS - Synonyms need distance, not equality
 # ═══════════════════════════════════════════════════════════════════════════════
+
 
 class RelationType(Enum):
     """
@@ -222,27 +229,28 @@ class RelationType(Enum):
     Collapsing them creates bugs.
     Typing them creates guarantees.
     """
+
     # Similarity relations (traditional thesaurus)
-    SYNONYM = "synonym"         # Similar meaning, DIFFERENT computation
-    ANTONYM = "antonym"         # Opposite meaning → hard constraint
-    HYPERNYM = "hypernym"       # More general (vehicle → car)
-    HYPONYM = "hyponym"         # More specific (car → vehicle)
+    SYNONYM = "synonym"  # Similar meaning, DIFFERENT computation
+    ANTONYM = "antonym"  # Opposite meaning → hard constraint
+    HYPERNYM = "hypernym"  # More general (vehicle → car)
+    HYPONYM = "hyponym"  # More specific (car → vehicle)
 
     # Constraint relations (Newton-specific)
-    IMPLIES = "implies"         # If A then B
-    EXCLUDES = "excludes"       # If A then not B
-    REQUIRES = "requires"       # A needs B to be valid
-    PREVENTS = "prevents"       # A makes B impossible
+    IMPLIES = "implies"  # If A then B
+    EXCLUDES = "excludes"  # If A then not B
+    REQUIRES = "requires"  # A needs B to be valid
+    PREVENTS = "prevents"  # A makes B impossible
 
     # Temporal relations
-    PRECEDES = "precedes"       # A happens before B
-    FOLLOWS = "follows"         # A happens after B
-    CONCURRENT = "concurrent"   # A and B happen together
+    PRECEDES = "precedes"  # A happens before B
+    FOLLOWS = "follows"  # A happens after B
+    CONCURRENT = "concurrent"  # A and B happen together
 
     # Causal relations
-    CAUSES = "causes"           # A leads to B
-    ENABLES = "enables"         # A makes B possible
-    TRIGGERS = "triggers"       # A immediately causes B
+    CAUSES = "causes"  # A leads to B
+    ENABLES = "enables"  # A makes B possible
+    TRIGGERS = "triggers"  # A immediately causes B
 
 
 @dataclass(frozen=True)
@@ -263,14 +271,15 @@ class SemanticRelation:
     The distance tells you: don't collapse these.
     The mapping tells you: how they differ computationally.
     """
+
     # The relation
     source: TypedConcept
     target: TypedConcept
     relation_type: RelationType
 
     # The measure (this is the math)
-    distance: float = 0.0       # 0 = identical, 1 = unrelated
-    strength: float = 1.0       # How strong is this relation?
+    distance: float = 0.0  # 0 = identical, 1 = unrelated
+    strength: float = 1.0  # How strong is this relation?
 
     # Constraint implications
     # When source is true, what does it say about target?
@@ -303,12 +312,20 @@ class SemanticRelation:
                     {
                         "logic": "and",
                         "constraints": [
-                            {"field": self.source.lemma, "operator": "eq", "value": True},
-                            {"field": self.target.lemma, "operator": "eq", "value": True}
-                        ]
+                            {
+                                "field": self.source.lemma,
+                                "operator": "eq",
+                                "value": True,
+                            },
+                            {
+                                "field": self.target.lemma,
+                                "operator": "eq",
+                                "value": True,
+                            },
+                        ],
                     }
                 ],
-                "message": f"Antonyms {self.source.word} and {self.target.word} cannot both be true"
+                "message": f"Antonyms {self.source.word} and {self.target.word} cannot both be true",
             }
 
         elif self.relation_type == RelationType.IMPLIES:
@@ -316,7 +333,7 @@ class SemanticRelation:
             return {
                 "if": {"field": self.source.lemma, "operator": "eq", "value": True},
                 "then": {"field": self.target.lemma, "operator": "eq", "value": True},
-                "message": f"{self.source.word} implies {self.target.word}"
+                "message": f"{self.source.word} implies {self.target.word}",
             }
 
         elif self.relation_type == RelationType.EXCLUDES:
@@ -324,15 +341,19 @@ class SemanticRelation:
             return {
                 "if": {"field": self.source.lemma, "operator": "eq", "value": True},
                 "then": {"field": self.target.lemma, "operator": "eq", "value": False},
-                "message": f"{self.source.word} excludes {self.target.word}"
+                "message": f"{self.source.word} excludes {self.target.word}",
             }
 
         elif self.relation_type == RelationType.REQUIRES:
             # Source requires target to be present
             return {
                 "if": {"field": self.source.lemma, "operator": "eq", "value": True},
-                "then": {"field": self.target.lemma, "operator": "exists", "value": True},
-                "message": f"{self.source.word} requires {self.target.word}"
+                "then": {
+                    "field": self.target.lemma,
+                    "operator": "exists",
+                    "value": True,
+                },
+                "message": f"{self.source.word} requires {self.target.word}",
             }
 
         return None
@@ -341,6 +362,7 @@ class SemanticRelation:
 # ═══════════════════════════════════════════════════════════════════════════════
 # CONSTRAINT COMPILER - Words become laws
 # ═══════════════════════════════════════════════════════════════════════════════
+
 
 class ConstraintCompiler:
     """
@@ -375,7 +397,7 @@ class ConstraintCompiler:
                 distance=relation.distance,
                 strength=relation.strength,
                 implication=relation.implication,
-                symmetric=False  # Don't recurse
+                symmetric=False,  # Don't recurse
             )
             self._relations[reverse.id] = reverse
 
@@ -405,7 +427,9 @@ class ConstraintCompiler:
                 constraint["g_field"] = concept.default_reference or "allowance"
                 constraint["operator"] = "ratio_le"
                 constraint["threshold"] = concept.threshold or 1.0
-                constraint["message"] = f"finfr: {concept.word} would violate constraint"
+                constraint["message"] = (
+                    f"finfr: {concept.word} would violate constraint"
+                )
 
             elif concept.semantic_type == SemanticType.STATE:
                 # Forbidden state → simple constraint
@@ -480,6 +504,7 @@ class ConstraintCompiler:
 # TYPED DICTIONARY - The complete dictionary with mathematical meaning
 # ═══════════════════════════════════════════════════════════════════════════════
 
+
 class TypedDictionary:
     """
     A dictionary where every word has a computational type.
@@ -524,7 +549,9 @@ class TypedDictionary:
 
         # Index structures
         self._by_type: Dict[SemanticType, Set[str]] = {t: set() for t in SemanticType}
-        self._by_role: Dict[ConstraintRole, Set[str]] = {r: set() for r in ConstraintRole}
+        self._by_role: Dict[ConstraintRole, Set[str]] = {
+            r: set() for r in ConstraintRole
+        }
         self._synonyms: Dict[str, Set[str]] = {}
         self._antonyms: Dict[str, Set[str]] = {}
 
@@ -558,7 +585,7 @@ class TypedDictionary:
             default_reference=reference,
             threshold=threshold,
             definition=definition,
-            examples=tuple(examples) if examples else ()
+            examples=tuple(examples) if examples else (),
         )
 
         self._concepts[word.lower()] = concept
@@ -600,7 +627,7 @@ class TypedDictionary:
             distance=distance,
             strength=strength,
             implication=implication,
-            symmetric=symmetric
+            symmetric=symmetric,
         )
 
         self._relations.append(relation)
@@ -720,13 +747,14 @@ class TypedDictionary:
                     "symmetric": r.symmetric,
                 }
                 for r in self._relations
-            ]
+            ],
         }
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # BUILT-IN FINANCIAL DICTIONARY
 # ═══════════════════════════════════════════════════════════════════════════════
+
 
 def create_financial_dictionary() -> TypedDictionary:
     """
@@ -753,7 +781,7 @@ def create_financial_dictionary() -> TypedDictionary:
         reference="balance",
         threshold=1.0,
         definition="To withdraw more than the available balance",
-        examples=["Attempting to overdraw the account will be rejected"]
+        examples=["Attempting to overdraw the account will be rejected"],
     )
 
     td.define(
@@ -764,7 +792,7 @@ def create_financial_dictionary() -> TypedDictionary:
         field="amount",
         reference="available",
         definition="To remove funds from an account",
-        examples=["Withdraw $100 from checking"]
+        examples=["Withdraw $100 from checking"],
     )
 
     td.define(
@@ -772,7 +800,7 @@ def create_financial_dictionary() -> TypedDictionary:
         semantic_type=SemanticType.ACTION,
         constraint_role=ConstraintRole.OBSERVABLE,
         definition="To add funds to an account",
-        examples=["Deposit $500"]
+        examples=["Deposit $500"],
     )
 
     td.define(
@@ -782,7 +810,7 @@ def create_financial_dictionary() -> TypedDictionary:
         predicate="{amount} <= {source_balance}",
         field="amount",
         reference="source_balance",
-        definition="To move funds between accounts"
+        definition="To move funds between accounts",
     )
 
     # ─────────────────────────────────────────────────────────────────────────
@@ -796,7 +824,7 @@ def create_financial_dictionary() -> TypedDictionary:
         predicate="{balance} < 0",
         field="balance",
         threshold=0,
-        definition="A state where the balance is negative"
+        definition="A state where the balance is negative",
     )
 
     td.define(
@@ -806,7 +834,7 @@ def create_financial_dictionary() -> TypedDictionary:
         predicate="{assets} >= {liabilities}",
         field="assets",
         reference="liabilities",
-        definition="Having assets greater than or equal to liabilities"
+        definition="Having assets greater than or equal to liabilities",
     )
 
     td.define(
@@ -816,14 +844,14 @@ def create_financial_dictionary() -> TypedDictionary:
         predicate="{liabilities} > {assets}",
         field="liabilities",
         reference="assets",
-        definition="Having liabilities greater than assets"
+        definition="Having liabilities greater than assets",
     )
 
     td.define(
         "liquid",
         semantic_type=SemanticType.STATE,
         constraint_role=ConstraintRole.OBSERVABLE,
-        definition="Having sufficient cash or cash equivalents"
+        definition="Having sufficient cash or cash equivalents",
     )
 
     # ─────────────────────────────────────────────────────────────────────────
@@ -834,14 +862,14 @@ def create_financial_dictionary() -> TypedDictionary:
         "limit",
         semantic_type=SemanticType.BOUNDARY,
         constraint_role=ConstraintRole.REQUIRED,
-        definition="A maximum value that cannot be exceeded"
+        definition="A maximum value that cannot be exceeded",
     )
 
     td.define(
         "threshold",
         semantic_type=SemanticType.THRESHOLD,
         constraint_role=ConstraintRole.CONDITIONAL,
-        definition="A value that triggers special handling"
+        definition="A value that triggers special handling",
     )
 
     # ─────────────────────────────────────────────────────────────────────────
@@ -850,41 +878,46 @@ def create_financial_dictionary() -> TypedDictionary:
 
     # Overdraw CAUSES overdraft
     td.relate(
-        "overdraw", "overdraft",
+        "overdraw",
+        "overdraft",
         relation_type=RelationType.CAUSES,
         implication="overdraw → overdraft",
-        strength=1.0
+        strength=1.0,
     )
 
     # Solvent and insolvent are ANTONYMS (hard constraint)
     td.relate(
-        "solvent", "insolvent",
+        "solvent",
+        "insolvent",
         relation_type=RelationType.ANTONYM,
         distance=1.0,  # Maximum distance - completely opposite
-        symmetric=True
+        symmetric=True,
     )
 
     # Withdraw is similar to overdraw but different (synonym with distance)
     td.relate(
-        "withdraw", "overdraw",
+        "withdraw",
+        "overdraw",
         relation_type=RelationType.SYNONYM,
         distance=0.3,  # Related but distinct
-        symmetric=True
+        symmetric=True,
     )
 
     # Deposit is antonym of withdraw
     td.relate(
-        "deposit", "withdraw",
+        "deposit",
+        "withdraw",
         relation_type=RelationType.ANTONYM,
         distance=1.0,
-        symmetric=True
+        symmetric=True,
     )
 
     # Transfer REQUIRES source account to be solvent
     td.relate(
-        "transfer", "solvent",
+        "transfer",
+        "solvent",
         relation_type=RelationType.REQUIRES,
-        implication="transfer → source.solvent"
+        implication="transfer → source.solvent",
     )
 
     return td
@@ -893,6 +926,7 @@ def create_financial_dictionary() -> TypedDictionary:
 # ═══════════════════════════════════════════════════════════════════════════════
 # BUILT-IN SAFETY DICTIONARY
 # ═══════════════════════════════════════════════════════════════════════════════
+
 
 def create_safety_dictionary() -> TypedDictionary:
     """
@@ -918,7 +952,7 @@ def create_safety_dictionary() -> TypedDictionary:
         field="risk",
         reference="tolerance",
         definition="System invariant: risk never exceeds tolerance",
-        examples=["The operation is safe if risk/tolerance <= 1"]
+        examples=["The operation is safe if risk/tolerance <= 1"],
     )
 
     td.define(
@@ -927,7 +961,7 @@ def create_safety_dictionary() -> TypedDictionary:
         constraint_role=ConstraintRole.CONDITIONAL,
         predicate="{policy}.permits({action})",
         definition="Policy permits this action",
-        examples=["This action is allowed by the policy"]
+        examples=["This action is allowed by the policy"],
     )
 
     td.define(
@@ -936,7 +970,7 @@ def create_safety_dictionary() -> TypedDictionary:
         constraint_role=ConstraintRole.CONDITIONAL,
         predicate="{authority}.grants({action}, {agent})",
         definition="Authority has granted permission",
-        examples=["The user is permitted to perform this action"]
+        examples=["The user is permitted to perform this action"],
     )
 
     td.define(
@@ -944,7 +978,7 @@ def create_safety_dictionary() -> TypedDictionary:
         semantic_type=SemanticType.THRESHOLD,
         constraint_role=ConstraintRole.OBSERVABLE,  # Soft constraint
         definition="Within context-dependent tolerance",
-        examples=["The latency is acceptable for this use case"]
+        examples=["The latency is acceptable for this use case"],
     )
 
     td.define(
@@ -954,7 +988,7 @@ def create_safety_dictionary() -> TypedDictionary:
         predicate="{risk} > {safe_threshold}",
         field="risk",
         reference="safe_threshold",
-        definition="Risk exceeds safe threshold"
+        definition="Risk exceeds safe threshold",
     )
 
     # ─────────────────────────────────────────────────────────────────────────
@@ -963,40 +997,45 @@ def create_safety_dictionary() -> TypedDictionary:
 
     # Safe/allowed/permitted are synonyms WITH DISTANCE
     td.relate(
-        "safe", "allowed",
+        "safe",
+        "allowed",
         relation_type=RelationType.SYNONYM,
         distance=0.4,  # Related but computationally distinct
         implication="safe → allowed (but not converse)",
-        symmetric=False  # safe implies allowed, but allowed doesn't imply safe
+        symmetric=False,  # safe implies allowed, but allowed doesn't imply safe
     )
 
     td.relate(
-        "allowed", "permitted",
+        "allowed",
+        "permitted",
         relation_type=RelationType.SYNONYM,
         distance=0.2,  # Closer than safe/allowed
-        symmetric=True
+        symmetric=True,
     )
 
     td.relate(
-        "safe", "permitted",
+        "safe",
+        "permitted",
         relation_type=RelationType.SYNONYM,
         distance=0.5,
-        symmetric=False
+        symmetric=False,
     )
 
     # Safe and dangerous are ANTONYMS (hard constraint)
     td.relate(
-        "safe", "dangerous",
+        "safe",
+        "dangerous",
         relation_type=RelationType.ANTONYM,
         distance=1.0,
-        symmetric=True
+        symmetric=True,
     )
 
     # Safe REQUIRES allowed
     td.relate(
-        "safe", "allowed",
+        "safe",
+        "allowed",
         relation_type=RelationType.REQUIRES,
-        implication="safe → allowed"
+        implication="safe → allowed",
     )
 
     return td
@@ -1012,8 +1051,8 @@ if __name__ == "__main__":
     print("═" * 70)
     print()
     print('"A dictionary gives you labels.')
-    print(' A thesaurus gives you relations.')
-    print(' Math turns them into constraints.')
+    print(" A thesaurus gives you relations.")
+    print(" Math turns them into constraints.")
     print(' Only then do you get code."')
     print()
     print("═" * 70)

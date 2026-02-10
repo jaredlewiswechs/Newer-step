@@ -1,4 +1,5 @@
 """NSTableView — a column-based data view."""
+
 from __future__ import annotations
 from typing import Optional, List, Any, Protocol
 
@@ -7,13 +8,19 @@ from Kernel.view.nsview import NSView, NSRect
 
 class NSTableViewDataSource(Protocol):
     """Protocol for providing data to a table view."""
+
     def number_of_rows(self, table_view: NSTableView) -> int: ...
-    def object_value_for(self, table_view: NSTableView, column: NSTableColumn, row: int) -> Any: ...
+    def object_value_for(
+        self, table_view: NSTableView, column: NSTableColumn, row: int
+    ) -> Any: ...
 
 
 class NSTableViewDelegate(Protocol):
     """Protocol for customizing table view behavior."""
-    def view_for_table_column(self, table_view: NSTableView, column: NSTableColumn, row: int) -> Optional[NSView]: ...
+
+    def view_for_table_column(
+        self, table_view: NSTableView, column: NSTableColumn, row: int
+    ) -> Optional[NSView]: ...
 
 
 class NSTableColumn:
@@ -224,34 +231,50 @@ class NSTableView(NSView):
     def draw(self, rect=None) -> str:
         w, h = self._bounds.width, self._bounds.height
         parts = []
-        parts.append(f'<rect x="0" y="0" width="{w}" height="{h}" fill="white" stroke="#ccc" />')
+        parts.append(
+            f'<rect x="0" y="0" width="{w}" height="{h}" fill="white" stroke="#ccc" />'
+        )
         # header
         x = 0.0
         header_h = 20.0
         for col in self._columns:
             if col.is_hidden:
                 continue
-            parts.append(f'<rect x="{x}" y="0" width="{col.width}" height="{header_h}" '
-                         f'fill="#f0f0f0" stroke="#ccc" stroke-width="0.5" />')
-            parts.append(f'<text x="{x + 4}" y="14" font-size="11" '
-                         f'font-family="sans-serif" font-weight="bold">{col.title}</text>')
+            parts.append(
+                f'<rect x="{x}" y="0" width="{col.width}" height="{header_h}" '
+                f'fill="#f0f0f0" stroke="#ccc" stroke-width="0.5" />'
+            )
+            parts.append(
+                f'<text x="{x + 4}" y="14" font-size="11" '
+                f'font-family="sans-serif" font-weight="bold">{col.title}</text>'
+            )
             x += col.width + self._intercell_spacing[0]
         # rows
         if self._data_source:
             self.reload_data()
         for r, row_data in enumerate(self._cached_rows):
             ry = header_h + r * (self._row_height + self._intercell_spacing[1])
-            bg = "#d0e0ff" if r in self._selected_row_indexes else (
-                "#f8f8f8" if r % 2 and self._uses_alternating_row_background_colors else "white"
+            bg = (
+                "#d0e0ff"
+                if r in self._selected_row_indexes
+                else (
+                    "#f8f8f8"
+                    if r % 2 and self._uses_alternating_row_background_colors
+                    else "white"
+                )
             )
-            parts.append(f'<rect x="0" y="{ry}" width="{w}" height="{self._row_height}" fill="{bg}" />')
+            parts.append(
+                f'<rect x="0" y="{ry}" width="{w}" height="{self._row_height}" fill="{bg}" />'
+            )
             cx = 0.0
             for ci, col in enumerate(self._columns):
                 if col.is_hidden:
                     continue
                 val = row_data[ci] if ci < len(row_data) else ""
-                parts.append(f'<text x="{cx + 4}" y="{ry + 16}" font-size="12" '
-                             f'font-family="sans-serif">{val}</text>')
+                parts.append(
+                    f'<text x="{cx + 4}" y="{ry + 16}" font-size="12" '
+                    f'font-family="sans-serif">{val}</text>'
+                )
                 cx += col.width + self._intercell_spacing[0]
         return "\n".join(parts)
 

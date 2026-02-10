@@ -25,27 +25,23 @@ Cartridge Types:
 ═══════════════════════════════════════════════════════════════════════════════
 """
 
-from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Tuple, Callable
+from typing import Any, Dict, List, Optional, Tuple
 from enum import Enum
 import re
 import hashlib
 import time
-import math
 
 # Import base cartridge infrastructure
-from .cartridges import (
-    CartridgeType, CartridgeResult, ConstraintResult,
-    ConstraintChecker, SAFETY_PATTERNS
-)
-
+from .cartridges import CartridgeType, CartridgeResult, ConstraintChecker
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # GAME CARTRIDGE TYPES
 # ═══════════════════════════════════════════════════════════════════════════════
 
+
 class GameCartridgeType(Enum):
     """Types of game-specific cartridges."""
+
     PHYSICS = "physics"
     AI = "ai"
     INPUT = "input"
@@ -61,6 +57,7 @@ class GameCartridgeType(Enum):
 
 class GameOutputFormat(Enum):
     """Output formats for game cartridges."""
+
     # Physics
     PHYSICS_SPEC = "physics_spec"
     COLLISION_SPEC = "collision_spec"
@@ -117,7 +114,7 @@ PHYSICS_CONSTRAINTS = {
     "max_velocity": {"cap": 1000},  # m/s
     "time_step": {"min": 0.001, "max": 0.1},  # seconds
     "substeps": {"min": 1, "max": 16},
-    "patterns": []
+    "patterns": [],
 }
 
 AI_CONSTRAINTS = {
@@ -126,7 +123,7 @@ AI_CONSTRAINTS = {
     "memory_duration_s": {"min": 0, "max": 3600},
     "max_behavior_depth": {"max": 20},
     "max_states": {"max": 100},
-    "patterns": []
+    "patterns": [],
 }
 
 INPUT_CONSTRAINTS = {
@@ -135,7 +132,7 @@ INPUT_CONSTRAINTS = {
     "sensitivity": {"min": 0.1, "max": 10.0},
     "max_simultaneous_touches": {"max": 10},
     "gesture_timeout_ms": {"max": 2000},
-    "patterns": []
+    "patterns": [],
 }
 
 NETWORK_CONSTRAINTS = {
@@ -147,7 +144,7 @@ NETWORK_CONSTRAINTS = {
     "patterns": [
         r"\b(ddos|denial of service|flood)\b",
         r"\b(exploit|cheat|hack)\b.*\b(server|game)\b",
-    ]
+    ],
 }
 
 ECONOMY_CONSTRAINTS = {
@@ -158,7 +155,7 @@ ECONOMY_CONSTRAINTS = {
     "patterns": [
         r"\b(real money|cash out|gambling)\b",
         r"\b(exploit|dupe|duplicate)\b.*\b(currency|item|gold)\b",
-    ]
+    ],
 }
 
 NARRATIVE_CONSTRAINTS = {
@@ -166,7 +163,7 @@ NARRATIVE_CONSTRAINTS = {
     "max_choices_per_node": {"max": 10},
     "max_quest_depth": {"max": 50},
     "max_concurrent_quests": {"max": 100},
-    "patterns": []
+    "patterns": [],
 }
 
 WORLD_CONSTRAINTS = {
@@ -175,7 +172,7 @@ WORLD_CONSTRAINTS = {
     "lod_levels": {"min": 1, "max": 10},
     "max_entities_per_chunk": {"max": 1000},
     "seed_range": {"min": 0, "max": 2**32 - 1},
-    "patterns": []
+    "patterns": [],
 }
 
 PARTICLE_CONSTRAINTS = {
@@ -186,14 +183,14 @@ PARTICLE_CONSTRAINTS = {
     "patterns": [
         r"\b(seizure|epilepsy)\b.*\b(inducing|triggering)\b",
         r"\b(strobing|flashing)\b.*\b(rapid|fast)\b",
-    ]
+    ],
 }
 
 HAPTIC_CONSTRAINTS = {
     "intensity": {"min": 0.0, "max": 1.0},
     "duration_ms": {"min": 1, "max": 5000},
     "frequency_hz": {"min": 1, "max": 500},
-    "patterns": []
+    "patterns": [],
 }
 
 SAVE_CONSTRAINTS = {
@@ -203,20 +200,21 @@ SAVE_CONSTRAINTS = {
     "compression_level": {"min": 0, "max": 9},
     "patterns": [
         r"\b(corrupt|destroy|delete)\b.*\b(save|data|progress)\b",
-    ]
+    ],
 }
 
 LOCALE_CONSTRAINTS = {
     "max_languages": {"max": 50},
     "max_string_length": {"max": 10000},
     "supported_encodings": ["utf-8", "utf-16", "ascii"],
-    "patterns": []
+    "patterns": [],
 }
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # PHYSICS CARTRIDGE
 # ═══════════════════════════════════════════════════════════════════════════════
+
 
 class PhysicsCartridge:
     """
@@ -266,7 +264,7 @@ class PhysicsCartridge:
         gravity: float = 9.81,
         time_step: float = 0.016,  # 60 Hz
         substeps: int = 4,
-        world_bounds: Optional[Tuple[float, float, float]] = None
+        world_bounds: Optional[Tuple[float, float, float]] = None,
     ) -> CartridgeResult:
         """Compile physics intent into simulation specification."""
         start_us = time.perf_counter_ns() // 1000
@@ -274,15 +272,15 @@ class PhysicsCartridge:
         # Clamp parameters
         gravity = max(
             PHYSICS_CONSTRAINTS["gravity"]["min"],
-            min(gravity, PHYSICS_CONSTRAINTS["gravity"]["max"])
+            min(gravity, PHYSICS_CONSTRAINTS["gravity"]["max"]),
         )
         time_step = max(
             PHYSICS_CONSTRAINTS["time_step"]["min"],
-            min(time_step, PHYSICS_CONSTRAINTS["time_step"]["max"])
+            min(time_step, PHYSICS_CONSTRAINTS["time_step"]["max"]),
         )
         substeps = max(
             PHYSICS_CONSTRAINTS["substeps"]["min"],
-            min(substeps, PHYSICS_CONSTRAINTS["substeps"]["max"])
+            min(substeps, PHYSICS_CONSTRAINTS["substeps"]["max"]),
         )
 
         # Safety check
@@ -318,7 +316,7 @@ class PhysicsCartridge:
                     "broad_phase": "dynamic_bvh",
                     "narrow_phase": "gjk_epa",
                 },
-                "intent_hash": hashlib.sha256(intent.encode()).hexdigest()[:16].upper()
+                "intent_hash": hashlib.sha256(intent.encode()).hexdigest()[:16].upper(),
             }
 
             # Add vehicle-specific physics if detected
@@ -336,16 +334,21 @@ class PhysicsCartridge:
             cartridge_type=CartridgeType.DATA,  # Using DATA as base
             spec=spec,
             constraints={
-                "safety": {"passed": safety_check.passed, "violations": safety_check.violations},
+                "safety": {
+                    "passed": safety_check.passed,
+                    "violations": safety_check.violations,
+                },
                 "bounds": {
                     "gravity": gravity,
                     "time_step": time_step,
-                    "substeps": substeps
-                }
+                    "substeps": substeps,
+                },
             },
-            fingerprint=hashlib.sha256(f"{intent}{gravity}{time_step}".encode()).hexdigest()[:12].upper(),
+            fingerprint=hashlib.sha256(f"{intent}{gravity}{time_step}".encode())
+            .hexdigest()[:12]
+            .upper(),
             elapsed_us=elapsed_us,
-            timestamp=int(time.time() * 1000)
+            timestamp=int(time.time() * 1000),
         )
 
     def _parse_body_type(self, intent: str) -> str:
@@ -368,7 +371,18 @@ class PhysicsCartridge:
         for material, props in self.MATERIAL_PRESETS.items():
             if material in intent_lower:
                 materials.append({"name": material, **props})
-        return materials if materials else [{"name": "default", "friction": 0.5, "restitution": 0.3, "density": 1000}]
+        return (
+            materials
+            if materials
+            else [
+                {
+                    "name": "default",
+                    "friction": 0.5,
+                    "restitution": 0.3,
+                    "density": 1000,
+                }
+            ]
+        )
 
     def _infer_layers(self, body_type: str) -> int:
         layers = {
@@ -385,44 +399,40 @@ class PhysicsCartridge:
     def _infer_masks(self, body_type: str) -> int:
         # What this body type collides with
         masks = {
-            "rigid": 0b1111111,      # collides with everything
-            "vehicle": 0b1111101,    # not with other vehicles (layer 2)
+            "rigid": 0b1111111,  # collides with everything
+            "vehicle": 0b1111101,  # not with other vehicles (layer 2)
             "character": 0b1110111,  # not with other characters
-            "projectile": 0b1110111, # not with other projectiles
+            "projectile": 0b1110111,  # not with other projectiles
             "soft": 0b0111111,
             "fluid": 0b1011111,
             "ragdoll": 0b1111111,
         }
         return masks.get(body_type, 0b1111111)
 
-    def _generate_physics_constraints(self, intent: str, body_type: str) -> List[Dict[str, Any]]:
+    def _generate_physics_constraints(
+        self, intent: str, body_type: str
+    ) -> List[Dict[str, Any]]:
         constraints = []
         intent_lower = intent.lower()
 
         if "joint" in intent_lower or "hinge" in intent_lower:
-            constraints.append({
-                "type": "hinge",
-                "axis": [0, 1, 0],
-                "limits": {"min": -180, "max": 180}
-            })
+            constraints.append(
+                {
+                    "type": "hinge",
+                    "axis": [0, 1, 0],
+                    "limits": {"min": -180, "max": 180},
+                }
+            )
         if "spring" in intent_lower:
-            constraints.append({
-                "type": "spring",
-                "stiffness": 1000,
-                "damping": 10
-            })
+            constraints.append({"type": "spring", "stiffness": 1000, "damping": 10})
         if "distance" in intent_lower or "rope" in intent_lower:
-            constraints.append({
-                "type": "distance",
-                "min_distance": 0,
-                "max_distance": 10
-            })
+            constraints.append(
+                {"type": "distance", "min_distance": 0, "max_distance": 10}
+            )
         if body_type == "character":
-            constraints.append({
-                "type": "ground_constraint",
-                "max_slope_angle": 45,
-                "step_height": 0.5
-            })
+            constraints.append(
+                {"type": "ground_constraint", "max_slope_angle": 45, "step_height": 0.5}
+            )
 
         return constraints
 
@@ -464,7 +474,7 @@ class PhysicsCartridge:
             "aerodynamics": {
                 "drag_coefficient": 0.3,
                 "downforce_coefficient": 0.5,
-            }
+            },
         }
 
     def _generate_character_spec(self, intent: str) -> Dict[str, Any]:
@@ -491,6 +501,7 @@ class PhysicsCartridge:
 # ═══════════════════════════════════════════════════════════════════════════════
 # AI CARTRIDGE
 # ═══════════════════════════════════════════════════════════════════════════════
+
 
 class AICartridge:
     """
@@ -533,7 +544,7 @@ class AICartridge:
         reaction_time_ms: int = 200,
         awareness_radius: float = 50.0,
         memory_duration_s: float = 30.0,
-        difficulty: float = 0.5
+        difficulty: float = 0.5,
     ) -> CartridgeResult:
         """Compile AI intent into behavior specification."""
         start_us = time.perf_counter_ns() // 1000
@@ -541,15 +552,15 @@ class AICartridge:
         # Clamp parameters
         reaction_time_ms = max(
             AI_CONSTRAINTS["reaction_time_ms"]["min"],
-            min(reaction_time_ms, AI_CONSTRAINTS["reaction_time_ms"]["max"])
+            min(reaction_time_ms, AI_CONSTRAINTS["reaction_time_ms"]["max"]),
         )
         awareness_radius = max(
             AI_CONSTRAINTS["awareness_radius"]["min"],
-            min(awareness_radius, AI_CONSTRAINTS["awareness_radius"]["max"])
+            min(awareness_radius, AI_CONSTRAINTS["awareness_radius"]["max"]),
         )
         memory_duration_s = max(
             AI_CONSTRAINTS["memory_duration_s"]["min"],
-            min(memory_duration_s, AI_CONSTRAINTS["memory_duration_s"]["max"])
+            min(memory_duration_s, AI_CONSTRAINTS["memory_duration_s"]["max"]),
         )
         difficulty = max(0.0, min(difficulty, 1.0))
 
@@ -583,7 +594,9 @@ class AICartridge:
                     "time_ms": reaction_time_ms,
                     "variance_ms": reaction_time_ms * 0.2,
                 },
-                "behavior_tree": self._generate_behavior_tree(behavior_type, difficulty),
+                "behavior_tree": self._generate_behavior_tree(
+                    behavior_type, difficulty
+                ),
                 "state_machine": {
                     "initial_state": "idle",
                     "states": states,
@@ -608,7 +621,7 @@ class AICartridge:
                     "reaction_speed": 1.0 - difficulty * 0.5,
                     "health_multiplier": 0.5 + difficulty * 1.0,
                 },
-                "intent_hash": hashlib.sha256(intent.encode()).hexdigest()[:16].upper()
+                "intent_hash": hashlib.sha256(intent.encode()).hexdigest()[:16].upper(),
             }
 
         elapsed_us = (time.perf_counter_ns() // 1000) - start_us
@@ -618,16 +631,23 @@ class AICartridge:
             cartridge_type=CartridgeType.DATA,
             spec=spec,
             constraints={
-                "safety": {"passed": safety_check.passed, "violations": safety_check.violations},
+                "safety": {
+                    "passed": safety_check.passed,
+                    "violations": safety_check.violations,
+                },
                 "bounds": {
                     "reaction_time_ms": reaction_time_ms,
                     "awareness_radius": awareness_radius,
                     "memory_duration_s": memory_duration_s,
-                }
+                },
             },
-            fingerprint=hashlib.sha256(f"{intent}{reaction_time_ms}{awareness_radius}".encode()).hexdigest()[:12].upper(),
+            fingerprint=hashlib.sha256(
+                f"{intent}{reaction_time_ms}{awareness_radius}".encode()
+            )
+            .hexdigest()[:12]
+            .upper(),
             elapsed_us=elapsed_us,
-            timestamp=int(time.time() * 1000)
+            timestamp=int(time.time() * 1000),
         )
 
     def _parse_behavior_type(self, intent: str) -> str:
@@ -645,70 +665,104 @@ class AICartridge:
                 states.append(state)
         return states if states else ["idle", "patrol", "alert", "combat"]
 
-    def _generate_behavior_tree(self, behavior_type: str, difficulty: float) -> Dict[str, Any]:
+    def _generate_behavior_tree(
+        self, behavior_type: str, difficulty: float
+    ) -> Dict[str, Any]:
         trees = {
             "aggressive": {
                 "root": "selector",
                 "children": [
-                    {"type": "sequence", "name": "attack", "children": [
-                        {"type": "condition", "name": "has_target"},
-                        {"type": "condition", "name": "in_range"},
-                        {"type": "action", "name": "attack_target"},
-                    ]},
-                    {"type": "sequence", "name": "chase", "children": [
-                        {"type": "condition", "name": "has_target"},
-                        {"type": "action", "name": "move_to_target"},
-                    ]},
+                    {
+                        "type": "sequence",
+                        "name": "attack",
+                        "children": [
+                            {"type": "condition", "name": "has_target"},
+                            {"type": "condition", "name": "in_range"},
+                            {"type": "action", "name": "attack_target"},
+                        ],
+                    },
+                    {
+                        "type": "sequence",
+                        "name": "chase",
+                        "children": [
+                            {"type": "condition", "name": "has_target"},
+                            {"type": "action", "name": "move_to_target"},
+                        ],
+                    },
                     {"type": "action", "name": "search_for_target"},
-                ]
+                ],
             },
             "defensive": {
                 "root": "selector",
                 "children": [
-                    {"type": "sequence", "name": "defend", "children": [
-                        {"type": "condition", "name": "threat_detected"},
-                        {"type": "action", "name": "face_threat"},
-                        {"type": "action", "name": "attack_if_close"},
-                    ]},
+                    {
+                        "type": "sequence",
+                        "name": "defend",
+                        "children": [
+                            {"type": "condition", "name": "threat_detected"},
+                            {"type": "action", "name": "face_threat"},
+                            {"type": "action", "name": "attack_if_close"},
+                        ],
+                    },
                     {"type": "action", "name": "patrol_area"},
-                ]
+                ],
             },
             "passive": {
                 "root": "selector",
                 "children": [
-                    {"type": "sequence", "name": "flee_if_attacked", "children": [
-                        {"type": "condition", "name": "is_damaged"},
-                        {"type": "action", "name": "flee"},
-                    ]},
+                    {
+                        "type": "sequence",
+                        "name": "flee_if_attacked",
+                        "children": [
+                            {"type": "condition", "name": "is_damaged"},
+                            {"type": "action", "name": "flee"},
+                        ],
+                    },
                     {"type": "action", "name": "wander"},
-                ]
+                ],
             },
             "fearful": {
                 "root": "selector",
                 "children": [
-                    {"type": "sequence", "name": "flee", "children": [
-                        {"type": "condition", "name": "threat_detected"},
-                        {"type": "action", "name": "flee_from_threat"},
-                    ]},
+                    {
+                        "type": "sequence",
+                        "name": "flee",
+                        "children": [
+                            {"type": "condition", "name": "threat_detected"},
+                            {"type": "action", "name": "flee_from_threat"},
+                        ],
+                    },
                     {"type": "action", "name": "hide"},
-                ]
+                ],
             },
         }
         return trees.get(behavior_type, trees["passive"])
 
-    def _generate_transitions(self, states: List[str], behavior_type: str) -> List[Dict[str, Any]]:
+    def _generate_transitions(
+        self, states: List[str], behavior_type: str
+    ) -> List[Dict[str, Any]]:
         transitions = []
 
         if "idle" in states and "patrol" in states:
-            transitions.append({"from": "idle", "to": "patrol", "condition": "patrol_timer_elapsed"})
+            transitions.append(
+                {"from": "idle", "to": "patrol", "condition": "patrol_timer_elapsed"}
+            )
         if "patrol" in states and "alert" in states:
-            transitions.append({"from": "patrol", "to": "alert", "condition": "suspicious_detected"})
+            transitions.append(
+                {"from": "patrol", "to": "alert", "condition": "suspicious_detected"}
+            )
         if "alert" in states and "combat" in states:
-            transitions.append({"from": "alert", "to": "combat", "condition": "threat_confirmed"})
+            transitions.append(
+                {"from": "alert", "to": "combat", "condition": "threat_confirmed"}
+            )
         if "combat" in states and "idle" in states:
-            transitions.append({"from": "combat", "to": "idle", "condition": "no_threats"})
+            transitions.append(
+                {"from": "combat", "to": "idle", "condition": "no_threats"}
+            )
         if "flee" in states:
-            transitions.append({"from": "combat", "to": "flee", "condition": "health_low"})
+            transitions.append(
+                {"from": "combat", "to": "flee", "condition": "health_low"}
+            )
         if "dead" in states:
             transitions.append({"from": "*", "to": "dead", "condition": "health_zero"})
 
@@ -718,6 +772,7 @@ class AICartridge:
 # ═══════════════════════════════════════════════════════════════════════════════
 # INPUT CARTRIDGE
 # ═══════════════════════════════════════════════════════════════════════════════
+
 
 class InputCartridge:
     """
@@ -789,7 +844,7 @@ class InputCartridge:
         intent: str,
         genre: str = "auto",
         allow_rebinding: bool = True,
-        haptic_feedback: bool = True
+        haptic_feedback: bool = True,
     ) -> CartridgeResult:
         """Compile input intent into control specification."""
         start_us = time.perf_counter_ns() // 1000
@@ -809,7 +864,11 @@ class InputCartridge:
                 "mappings": {
                     "keyboard_mouse": self._generate_keyboard_mapping(detected_genre),
                     "gamepad": self._generate_gamepad_mapping(detected_genre),
-                    "touch": self._generate_touch_mapping(detected_genre) if "touch" in devices else None,
+                    "touch": (
+                        self._generate_touch_mapping(detected_genre)
+                        if "touch" in devices
+                        else None
+                    ),
                 },
                 "settings": {
                     "allow_rebinding": allow_rebinding,
@@ -830,8 +889,10 @@ class InputCartridge:
                     "button_remapping": True,
                     "one_handed_mode": False,
                 },
-                "gestures": self._generate_gestures(intent) if "touch" in devices else [],
-                "intent_hash": hashlib.sha256(intent.encode()).hexdigest()[:16].upper()
+                "gestures": (
+                    self._generate_gestures(intent) if "touch" in devices else []
+                ),
+                "intent_hash": hashlib.sha256(intent.encode()).hexdigest()[:16].upper(),
             }
 
         elapsed_us = (time.perf_counter_ns() // 1000) - start_us
@@ -841,11 +902,16 @@ class InputCartridge:
             cartridge_type=CartridgeType.DATA,
             spec=spec,
             constraints={
-                "safety": {"passed": safety_check.passed, "violations": safety_check.violations},
+                "safety": {
+                    "passed": safety_check.passed,
+                    "violations": safety_check.violations,
+                },
             },
-            fingerprint=hashlib.sha256(f"{intent}{genre}".encode()).hexdigest()[:12].upper(),
+            fingerprint=hashlib.sha256(f"{intent}{genre}".encode())
+            .hexdigest()[:12]
+            .upper(),
             elapsed_us=elapsed_us,
-            timestamp=int(time.time() * 1000)
+            timestamp=int(time.time() * 1000),
         )
 
     def _detect_devices(self, intent: str) -> List[str]:
@@ -883,7 +949,7 @@ class InputCartridge:
                 "escape": "pause",
                 "tab": "scoreboard",
                 "enter": "chat",
-            }
+            },
         }
 
     def _generate_gamepad_mapping(self, genre: str) -> Dict[str, Any]:
@@ -911,7 +977,7 @@ class InputCartridge:
                 "right": "item_2",
                 "down": "item_3",
                 "left": "item_4",
-            }
+            },
         }
 
     def _generate_touch_mapping(self, genre: str) -> Dict[str, Any]:
@@ -928,19 +994,43 @@ class InputCartridge:
                 "swipe_down": "crouch",
                 "double_tap": "interact",
                 "pinch": "zoom",
-            }
+            },
         }
 
     def _generate_combos(self, genre: str) -> List[Dict[str, Any]]:
         if genre == "fighting":
             return [
-                {"name": "hadouken", "sequence": ["down", "down_right", "right", "punch"], "window_ms": 500},
-                {"name": "shoryuken", "sequence": ["right", "down", "down_right", "punch"], "window_ms": 400},
-                {"name": "super", "sequence": ["down", "down_right", "right", "down", "down_right", "right", "punch"], "window_ms": 800},
+                {
+                    "name": "hadouken",
+                    "sequence": ["down", "down_right", "right", "punch"],
+                    "window_ms": 500,
+                },
+                {
+                    "name": "shoryuken",
+                    "sequence": ["right", "down", "down_right", "punch"],
+                    "window_ms": 400,
+                },
+                {
+                    "name": "super",
+                    "sequence": [
+                        "down",
+                        "down_right",
+                        "right",
+                        "down",
+                        "down_right",
+                        "right",
+                        "punch",
+                    ],
+                    "window_ms": 800,
+                },
             ]
         elif genre == "fps":
             return [
-                {"name": "quick_reload", "sequence": ["reload", "reload"], "window_ms": 200},
+                {
+                    "name": "quick_reload",
+                    "sequence": ["reload", "reload"],
+                    "window_ms": 200,
+                },
                 {"name": "slide", "sequence": ["sprint", "crouch"], "window_ms": 300},
             ]
         return []
@@ -949,16 +1039,26 @@ class InputCartridge:
         return [
             {"name": "tap", "fingers": 1, "action": "select"},
             {"name": "double_tap", "fingers": 1, "action": "interact"},
-            {"name": "swipe", "fingers": 1, "directions": ["up", "down", "left", "right"]},
+            {
+                "name": "swipe",
+                "fingers": 1,
+                "directions": ["up", "down", "left", "right"],
+            },
             {"name": "pinch", "fingers": 2, "action": "zoom"},
             {"name": "rotate", "fingers": 2, "action": "rotate_camera"},
-            {"name": "long_press", "fingers": 1, "duration_ms": 500, "action": "context_menu"},
+            {
+                "name": "long_press",
+                "fingers": 1,
+                "duration_ms": 500,
+                "action": "context_menu",
+            },
         ]
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # NETWORK CARTRIDGE
 # ═══════════════════════════════════════════════════════════════════════════════
+
 
 class NetworkCartridge:
     """
@@ -993,16 +1093,18 @@ class NetworkCartridge:
         intent: str,
         max_players: int = 16,
         tick_rate: int = 64,
-        region: str = "auto"
+        region: str = "auto",
     ) -> CartridgeResult:
         """Compile network intent into multiplayer specification."""
         start_us = time.perf_counter_ns() // 1000
 
         # Clamp parameters
-        max_players = max(1, min(max_players, NETWORK_CONSTRAINTS["max_players"]["max"]))
+        max_players = max(
+            1, min(max_players, NETWORK_CONSTRAINTS["max_players"]["max"])
+        )
         tick_rate = max(
             NETWORK_CONSTRAINTS["tick_rate"]["min"],
-            min(tick_rate, NETWORK_CONSTRAINTS["tick_rate"]["max"])
+            min(tick_rate, NETWORK_CONSTRAINTS["tick_rate"]["max"]),
         )
 
         safety_check = ConstraintChecker.check_safety(intent)
@@ -1048,13 +1150,17 @@ class NetworkCartridge:
                     "position_validation": True,
                     "rate_limiting": True,
                 },
-                "regions": ["us-east", "us-west", "eu-west", "eu-east", "asia", "oceania"] if region == "auto" else [region],
+                "regions": (
+                    ["us-east", "us-west", "eu-west", "eu-east", "asia", "oceania"]
+                    if region == "auto"
+                    else [region]
+                ),
                 "voice_chat": {
                     "enabled": game_mode in ["competitive", "cooperative"],
                     "codec": "opus",
                     "channels": "team" if game_mode == "competitive" else "proximity",
                 },
-                "intent_hash": hashlib.sha256(intent.encode()).hexdigest()[:16].upper()
+                "intent_hash": hashlib.sha256(intent.encode()).hexdigest()[:16].upper(),
             }
 
         elapsed_us = (time.perf_counter_ns() // 1000) - start_us
@@ -1064,13 +1170,21 @@ class NetworkCartridge:
             cartridge_type=CartridgeType.DATA,
             spec=spec,
             constraints={
-                "safety": {"passed": safety_check.passed, "violations": safety_check.violations},
-                "network": {"passed": network_check.passed, "violations": network_check.violations},
-                "bounds": {"max_players": max_players, "tick_rate": tick_rate}
+                "safety": {
+                    "passed": safety_check.passed,
+                    "violations": safety_check.violations,
+                },
+                "network": {
+                    "passed": network_check.passed,
+                    "violations": network_check.violations,
+                },
+                "bounds": {"max_players": max_players, "tick_rate": tick_rate},
             },
-            fingerprint=hashlib.sha256(f"{intent}{max_players}{tick_rate}".encode()).hexdigest()[:12].upper(),
+            fingerprint=hashlib.sha256(f"{intent}{max_players}{tick_rate}".encode())
+            .hexdigest()[:12]
+            .upper(),
             elapsed_us=elapsed_us,
-            timestamp=int(time.time() * 1000)
+            timestamp=int(time.time() * 1000),
         )
 
     def _detect_topology(self, intent: str) -> str:
@@ -1101,13 +1215,14 @@ class NetworkCartridge:
                 "max_size": max_players,
                 "ready_check": game_mode == "competitive",
                 "auto_start": game_mode == "casual",
-            }
+            },
         }
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # ECONOMY CARTRIDGE
 # ═══════════════════════════════════════════════════════════════════════════════
+
 
 class EconomyCartridge:
     """
@@ -1141,12 +1256,14 @@ class EconomyCartridge:
         intent: str,
         economy_type: str = "auto",
         max_level: int = 100,
-        inflation_rate: float = 0.05
+        inflation_rate: float = 0.05,
     ) -> CartridgeResult:
         """Compile economy intent into game economy specification."""
         start_us = time.perf_counter_ns() // 1000
 
-        inflation_rate = max(0, min(inflation_rate, ECONOMY_CONSTRAINTS["inflation_rate"]["max"]))
+        inflation_rate = max(
+            0, min(inflation_rate, ECONOMY_CONSTRAINTS["inflation_rate"]["max"])
+        )
 
         safety_check = ConstraintChecker.check_safety(intent)
         economy_check = ConstraintChecker.check_patterns(
@@ -1157,7 +1274,11 @@ class EconomyCartridge:
 
         spec = None
         if verified:
-            detected_type = self._detect_economy_type(intent) if economy_type == "auto" else economy_type
+            detected_type = (
+                self._detect_economy_type(intent)
+                if economy_type == "auto"
+                else economy_type
+            )
             progression_type = self._detect_progression_type(intent)
 
             spec = {
@@ -1174,7 +1295,13 @@ class EconomyCartridge:
                 "items": {
                     "rarities": ["common", "uncommon", "rare", "epic", "legendary"],
                     "rarity_weights": [0.60, 0.25, 0.10, 0.04, 0.01],
-                    "categories": ["weapon", "armor", "consumable", "material", "cosmetic"],
+                    "categories": [
+                        "weapon",
+                        "armor",
+                        "consumable",
+                        "material",
+                        "cosmetic",
+                    ],
                     "max_inventory_size": 500,
                 },
                 "rewards": self._generate_reward_tables(),
@@ -1186,11 +1313,17 @@ class EconomyCartridge:
                 },
                 "sinks_and_faucets": {
                     "faucets": ["quests", "enemies", "daily_rewards", "achievements"],
-                    "sinks": ["items", "upgrades", "repairs", "fast_travel", "cosmetics"],
+                    "sinks": [
+                        "items",
+                        "upgrades",
+                        "repairs",
+                        "fast_travel",
+                        "cosmetics",
+                    ],
                     "target_inflation_rate": inflation_rate,
                 },
                 "monetization": self._generate_monetization(detected_type),
-                "intent_hash": hashlib.sha256(intent.encode()).hexdigest()[:16].upper()
+                "intent_hash": hashlib.sha256(intent.encode()).hexdigest()[:16].upper(),
             }
 
         elapsed_us = (time.perf_counter_ns() // 1000) - start_us
@@ -1200,12 +1333,20 @@ class EconomyCartridge:
             cartridge_type=CartridgeType.DATA,
             spec=spec,
             constraints={
-                "safety": {"passed": safety_check.passed, "violations": safety_check.violations},
-                "economy": {"passed": economy_check.passed, "violations": economy_check.violations},
+                "safety": {
+                    "passed": safety_check.passed,
+                    "violations": safety_check.violations,
+                },
+                "economy": {
+                    "passed": economy_check.passed,
+                    "violations": economy_check.violations,
+                },
             },
-            fingerprint=hashlib.sha256(f"{intent}{max_level}".encode()).hexdigest()[:12].upper(),
+            fingerprint=hashlib.sha256(f"{intent}{max_level}".encode())
+            .hexdigest()[:12]
+            .upper(),
             elapsed_us=elapsed_us,
-            timestamp=int(time.time() * 1000)
+            timestamp=int(time.time() * 1000),
         )
 
     def _detect_economy_type(self, intent: str) -> str:
@@ -1227,10 +1368,15 @@ class EconomyCartridge:
             {"name": "gold", "type": "soft", "earn_method": "gameplay", "cap": None}
         ]
         if economy_type == "free_to_play":
-            currencies.append({
-                "name": "gems", "type": "hard", "earn_method": "purchase_or_rare_drop",
-                "cap": None, "ethical_note": "No gameplay advantages, cosmetics only"
-            })
+            currencies.append(
+                {
+                    "name": "gems",
+                    "type": "hard",
+                    "earn_method": "purchase_or_rare_drop",
+                    "cap": None,
+                    "ethical_note": "No gameplay advantages, cosmetics only",
+                }
+            )
         return currencies
 
     def _generate_xp_curve(self, max_level: int) -> Dict[str, Any]:
@@ -1238,7 +1384,7 @@ class EconomyCartridge:
             "formula": "base * (level ^ exponent)",
             "base": 100,
             "exponent": 1.5,
-            "total_xp_to_max": int(100 * sum(i ** 1.5 for i in range(1, max_level + 1))),
+            "total_xp_to_max": int(100 * sum(i**1.5 for i in range(1, max_level + 1))),
         }
 
     def _generate_reward_tables(self) -> Dict[str, Any]:
@@ -1278,7 +1424,7 @@ class EconomyCartridge:
                     "all_gameplay_content_earnable",
                     "clear_pricing",
                     "spending_limits_optional",
-                ]
+                ],
             }
         else:
             return {
@@ -1291,6 +1437,7 @@ class EconomyCartridge:
 # ═══════════════════════════════════════════════════════════════════════════════
 # NARRATIVE CARTRIDGE
 # ═══════════════════════════════════════════════════════════════════════════════
+
 
 class NarrativeCartridge:
     """
@@ -1318,12 +1465,14 @@ class NarrativeCartridge:
         intent: str,
         max_dialogue_nodes: int = 1000,
         max_quests: int = 100,
-        voice_acted: bool = False
+        voice_acted: bool = False,
     ) -> CartridgeResult:
         """Compile narrative intent into story specification."""
         start_us = time.perf_counter_ns() // 1000
 
-        max_dialogue_nodes = min(max_dialogue_nodes, NARRATIVE_CONSTRAINTS["max_dialogue_nodes"]["max"])
+        max_dialogue_nodes = min(
+            max_dialogue_nodes, NARRATIVE_CONSTRAINTS["max_dialogue_nodes"]["max"]
+        )
 
         safety_check = ConstraintChecker.check_safety(intent)
 
@@ -1339,14 +1488,35 @@ class NarrativeCartridge:
                     "max_nodes": max_dialogue_nodes,
                     "max_choices_per_node": 6,
                     "voice_acted": voice_acted,
-                    "emotion_tags": ["neutral", "happy", "sad", "angry", "fearful", "surprised"],
-                    "conditions": ["quest_state", "reputation", "inventory", "stats", "time"],
+                    "emotion_tags": [
+                        "neutral",
+                        "happy",
+                        "sad",
+                        "angry",
+                        "fearful",
+                        "surprised",
+                    ],
+                    "conditions": [
+                        "quest_state",
+                        "reputation",
+                        "inventory",
+                        "stats",
+                        "time",
+                    ],
                 },
                 "quests": {
                     "max_quests": max_quests,
                     "types": ["main", "side", "daily", "event", "hidden"],
                     "structure": {
-                        "objectives": ["collect", "kill", "deliver", "escort", "discover", "craft", "talk"],
+                        "objectives": [
+                            "collect",
+                            "kill",
+                            "deliver",
+                            "escort",
+                            "discover",
+                            "craft",
+                            "talk",
+                        ],
                         "max_objectives_per_quest": 10,
                         "branching": narrative_style == "branching",
                     },
@@ -1369,7 +1539,7 @@ class NarrativeCartridge:
                     "gender_support": True,
                     "pluralization": True,
                 },
-                "intent_hash": hashlib.sha256(intent.encode()).hexdigest()[:16].upper()
+                "intent_hash": hashlib.sha256(intent.encode()).hexdigest()[:16].upper(),
             }
 
         elapsed_us = (time.perf_counter_ns() // 1000) - start_us
@@ -1379,11 +1549,16 @@ class NarrativeCartridge:
             cartridge_type=CartridgeType.DATA,
             spec=spec,
             constraints={
-                "safety": {"passed": safety_check.passed, "violations": safety_check.violations},
+                "safety": {
+                    "passed": safety_check.passed,
+                    "violations": safety_check.violations,
+                },
             },
-            fingerprint=hashlib.sha256(f"{intent}{max_dialogue_nodes}".encode()).hexdigest()[:12].upper(),
+            fingerprint=hashlib.sha256(f"{intent}{max_dialogue_nodes}".encode())
+            .hexdigest()[:12]
+            .upper(),
             elapsed_us=elapsed_us,
-            timestamp=int(time.time() * 1000)
+            timestamp=int(time.time() * 1000),
         )
 
     def _detect_narrative_style(self, intent: str) -> str:
@@ -1397,6 +1572,7 @@ class NarrativeCartridge:
 # ═══════════════════════════════════════════════════════════════════════════════
 # WORLD CARTRIDGE
 # ═══════════════════════════════════════════════════════════════════════════════
+
 
 class WorldCartridge:
     """
@@ -1435,14 +1611,14 @@ class WorldCartridge:
         intent: str,
         seed: Optional[int] = None,
         world_size: Tuple[int, int, int] = (1000, 100, 1000),
-        chunk_size: int = 32
+        chunk_size: int = 32,
     ) -> CartridgeResult:
         """Compile world intent into generation specification."""
         start_us = time.perf_counter_ns() // 1000
 
         chunk_size = max(
             WORLD_CONSTRAINTS["chunk_size"]["min"],
-            min(chunk_size, WORLD_CONSTRAINTS["chunk_size"]["max"])
+            min(chunk_size, WORLD_CONSTRAINTS["chunk_size"]["max"]),
         )
 
         if seed is None:
@@ -1462,7 +1638,11 @@ class WorldCartridge:
                 "world_type": world_type,
                 "generation": {
                     "seed": seed,
-                    "size": {"x": world_size[0], "y": world_size[1], "z": world_size[2]},
+                    "size": {
+                        "x": world_size[0],
+                        "y": world_size[1],
+                        "z": world_size[2],
+                    },
                     "chunk_size": chunk_size,
                     "algorithm": self._get_generation_algorithm(world_type),
                 },
@@ -1493,7 +1673,7 @@ class WorldCartridge:
                     "weather": True,
                     "ambient_sounds": True,
                 },
-                "intent_hash": hashlib.sha256(intent.encode()).hexdigest()[:16].upper()
+                "intent_hash": hashlib.sha256(intent.encode()).hexdigest()[:16].upper(),
             }
 
         elapsed_us = (time.perf_counter_ns() // 1000) - start_us
@@ -1503,12 +1683,17 @@ class WorldCartridge:
             cartridge_type=CartridgeType.DATA,
             spec=spec,
             constraints={
-                "safety": {"passed": safety_check.passed, "violations": safety_check.violations},
-                "bounds": {"seed": seed, "chunk_size": chunk_size}
+                "safety": {
+                    "passed": safety_check.passed,
+                    "violations": safety_check.violations,
+                },
+                "bounds": {"seed": seed, "chunk_size": chunk_size},
             },
-            fingerprint=hashlib.sha256(f"{intent}{seed}".encode()).hexdigest()[:12].upper(),
+            fingerprint=hashlib.sha256(f"{intent}{seed}".encode())
+            .hexdigest()[:12]
+            .upper(),
             elapsed_us=elapsed_us,
-            timestamp=int(time.time() * 1000)
+            timestamp=int(time.time() * 1000),
         )
 
     def _detect_world_type(self, intent: str) -> str:
@@ -1555,6 +1740,7 @@ class WorldCartridge:
 # PARTICLE CARTRIDGE
 # ═══════════════════════════════════════════════════════════════════════════════
 
+
 class ParticleCartridge:
     """
     Particle Cartridge: Verified Visual Effects Specifications
@@ -1585,7 +1771,7 @@ class ParticleCartridge:
         intent: str,
         max_particles: int = 10000,
         lifetime_ms: int = 2000,
-        gpu_accelerated: bool = True
+        gpu_accelerated: bool = True,
     ) -> CartridgeResult:
         """Compile particle intent into effect specification."""
         start_us = time.perf_counter_ns() // 1000
@@ -1593,7 +1779,7 @@ class ParticleCartridge:
         max_particles = min(max_particles, PARTICLE_CONSTRAINTS["max_particles"]["max"])
         lifetime_ms = max(
             PARTICLE_CONSTRAINTS["lifetime_ms"]["min"],
-            min(lifetime_ms, PARTICLE_CONSTRAINTS["lifetime_ms"]["max"])
+            min(lifetime_ms, PARTICLE_CONSTRAINTS["lifetime_ms"]["max"]),
         )
 
         safety_check = ConstraintChecker.check_safety(intent)
@@ -1624,7 +1810,11 @@ class ParticleCartridge:
                     "turbulence": 0.1,
                 },
                 "rendering": {
-                    "blend_mode": "additive" if any(e in effect_types for e in ["fire", "electric", "magic"]) else "alpha",
+                    "blend_mode": (
+                        "additive"
+                        if any(e in effect_types for e in ["fire", "electric", "magic"])
+                        else "alpha"
+                    ),
                     "soft_particles": True,
                     "depth_fade": True,
                 },
@@ -1633,7 +1823,7 @@ class ParticleCartridge:
                     "culling": True,
                     "particle_pooling": True,
                 },
-                "intent_hash": hashlib.sha256(intent.encode()).hexdigest()[:16].upper()
+                "intent_hash": hashlib.sha256(intent.encode()).hexdigest()[:16].upper(),
             }
 
         elapsed_us = (time.perf_counter_ns() // 1000) - start_us
@@ -1643,12 +1833,20 @@ class ParticleCartridge:
             cartridge_type=CartridgeType.DATA,
             spec=spec,
             constraints={
-                "safety": {"passed": safety_check.passed, "violations": safety_check.violations},
-                "particle": {"passed": particle_check.passed, "violations": particle_check.violations},
+                "safety": {
+                    "passed": safety_check.passed,
+                    "violations": safety_check.violations,
+                },
+                "particle": {
+                    "passed": particle_check.passed,
+                    "violations": particle_check.violations,
+                },
             },
-            fingerprint=hashlib.sha256(f"{intent}{max_particles}".encode()).hexdigest()[:12].upper(),
+            fingerprint=hashlib.sha256(f"{intent}{max_particles}".encode())
+            .hexdigest()[:12]
+            .upper(),
             elapsed_us=elapsed_us,
-            timestamp=int(time.time() * 1000)
+            timestamp=int(time.time() * 1000),
         )
 
     def _detect_effect_types(self, intent: str) -> List[str]:
@@ -1728,21 +1926,29 @@ class ParticleCartridge:
                 "end_color": "#00FFFF",
             },
         }
-        return presets.get(effect_type, presets["debris"] if "debris" not in presets else {
-            "shape": "point",
-            "spawn_rate": 100,
-            "lifetime_ms": 2000,
-            "start_speed": 10,
-            "start_size": 0.2,
-            "end_size": 0.1,
-            "start_color": "#888888",
-            "end_color": "#444444",
-        })
+        return presets.get(
+            effect_type,
+            (
+                presets["debris"]
+                if "debris" not in presets
+                else {
+                    "shape": "point",
+                    "spawn_rate": 100,
+                    "lifetime_ms": 2000,
+                    "start_speed": 10,
+                    "start_size": 0.2,
+                    "end_size": 0.1,
+                    "start_color": "#888888",
+                    "end_color": "#444444",
+                }
+            ),
+        )
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # HAPTIC CARTRIDGE
 # ═══════════════════════════════════════════════════════════════════════════════
+
 
 class HapticCartridge:
     """
@@ -1768,21 +1974,18 @@ class HapticCartridge:
     }
 
     def compile(
-        self,
-        intent: str,
-        intensity: float = 0.5,
-        duration_ms: int = 200
+        self, intent: str, intensity: float = 0.5, duration_ms: int = 200
     ) -> CartridgeResult:
         """Compile haptic intent into feedback specification."""
         start_us = time.perf_counter_ns() // 1000
 
         intensity = max(
             HAPTIC_CONSTRAINTS["intensity"]["min"],
-            min(intensity, HAPTIC_CONSTRAINTS["intensity"]["max"])
+            min(intensity, HAPTIC_CONSTRAINTS["intensity"]["max"]),
         )
         duration_ms = max(
             HAPTIC_CONSTRAINTS["duration_ms"]["min"],
-            min(duration_ms, HAPTIC_CONSTRAINTS["duration_ms"]["max"])
+            min(duration_ms, HAPTIC_CONSTRAINTS["duration_ms"]["max"]),
         )
 
         safety_check = ConstraintChecker.check_safety(intent)
@@ -1795,7 +1998,10 @@ class HapticCartridge:
                 "type": "haptic",
                 "format": GameOutputFormat.HAPTIC_SPEC.value,
                 "event_types": event_types,
-                "patterns": [self._generate_pattern(event, intensity, duration_ms) for event in event_types],
+                "patterns": [
+                    self._generate_pattern(event, intensity, duration_ms)
+                    for event in event_types
+                ],
                 "platforms": {
                     "ios": {
                         "api": "CoreHaptics",
@@ -1816,7 +2022,7 @@ class HapticCartridge:
                     "disable_option": True,
                     "intensity_scale": 1.0,
                 },
-                "intent_hash": hashlib.sha256(intent.encode()).hexdigest()[:16].upper()
+                "intent_hash": hashlib.sha256(intent.encode()).hexdigest()[:16].upper(),
             }
 
         elapsed_us = (time.perf_counter_ns() // 1000) - start_us
@@ -1826,12 +2032,17 @@ class HapticCartridge:
             cartridge_type=CartridgeType.DATA,
             spec=spec,
             constraints={
-                "safety": {"passed": safety_check.passed, "violations": safety_check.violations},
-                "bounds": {"intensity": intensity, "duration_ms": duration_ms}
+                "safety": {
+                    "passed": safety_check.passed,
+                    "violations": safety_check.violations,
+                },
+                "bounds": {"intensity": intensity, "duration_ms": duration_ms},
             },
-            fingerprint=hashlib.sha256(f"{intent}{intensity}{duration_ms}".encode()).hexdigest()[:12].upper(),
+            fingerprint=hashlib.sha256(f"{intent}{intensity}{duration_ms}".encode())
+            .hexdigest()[:12]
+            .upper(),
             elapsed_us=elapsed_us,
-            timestamp=int(time.time() * 1000)
+            timestamp=int(time.time() * 1000),
         )
 
     def _detect_event_types(self, intent: str) -> List[str]:
@@ -1842,7 +2053,9 @@ class HapticCartridge:
                 events.append(event)
         return events if events else ["notification"]
 
-    def _generate_pattern(self, event_type: str, intensity: float, duration_ms: int) -> Dict[str, Any]:
+    def _generate_pattern(
+        self, event_type: str, intensity: float, duration_ms: int
+    ) -> Dict[str, Any]:
         patterns = {
             "impact": {
                 "type": "transient",
@@ -1887,12 +2100,16 @@ class HapticCartridge:
                 "adaptive_trigger": {"resistance": 0.7, "start_position": 0.3},
             },
         }
-        return {"event": event_type, **patterns.get(event_type, patterns["notification"])}
+        return {
+            "event": event_type,
+            **patterns.get(event_type, patterns["notification"]),
+        }
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # SAVE CARTRIDGE
 # ═══════════════════════════════════════════════════════════════════════════════
+
 
 class SaveCartridge:
     """
@@ -1920,7 +2137,7 @@ class SaveCartridge:
         intent: str,
         max_saves: int = 10,
         autosave_interval_s: int = 300,
-        cloud_sync: bool = True
+        cloud_sync: bool = True,
     ) -> CartridgeResult:
         """Compile save intent into persistence specification."""
         start_us = time.perf_counter_ns() // 1000
@@ -1928,7 +2145,7 @@ class SaveCartridge:
         max_saves = min(max_saves, SAVE_CONSTRAINTS["max_save_slots"]["max"])
         autosave_interval_s = max(
             SAVE_CONSTRAINTS["autosave_interval_s"]["min"],
-            min(autosave_interval_s, SAVE_CONSTRAINTS["autosave_interval_s"]["max"])
+            min(autosave_interval_s, SAVE_CONSTRAINTS["autosave_interval_s"]["max"]),
         )
 
         safety_check = ConstraintChecker.check_safety(intent)
@@ -1952,9 +2169,14 @@ class SaveCartridge:
                     "autosave_slots": 3,
                 },
                 "autosave": {
-                    "enabled": "checkpoint" in save_types or "autosave" in intent.lower(),
+                    "enabled": "checkpoint" in save_types
+                    or "autosave" in intent.lower(),
                     "interval_s": autosave_interval_s,
-                    "triggers": ["level_complete", "checkpoint_reached", "significant_progress"],
+                    "triggers": [
+                        "level_complete",
+                        "checkpoint_reached",
+                        "significant_progress",
+                    ],
                 },
                 "cloud": {
                     "enabled": cloud_sync,
@@ -1983,7 +2205,7 @@ class SaveCartridge:
                     "backup_before_migrate": True,
                     "supported_versions": [1],
                 },
-                "intent_hash": hashlib.sha256(intent.encode()).hexdigest()[:16].upper()
+                "intent_hash": hashlib.sha256(intent.encode()).hexdigest()[:16].upper(),
             }
 
         elapsed_us = (time.perf_counter_ns() // 1000) - start_us
@@ -1993,12 +2215,20 @@ class SaveCartridge:
             cartridge_type=CartridgeType.DATA,
             spec=spec,
             constraints={
-                "safety": {"passed": safety_check.passed, "violations": safety_check.violations},
-                "save": {"passed": save_check.passed, "violations": save_check.violations},
+                "safety": {
+                    "passed": safety_check.passed,
+                    "violations": safety_check.violations,
+                },
+                "save": {
+                    "passed": save_check.passed,
+                    "violations": save_check.violations,
+                },
             },
-            fingerprint=hashlib.sha256(f"{intent}{max_saves}".encode()).hexdigest()[:12].upper(),
+            fingerprint=hashlib.sha256(f"{intent}{max_saves}".encode())
+            .hexdigest()[:12]
+            .upper(),
             elapsed_us=elapsed_us,
-            timestamp=int(time.time() * 1000)
+            timestamp=int(time.time() * 1000),
         )
 
     def _detect_save_types(self, intent: str) -> List[str]:
@@ -2013,6 +2243,7 @@ class SaveCartridge:
 # ═══════════════════════════════════════════════════════════════════════════════
 # LOCALE CARTRIDGE
 # ═══════════════════════════════════════════════════════════════════════════════
+
 
 class LocaleCartridge:
     """
@@ -2033,15 +2264,28 @@ class LocaleCartridge:
         intent: str,
         base_language: str = "en",
         target_languages: Optional[List[str]] = None,
-        voice_localization: bool = False
+        voice_localization: bool = False,
     ) -> CartridgeResult:
         """Compile locale intent into localization specification."""
         start_us = time.perf_counter_ns() // 1000
 
         if target_languages is None:
-            target_languages = ["en", "es", "fr", "de", "ja", "zh", "ko", "pt", "ru", "it"]
+            target_languages = [
+                "en",
+                "es",
+                "fr",
+                "de",
+                "ja",
+                "zh",
+                "ko",
+                "pt",
+                "ru",
+                "it",
+            ]
 
-        target_languages = target_languages[:LOCALE_CONSTRAINTS["max_languages"]["max"]]
+        target_languages = target_languages[
+            : LOCALE_CONSTRAINTS["max_languages"]["max"]
+        ]
 
         safety_check = ConstraintChecker.check_safety(intent)
 
@@ -2067,7 +2311,9 @@ class LocaleCartridge:
                     "audio_description": True,
                 },
                 "rtl_support": {
-                    "enabled": any(lang in target_languages for lang in ["ar", "he", "fa"]),
+                    "enabled": any(
+                        lang in target_languages for lang in ["ar", "he", "fa"]
+                    ),
                     "mirror_ui": True,
                 },
                 "cultural_adaptation": {
@@ -2090,7 +2336,7 @@ class LocaleCartridge:
                     "machine_translation_draft": True,
                     "review_required": True,
                 },
-                "intent_hash": hashlib.sha256(intent.encode()).hexdigest()[:16].upper()
+                "intent_hash": hashlib.sha256(intent.encode()).hexdigest()[:16].upper(),
             }
 
         elapsed_us = (time.perf_counter_ns() // 1000) - start_us
@@ -2100,17 +2346,23 @@ class LocaleCartridge:
             cartridge_type=CartridgeType.DATA,
             spec=spec,
             constraints={
-                "safety": {"passed": safety_check.passed, "violations": safety_check.violations},
+                "safety": {
+                    "passed": safety_check.passed,
+                    "violations": safety_check.violations,
+                },
             },
-            fingerprint=hashlib.sha256(f"{intent}{base_language}".encode()).hexdigest()[:12].upper(),
+            fingerprint=hashlib.sha256(f"{intent}{base_language}".encode())
+            .hexdigest()[:12]
+            .upper(),
             elapsed_us=elapsed_us,
-            timestamp=int(time.time() * 1000)
+            timestamp=int(time.time() * 1000),
         )
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # GAME CARTRIDGE MANAGER
 # ═══════════════════════════════════════════════════════════════════════════════
+
 
 class GameCartridgeManager:
     """
@@ -2186,13 +2438,19 @@ class GameCartridgeManager:
         intent_lower = intent.lower()
 
         if re.search(r"\b(multiplayer|online|coop|pvp|mmo)\b", intent_lower):
-            results["network"] = self.compile_network(intent, **kwargs.get("network", {}))
+            results["network"] = self.compile_network(
+                intent, **kwargs.get("network", {})
+            )
 
         if re.search(r"\b(story|quest|dialogue|narrative|rpg)\b", intent_lower):
-            results["narrative"] = self.compile_narrative(intent, **kwargs.get("narrative", {}))
+            results["narrative"] = self.compile_narrative(
+                intent, **kwargs.get("narrative", {})
+            )
 
         if re.search(r"\b(effect|particle|explosion|magic|weather)\b", intent_lower):
-            results["particle"] = self.compile_particle(intent, **kwargs.get("particle", {}))
+            results["particle"] = self.compile_particle(
+                intent, **kwargs.get("particle", {})
+            )
 
         if re.search(r"\b(haptic|vibrat|feedback|controller)\b", intent_lower):
             results["haptic"] = self.compile_haptic(intent, **kwargs.get("haptic", {}))
@@ -2220,36 +2478,33 @@ def get_game_cartridge_manager() -> GameCartridgeManager:
 
 __all__ = [
     # Types
-    'GameCartridgeType',
-    'GameOutputFormat',
-
+    "GameCartridgeType",
+    "GameOutputFormat",
     # Constraints
-    'PHYSICS_CONSTRAINTS',
-    'AI_CONSTRAINTS',
-    'INPUT_CONSTRAINTS',
-    'NETWORK_CONSTRAINTS',
-    'ECONOMY_CONSTRAINTS',
-    'NARRATIVE_CONSTRAINTS',
-    'WORLD_CONSTRAINTS',
-    'PARTICLE_CONSTRAINTS',
-    'HAPTIC_CONSTRAINTS',
-    'SAVE_CONSTRAINTS',
-    'LOCALE_CONSTRAINTS',
-
+    "PHYSICS_CONSTRAINTS",
+    "AI_CONSTRAINTS",
+    "INPUT_CONSTRAINTS",
+    "NETWORK_CONSTRAINTS",
+    "ECONOMY_CONSTRAINTS",
+    "NARRATIVE_CONSTRAINTS",
+    "WORLD_CONSTRAINTS",
+    "PARTICLE_CONSTRAINTS",
+    "HAPTIC_CONSTRAINTS",
+    "SAVE_CONSTRAINTS",
+    "LOCALE_CONSTRAINTS",
     # Cartridges
-    'PhysicsCartridge',
-    'AICartridge',
-    'InputCartridge',
-    'NetworkCartridge',
-    'EconomyCartridge',
-    'NarrativeCartridge',
-    'WorldCartridge',
-    'ParticleCartridge',
-    'HapticCartridge',
-    'SaveCartridge',
-    'LocaleCartridge',
-
+    "PhysicsCartridge",
+    "AICartridge",
+    "InputCartridge",
+    "NetworkCartridge",
+    "EconomyCartridge",
+    "NarrativeCartridge",
+    "WorldCartridge",
+    "ParticleCartridge",
+    "HapticCartridge",
+    "SaveCartridge",
+    "LocaleCartridge",
     # Manager
-    'GameCartridgeManager',
-    'get_game_cartridge_manager',
+    "GameCartridgeManager",
+    "get_game_cartridge_manager",
 ]

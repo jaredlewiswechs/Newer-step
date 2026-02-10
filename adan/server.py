@@ -23,12 +23,11 @@ Endpoints:
 © 2026 Jared Lewis · Ada Computing Company · Houston, Texas
 """
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse, FileResponse, StreamingResponse
-from fastapi.staticfiles import StaticFiles
+from fastapi.responses import HTMLResponse, StreamingResponse
 from pydantic import BaseModel
-from typing import Optional, List, Dict, Any
+from typing import List, Dict, Any
 from pathlib import Path
 import time
 import os
@@ -39,8 +38,7 @@ import json
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from adan import (
-    NewtonAgent, AgentConfig, AgentResponse,
-    OllamaBackend, OllamaConfig, create_ollama_generator,
+    NewtonAgent, AgentConfig, OllamaBackend, OllamaConfig, create_ollama_generator,
     get_kinematic_analyzer, get_trajectory_verifier, get_trajectory_composer,
 )
 

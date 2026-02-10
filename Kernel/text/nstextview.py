@@ -1,9 +1,10 @@
 """NSTextView — an editable, scrollable text view."""
+
 from __future__ import annotations
-from typing import Optional, List, Tuple
+from typing import Optional, Tuple
 
 from Kernel.view.nsview import NSView, NSRect
-from Kernel.runtime.event import NSEvent, NSEventType
+from Kernel.runtime.event import NSEvent
 from .nsfont import NSFont
 from .nstextstorage import NSTextStorage
 from .nslayoutmanager import NSLayoutManager, NSTextContainer
@@ -20,6 +21,7 @@ class NSTextView(NSView):
         self._text_container = NSTextContainer()
         if frame:
             from Kernel.view.nsview import NSSize
+
             self._text_container.size = NSSize(frame.width, frame.height)
         self._text_storage.add_layout_manager(self._layout_manager)
         self._layout_manager.add_text_container(self._text_container)
@@ -167,23 +169,25 @@ class NSTextView(NSView):
         if not self._is_editable:
             return False
         if event.user_info:
-            key = event.user_info.get('key', '')
-            if key == 'backspace':
+            key = event.user_info.get("key", "")
+            if key == "backspace":
                 self.delete_backward()
                 return True
-            elif key == 'delete':
+            elif key == "delete":
                 self.delete_forward()
                 return True
-            elif key == 'left':
+            elif key == "left":
                 self._insertion_point = max(0, self._insertion_point - 1)
                 self._selection_range = (self._insertion_point, 0)
                 return True
-            elif key == 'right':
-                self._insertion_point = min(len(self._text_storage.string), self._insertion_point + 1)
+            elif key == "right":
+                self._insertion_point = min(
+                    len(self._text_storage.string), self._insertion_point + 1
+                )
                 self._selection_range = (self._insertion_point, 0)
                 return True
-            elif len(key) == 1 or key in ('enter', 'return'):
-                text = '\n' if key in ('enter', 'return') else key
+            elif len(key) == 1 or key in ("enter", "return"):
+                text = "\n" if key in ("enter", "return") else key
                 self.insert_text(text)
                 return True
         return False
@@ -191,7 +195,8 @@ class NSTextView(NSView):
     def handle_mouse_down(self, event: NSEvent) -> bool:
         if event.location:
             idx = self._layout_manager.character_index_for_point(
-                event.location, self._text_container)
+                event.location, self._text_container
+            )
             self._insertion_point = idx
             self._selection_range = (idx, 0)
         if self._window:
@@ -205,18 +210,24 @@ class NSTextView(NSView):
         w, h = self._bounds.width, self._bounds.height
         parts = []
         # background
-        parts.append(f'<rect x="0" y="0" width="{w}" height="{h}" fill="white" '
-                     f'stroke="#aaa" stroke-width="1" />')
+        parts.append(
+            f'<rect x="0" y="0" width="{w}" height="{h}" fill="white" '
+            f'stroke="#aaa" stroke-width="1" />'
+        )
         # render each layout line
         text = self._text_storage.string
         for line in self._layout_manager._lines:
-            chunk = text[line.char_start:line.char_end]
+            chunk = text[line.char_start : line.char_end]
             # escape XML
-            chunk = chunk.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+            chunk = (
+                chunk.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+            )
             ty = line.origin_y + line.height * 0.75
-            parts.append(f'<text x="{line.origin_x}" y="{ty}" '
-                         f'font-size="{self._font.point_size}" '
-                         f'font-family="{self._font.family_name}">{chunk}</text>')
+            parts.append(
+                f'<text x="{line.origin_x}" y="{ty}" '
+                f'font-size="{self._font.point_size}" '
+                f'font-family="{self._font.family_name}">{chunk}</text>'
+            )
         return "\n".join(parts)
 
     def __repr__(self):

@@ -1,4 +1,4 @@
-from core.schemas import Omega, StructureConstraint, CitationRequirement
+from core.schemas import Omega, CitationRequirement
 from core.live_checker import compute_envelope_distance
 
 

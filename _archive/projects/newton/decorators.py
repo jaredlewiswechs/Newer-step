@@ -22,12 +22,12 @@ Usage:
 """
 
 from functools import wraps
-from typing import Any, Callable, Dict, Optional, TypeVar
+from typing import Callable, Optional, TypeVar
 from datetime import datetime
 import hashlib
 import time
 
-from newton.types import Bounds, VerificationResult
+from newton.types import Bounds
 from newton.constraints import Constraint
 
 
@@ -66,7 +66,7 @@ def verified(fn: F) -> F:
                 result._newton_elapsed = elapsed
             
             return result
-        except Exception as e:
+        except Exception:
             # Log the error but re-raise
             raise
     

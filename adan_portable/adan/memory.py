@@ -8,9 +8,8 @@ Hash-chained conversation history with Newton Ledger integration.
 
 import time
 import hashlib
-import json
 from dataclasses import dataclass, field
-from typing import List, Dict, Optional, Any
+from typing import List, Dict, Optional
 from enum import Enum
 
 

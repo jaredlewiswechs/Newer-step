@@ -24,20 +24,14 @@ import sys
 sys.path.insert(0, str(__file__).rsplit('/', 2)[0])
 
 from core.constraint_extractor import (
-    ConstraintExtractor,
     extract_constraints,
     verify_plan,
     get_extractor,
     ConstraintCategory,
     ConstraintStrength,
     ConstraintPolarity,
-    ExtractedConstraint,
-    ExtractionResult,
-    VerifiedPlan,
-    PlanVerifier,
-    ExtractionPatterns,
 )
-from core.cdl import Operator, Domain
+from core.cdl import Operator
 
 
 # ═══════════════════════════════════════════════════════════════════════════════

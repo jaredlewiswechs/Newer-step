@@ -15,10 +15,9 @@ import hashlib
 import time
 from pathlib import Path
 from dataclasses import dataclass, asdict
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Optional
 from threading import Lock
 from difflib import get_close_matches
-import os
 
 # Import language mechanics for fuzzy matching
 try:

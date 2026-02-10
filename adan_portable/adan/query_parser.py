@@ -17,7 +17,7 @@ The pattern IS the path. The slot IS the coordinate. The KB IS the space.
 """
 
 from dataclasses import dataclass
-from typing import Optional, List, Tuple, Dict, Any
+from typing import Optional, List, Tuple, Dict
 from enum import Enum
 import re
 

@@ -43,14 +43,12 @@ import copy
 import hashlib
 import sys
 import os
-from typing import Any, Dict, List, Set, Tuple
-from dataclasses import dataclass
+from typing import Any
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from tinytalk_py import (
-    Blueprint, field, law, forge, when, finfr, fin,
-    LawViolation, FinClosure, ratio, finfr_if_undefined
+    Blueprint, field, law, forge, when, finfr, LawViolation, ratio, finfr_if_undefined
 )
 
 

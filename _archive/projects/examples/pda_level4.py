@@ -10,7 +10,6 @@ import sys
 sys.path.insert(0, str(__file__).rsplit('/', 2)[0])
 
 from tinytalk_py import Blueprint, field, law, forge, when, finfr
-from datetime import datetime
 
 class Task(Blueprint):
     """A task with deadline constraints"""

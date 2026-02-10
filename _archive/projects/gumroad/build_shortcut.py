@@ -29,7 +29,6 @@ import time
 from pathlib import Path
 from typing import Dict, List, Any, Optional
 from dataclasses import dataclass, field
-import os
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -412,7 +411,7 @@ def validate_constraints_only() -> bool:
         
         lib_data = load_constraint_library(lib_name)
         if lib_data is None:
-            print(f"  ❌ Failed to load")
+            print("  ❌ Failed to load")
             all_valid = False
             continue
         
@@ -421,7 +420,7 @@ def validate_constraints_only() -> bool:
             rule_count = len(lib_data.get("rules", []))
             print(f"  ✅ Valid ({rule_count} rules)")
         else:
-            print(f"  ❌ Invalid:")
+            print("  ❌ Invalid:")
             for error in errors:
                 print(f"     - {error}")
             all_valid = False
@@ -454,7 +453,7 @@ def build_shortcuts(output_dir: Path) -> bool:
         print(f"     Size: {full_result.size_bytes:,} bytes")
         print(f"     SHA256: {full_result.checksum[:16]}...")
     else:
-        print(f"  ❌ Failed:")
+        print("  ❌ Failed:")
         for error in full_result.errors:
             print(f"     - {error}")
         return False
@@ -469,7 +468,7 @@ def build_shortcuts(output_dir: Path) -> bool:
         print(f"     Size: {verify_result.size_bytes:,} bytes")
         print(f"     SHA256: {verify_result.checksum[:16]}...")
     else:
-        print(f"  ❌ Failed:")
+        print("  ❌ Failed:")
         for error in verify_result.errors:
             print(f"     - {error}")
         return False
@@ -503,7 +502,7 @@ def create_package(output_dir: Path) -> bool:
         print(f"     Path: {result.shortcut_path}")
         return True
     else:
-        print(f"  ❌ Failed:")
+        print("  ❌ Failed:")
         for error in result.errors:
             print(f"     - {error}")
         return False

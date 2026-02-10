@@ -6,8 +6,8 @@ Extend the Matter system with your own type-safe units.
 """
 
 from dataclasses import dataclass
-from newton import Matter
 
+from newton import Matter
 
 # ============================================================================
 # Custom Matter Type: Energy

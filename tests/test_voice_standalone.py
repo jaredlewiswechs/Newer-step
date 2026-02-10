@@ -11,12 +11,8 @@ Runs without full core imports to bypass cryptography issues.
 """
 
 import sys
-import os
 import time
 import re
-import json
-import random
-import hashlib
 from dataclasses import dataclass, field
 from typing import List, Dict, Any, Optional, Tuple
 from enum import Enum
@@ -48,7 +44,6 @@ def verify_and(constraints, obj):
     return verify(constraints[0], obj) if constraints else verify({}, obj)
 
 # Inject mocks into voice_interface's namespace
-import importlib.util
 
 # Read the voice_interface.py file
 with open('core/voice_interface.py', 'r') as f:

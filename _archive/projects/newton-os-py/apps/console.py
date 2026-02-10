@@ -9,12 +9,11 @@ Direct access to Newton Agent.
 from typing import Optional, List
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QTextEdit, 
-    QLineEdit, QPushButton, QLabel, QComboBox
+    QLineEdit, QPushButton, QComboBox
 )
 from PyQt6.QtCore import Qt, QThread, pyqtSignal
-from PyQt6.QtGui import QFont, QTextCursor, QColor
+from PyQt6.QtGui import QFont, QTextCursor
 
-from core.nobject import NObject
 from core.graph import TheGraph
 from shell.window import NWindow
 

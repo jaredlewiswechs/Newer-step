@@ -6,40 +6,39 @@ text system, data views, pasteboard, accessibility, and menus.
 import pytest
 import time
 from Kernel.view.nsview import NSView, NSViewController, NSRect, NSSize
-from Kernel.view.nsscrollview import NSScrollView, NSClipView
+from Kernel.view.nsscrollview import NSScrollView
 from Kernel.view.nssplitview import NSSplitView
 from Kernel.view.nsstackview import NSStackView, NSGridView
-from Kernel.window.nswindow import NSWindow, NSWindowController, NSPanel, NSWindowStyleMask
+from Kernel.window.nswindow import NSWindow, NSWindowController, NSPanel
 from Kernel.window.nsscreen import NSScreen
 from Kernel.layout.constraint import (
-    NSLayoutConstraint, NSLayoutAnchor, NSLayoutXAxisAnchor,
+    NSLayoutConstraint, NSLayoutXAxisAnchor,
     NSLayoutDimension, NSLayoutGuide, NSLayoutAttribute,
     NSLayoutRelation, solve_constraints,
 )
 from Kernel.gesture.recognizer import (
-    NSGestureRecognizer, NSClickGestureRecognizer,
+    NSClickGestureRecognizer,
     NSPanGestureRecognizer, NSGestureRecognizerState,
 )
 from Kernel.gesture.tracking import NSTrackingArea, NSTrackingAreaOptions
-from Kernel.controls.nscontrol import NSControl
 from Kernel.controls.nsbutton import NSButton, NSButtonType
 from Kernel.controls.nstextfield import NSTextField
 from Kernel.controls.nsslider import NSSlider
 from Kernel.controls.nssegmented import NSSegmentedControl
-from Kernel.text.nsfont import NSFont, NSFontDescriptor, NSFontManager
+from Kernel.text.nsfont import NSFont
 from Kernel.text.nstextstorage import NSTextStorage
 from Kernel.text.nslayoutmanager import NSLayoutManager, NSTextContainer
 from Kernel.text.nstextview import NSTextView
 from Kernel.data.nstableview import NSTableView, NSTableColumn
 from Kernel.data.nsoutlineview import NSOutlineView
-from Kernel.data.nscollectionview import NSCollectionView, NSCollectionViewItem
+from Kernel.data.nscollectionview import NSCollectionView
 from Kernel.pasteboard.nspasteboard import NSPasteboard, NSPasteboardType, NSPasteboardItem
-from Kernel.pasteboard.dragging import NSDraggingInfo, NSDraggingItem, NSDraggingSession, NSDragOperation
+from Kernel.pasteboard.dragging import NSDraggingItem, NSDraggingSession, NSDragOperation
 from Kernel.accessibility.nsaccessibility import (
     NSAccessibilityElement, NSAccessibilityRole, accessibility_tree_from_view,
 )
 from Kernel.menu.nsmenu import NSMenu, NSMenuItem
-from Kernel.menu.nstoolbar import NSToolbar, NSToolbarItem
+from Kernel.menu.nstoolbar import NSToolbar
 from Kernel.runtime.event import NSEvent, NSEventType
 from Kernel.gui.nsbezier import NSColor
 

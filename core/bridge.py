@@ -25,23 +25,24 @@ import asyncio
 import random
 from concurrent.futures import ThreadPoolExecutor
 
-
 # ═══════════════════════════════════════════════════════════════════════════════
 # NODE IDENTITY
 # ═══════════════════════════════════════════════════════════════════════════════
 
+
 @dataclass
 class NodeIdentity:
     """Identity of a Newton node."""
+
     node_id: str
-    public_key: str          # For signature verification
-    endpoint: str            # Network endpoint
-    stake: int = 0           # Stake for Sybil resistance
+    public_key: str  # For signature verification
+    endpoint: str  # Network endpoint
+    stake: int = 0  # Stake for Sybil resistance
     registered_at: int = 0
     last_seen: int = 0
 
     @classmethod
-    def generate(cls, endpoint: str, stake: int = 1000) -> 'NodeIdentity':
+    def generate(cls, endpoint: str, stake: int = 1000) -> "NodeIdentity":
         """Generate a new node identity."""
         # In production, use proper key generation
         seed = f"{endpoint}:{time.time()}:{random.random()}"
@@ -54,7 +55,7 @@ class NodeIdentity:
             endpoint=endpoint,
             stake=stake,
             registered_at=int(time.time()),
-            last_seen=int(time.time())
+            last_seen=int(time.time()),
         )
 
     def sign(self, data: bytes) -> str:
@@ -71,6 +72,7 @@ class NodeIdentity:
 # VERIFICATION REQUEST
 # ═══════════════════════════════════════════════════════════════════════════════
 
+
 class MessageType(Enum):
     VERIFY_REQUEST = "verify_request"
     VERIFY_RESPONSE = "verify_response"
@@ -82,6 +84,7 @@ class MessageType(Enum):
 @dataclass
 class VerificationRequest:
     """A request to verify something across the network."""
+
     request_id: str
     payload: Dict[str, Any]
     requester: str
@@ -89,30 +92,35 @@ class VerificationRequest:
     signature: str = ""
 
     @classmethod
-    def create(cls, payload: Dict[str, Any], requester: str) -> 'VerificationRequest':
-        request_id = hashlib.sha256(
-            f"{json.dumps(payload)}:{requester}:{time.time()}".encode()
-        ).hexdigest()[:16].upper()
+    def create(cls, payload: Dict[str, Any], requester: str) -> "VerificationRequest":
+        request_id = (
+            hashlib.sha256(f"{json.dumps(payload)}:{requester}:{time.time()}".encode())
+            .hexdigest()[:16]
+            .upper()
+        )
 
         return cls(
             request_id=request_id,
             payload=payload,
             requester=requester,
-            timestamp=int(time.time() * 1000)
+            timestamp=int(time.time() * 1000),
         )
 
     def to_bytes(self) -> bytes:
-        return json.dumps({
-            "request_id": self.request_id,
-            "payload": self.payload,
-            "requester": self.requester,
-            "timestamp": self.timestamp
-        }).encode()
+        return json.dumps(
+            {
+                "request_id": self.request_id,
+                "payload": self.payload,
+                "requester": self.requester,
+                "timestamp": self.timestamp,
+            }
+        ).encode()
 
 
 @dataclass
 class VerificationResponse:
     """Response from a node."""
+
     request_id: str
     node_id: str
     result: bool
@@ -124,6 +132,7 @@ class VerificationResponse:
 # ═══════════════════════════════════════════════════════════════════════════════
 # CONSENSUS STATE
 # ═══════════════════════════════════════════════════════════════════════════════
+
 
 class ConsensusState(Enum):
     PENDING = "pending"
@@ -138,6 +147,7 @@ class ConsensusState(Enum):
 @dataclass
 class ConsensusRound:
     """State for a single consensus round."""
+
     request_id: str
     request: VerificationRequest
     state: ConsensusState = ConsensusState.PENDING
@@ -167,6 +177,7 @@ class ConsensusRound:
 # ═══════════════════════════════════════════════════════════════════════════════
 # NODE REGISTRY
 # ═══════════════════════════════════════════════════════════════════════════════
+
 
 class NodeRegistry:
     """Registry of known Newton nodes."""
@@ -229,6 +240,7 @@ class NodeRegistry:
 # THE BRIDGE
 # ═══════════════════════════════════════════════════════════════════════════════
 
+
 class Bridge:
     """
     The Newton Bridge - Distributed Verification Protocol.
@@ -257,7 +269,9 @@ class Bridge:
     # PUBLIC API
     # ─────────────────────────────────────────────────────────────────────────
 
-    async def verify(self, payload: Dict[str, Any], timeout_ms: int = 5000) -> Dict[str, Any]:
+    async def verify(
+        self, payload: Dict[str, Any], timeout_ms: int = 5000
+    ) -> Dict[str, Any]:
         """
         Verify payload through distributed consensus.
 
@@ -316,7 +330,9 @@ class Bridge:
 
         return self._build_result(round)
 
-    def verify_sync(self, payload: Dict[str, Any], timeout_ms: int = 5000) -> Dict[str, Any]:
+    def verify_sync(
+        self, payload: Dict[str, Any], timeout_ms: int = 5000
+    ) -> Dict[str, Any]:
         """Synchronous wrapper for verify."""
         return asyncio.run(self.verify(payload, timeout_ms))
 
@@ -340,7 +356,9 @@ class Bridge:
                 await asyncio.sleep(random.uniform(0.001, 0.01))
                 # Simulate node's local verification (random for demo)
                 simulated_result = random.random() > 0.1  # 90% pass rate
-                self._rounds[request.request_id].prepare_votes[node.node_id] = simulated_result
+                self._rounds[request.request_id].prepare_votes[
+                    node.node_id
+                ] = simulated_result
 
     async def _broadcast_commit(self, request_id: str, result: bool):
         """Broadcast COMMIT message to all nodes."""
@@ -350,7 +368,9 @@ class Bridge:
                 # Nodes commit to prepare result
                 self._rounds[request_id].commit_votes[node.node_id] = result
 
-    def receive_prepare(self, request_id: str, node_id: str, result: bool, signature: str):
+    def receive_prepare(
+        self, request_id: str, node_id: str, result: bool, signature: str
+    ):
         """Handle incoming PREPARE message."""
         if request_id not in self._rounds:
             return
@@ -362,7 +382,9 @@ class Bridge:
 
         self._rounds[request_id].prepare_votes[node_id] = result
 
-    def receive_commit(self, request_id: str, node_id: str, result: bool, signature: str):
+    def receive_commit(
+        self, request_id: str, node_id: str, result: bool, signature: str
+    ):
         """Handle incoming COMMIT message."""
         if request_id not in self._rounds:
             return
@@ -373,11 +395,11 @@ class Bridge:
     # RESULT BUILDING
     # ─────────────────────────────────────────────────────────────────────────
 
-    def _build_result(self, round: ConsensusRound, error: Optional[str] = None) -> Dict[str, Any]:
+    def _build_result(
+        self, round: ConsensusRound, error: Optional[str] = None
+    ) -> Dict[str, Any]:
         """Build verification result with consensus proof."""
-        elapsed_ms = (
-            (round.decided_at or int(time.time() * 1000)) - round.started_at
-        )
+        elapsed_ms = (round.decided_at or int(time.time() * 1000)) - round.started_at
 
         result = {
             "request_id": round.request_id,
@@ -388,9 +410,9 @@ class Bridge:
                 "prepare_votes": round.n_prepare_votes,
                 "commit_votes": round.n_commit_votes,
                 "quorum_size": self.registry.quorum_size,
-                "total_nodes": len(self.registry.get_all())
+                "total_nodes": len(self.registry.get_all()),
             },
-            "timestamp": int(time.time() * 1000)
+            "timestamp": int(time.time() * 1000),
         }
 
         if error:
@@ -398,11 +420,15 @@ class Bridge:
 
         # Generate proof
         if round.state == ConsensusState.DECIDED:
-            proof_data = f"{round.request_id}:{round.final_result}:{round.n_commit_votes}"
+            proof_data = (
+                f"{round.request_id}:{round.final_result}:{round.n_commit_votes}"
+            )
             result["proof"] = {
                 "type": "consensus",
-                "signature": hashlib.sha256(proof_data.encode()).hexdigest()[:32].upper(),
-                "nodes": list(round.commit_votes.keys())
+                "signature": hashlib.sha256(proof_data.encode())
+                .hexdigest()[:32]
+                .upper(),
+                "nodes": list(round.commit_votes.keys()),
             }
 
         return result
@@ -431,9 +457,11 @@ class Bridge:
             "active_nodes": len(active),
             "quorum_size": self.registry.quorum_size,
             "total_stake": self.registry.total_stake(),
-            "rounds_pending": len([r for r in self._rounds.values() if r.state == ConsensusState.PENDING]),
+            "rounds_pending": len(
+                [r for r in self._rounds.values() if r.state == ConsensusState.PENDING]
+            ),
             "rounds_decided": len(self._decided),
-            "this_node": self.identity.node_id
+            "this_node": self.identity.node_id,
         }
 
     # ─────────────────────────────────────────────────────────────────────────
@@ -448,6 +476,7 @@ class Bridge:
 # ═══════════════════════════════════════════════════════════════════════════════
 # SIMPLIFIED BRIDGE FOR LOCAL TESTING
 # ═══════════════════════════════════════════════════════════════════════════════
+
 
 class LocalBridge:
     """
@@ -467,20 +496,21 @@ class LocalBridge:
         start_us = time.perf_counter_ns() // 1000
 
         result = self.verify_fn(payload)
-        passed = result.get("passed", False) if isinstance(result, dict) else bool(result)
+        passed = (
+            result.get("passed", False) if isinstance(result, dict) else bool(result)
+        )
 
         elapsed_us = (time.perf_counter_ns() // 1000) - start_us
 
         response = {
-            "request_id": hashlib.sha256(json.dumps(payload).encode()).hexdigest()[:16].upper(),
+            "request_id": hashlib.sha256(json.dumps(payload).encode())
+            .hexdigest()[:16]
+            .upper(),
             "passed": passed,
             "state": "local",
             "elapsed_us": elapsed_us,
-            "consensus": {
-                "type": "local",
-                "node": self.identity.node_id
-            },
-            "timestamp": int(time.time() * 1000)
+            "consensus": {"type": "local", "node": self.identity.node_id},
+            "timestamp": int(time.time() * 1000),
         }
 
         self._history.append(response)

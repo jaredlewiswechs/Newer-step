@@ -14,7 +14,6 @@ Run with: pytest tests/test_knowledge.py -v
 
 import pytest
 import time
-from typing import Dict, Any
 
 import sys
 sys.path.insert(0, str(__file__).rsplit('/', 2)[0])
@@ -42,7 +41,6 @@ from tinytalk_py.knowledge import (
     simulate_struggling_learner,
 )
 
-from tinytalk_py.core import LawViolation, FinClosure
 
 
 # =============================================================================

@@ -30,11 +30,9 @@ The difference? Every part is VERIFIED.
 
 import hashlib
 import json
-import time
-from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from enum import Enum, auto
-from typing import Any, Callable, Dict, List, Optional, Set, Type, Union
+from enum import Enum
+from typing import Any, Callable, Dict, List, Optional
 import sys
 import os
 
@@ -42,12 +40,8 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from foghorn.objects import (
-    FoghornObject, ObjectType, Card, Query, ResultSet,
-    FileAsset, Task, Receipt, LinkCurve, Rule,
-    get_object_store,
+    FoghornObject, ObjectType,
 )
-from foghorn.commands import add_object
-from foghorn.services import get_service_registry, ServiceCategory
 from core.cdl import CDLEvaluator
 
 
@@ -212,7 +206,7 @@ class Part(FoghornObject):
                     self.state = PartState.INVALID
                     self.verified = False
                     return False
-            except Exception as e:
+            except Exception:
                 self.state = PartState.INVALID
                 self.verified = False
                 return False

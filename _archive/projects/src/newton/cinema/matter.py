@@ -14,7 +14,7 @@ The stability score determines how much "noise" or "demand" a letter
 contributes to spoken language in a constrained social space.
 """
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Dict, Tuple
 from enum import Enum
 

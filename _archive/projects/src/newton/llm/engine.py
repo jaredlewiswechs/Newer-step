@@ -17,7 +17,7 @@ The LLM is subordinate. The validators are sovereign.
 """
 
 from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, List, Optional, Protocol, Union
+from typing import Any, Dict, List, Optional, Protocol
 import json
 import time
 import hashlib

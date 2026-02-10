@@ -8,10 +8,9 @@ Uses PIL/Pillow for image generation.
 
 from __future__ import annotations
 from typing import Optional, Dict, Any, Tuple, List
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 from enum import Enum
-import math
 
 try:
     from PIL import Image, ImageDraw, ImageFont
@@ -21,9 +20,7 @@ except ImportError:
     print("Warning: PIL not installed. PNG export disabled.")
 
 from .core import (
-    Building, Level, Space, Wall, Door, Window,
-    Zone, SpaceType, Furniture, Point, Rect,
-    SPACE_COLORS
+    Building, Level, Space, Wall, Point, Rect
 )
 
 

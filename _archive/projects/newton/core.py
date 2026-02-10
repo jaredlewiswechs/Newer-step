@@ -8,7 +8,7 @@ When true → execute. When false → halt.
 ═══════════════════════════════════════════════════════════════════════════════
 """
 
-from typing import Any, Dict, List, Optional, Union, Callable
+from typing import Any, Dict, List, Optional, Callable
 from datetime import datetime
 import hashlib
 import re

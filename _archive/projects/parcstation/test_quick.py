@@ -4,14 +4,11 @@ Quick test for parcStation - runs server inline
 
 import os
 import sys
-import asyncio
-import threading
-import time
 
 # Add parent to path
 sys.path.insert(0, os.path.dirname(__file__))
 
-from server import app, notebooks, Notebook, Stack, Card, Cartridge
+from server import app
 from fastapi.testclient import TestClient
 
 def test_parcstation():

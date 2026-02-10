@@ -93,8 +93,8 @@ THE FUNDAMENTAL LAW:
 """
 
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Any, Tuple, Callable, Generic, TypeVar, Set, Generator
-from enum import Enum, auto
+from typing import Dict, List, Optional, Any, Tuple, Callable, Generic, TypeVar, Set
+from enum import Enum
 from datetime import datetime
 import time
 import hashlib
@@ -239,7 +239,7 @@ class TrustLattice:
             raise UpgradeError(f"Verification failed: {e}")
         
         if not verified:
-            raise UpgradeError(f"Verification returned False")
+            raise UpgradeError("Verification returned False")
         
         # Create upgraded label
         new_trace = labeled.verification_trace + [
@@ -1432,7 +1432,7 @@ if __name__ == "__main__":
         sanitized = pipeline._sanitize_input(attack)
         print(f"\n   IN:  {repr(attack)}")
         print(f"   OUT: {repr(sanitized)}")
-        print(f"   [OK] Neutralized")
+        print("   [OK] Neutralized")
     
     # Show ledger
     print("\n" + "=" * 78)

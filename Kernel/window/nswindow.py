@@ -3,8 +3,9 @@
 NSWindow owns a content view (the root of the view tree for that window),
 manages a title, frame, and can route events into its view hierarchy.
 """
+
 from __future__ import annotations
-from typing import Optional, List, Any
+from typing import Optional, List
 from enum import IntFlag
 
 from Kernel.view.nsview import NSView, NSRect
@@ -37,9 +38,14 @@ class NSWindow(NSResponder):
 
     _all_windows: List[NSWindow] = []
 
-    def __init__(self, content_rect: Optional[NSRect] = None,
-                 style_mask: int = NSWindowStyleMask.TITLED | NSWindowStyleMask.CLOSABLE | NSWindowStyleMask.RESIZABLE,
-                 title: str = "Window"):
+    def __init__(
+        self,
+        content_rect: Optional[NSRect] = None,
+        style_mask: int = NSWindowStyleMask.TITLED
+        | NSWindowStyleMask.CLOSABLE
+        | NSWindowStyleMask.RESIZABLE,
+        title: str = "Window",
+    ):
         super().__init__()
         self._frame = content_rect or NSRect(0, 0, 480, 320)
         self._style_mask = style_mask
@@ -53,7 +59,7 @@ class NSWindow(NSResponder):
         self._delegate = None
         self._window_controller: Optional[NSWindowController] = None
         self._min_size = (0.0, 0.0)
-        self._max_size = (float('inf'), float('inf'))
+        self._max_size = (float("inf"), float("inf"))
         self._background_color = None
         self._is_opaque = True
         self._alpha_value = 1.0
@@ -168,7 +174,7 @@ class NSWindow(NSResponder):
         self._is_main = False
         if self in NSWindow._all_windows:
             NSWindow._all_windows.remove(self)
-        if self._delegate and hasattr(self._delegate, 'window_will_close'):
+        if self._delegate and hasattr(self._delegate, "window_will_close"):
             self._delegate.window_will_close(self)
 
     def miniaturize(self, sender=None):
@@ -198,14 +204,19 @@ class NSWindow(NSResponder):
         self._frame = NSRect(
             (1920 - self._frame.width) / 2,
             (1080 - self._frame.height) / 2,
-            self._frame.width, self._frame.height,
+            self._frame.width,
+            self._frame.height,
         )
 
     # ── event routing ─────────────────────────────────────────────
 
     def send_event(self, event: NSEvent):
         """Route events into the content view tree via hit testing."""
-        if event.location and event.type in (NSEventType.MOUSE_DOWN, NSEventType.MOUSE_UP, NSEventType.MOUSE_MOVE):
+        if event.location and event.type in (
+            NSEventType.MOUSE_DOWN,
+            NSEventType.MOUSE_UP,
+            NSEventType.MOUSE_MOVE,
+        ):
             hit = self._content_view.hit_test(event.location)
             if hit:
                 return hit.send_event(event)
@@ -220,29 +231,41 @@ class NSWindow(NSResponder):
     def render_to_svg(self, include_chrome: bool = True) -> str:
         parts = []
         fw, fh = self._frame.width, self._frame.height
-        chrome_h = 22 if include_chrome and (self._style_mask & NSWindowStyleMask.TITLED) else 0
+        chrome_h = (
+            22
+            if include_chrome and (self._style_mask & NSWindowStyleMask.TITLED)
+            else 0
+        )
         total_h = fh + chrome_h
 
-        parts.append(f'<svg xmlns="http://www.w3.org/2000/svg" width="{fw}" '
-                     f'height="{total_h}" viewBox="0 0 {fw} {total_h}">')
+        parts.append(
+            f'<svg xmlns="http://www.w3.org/2000/svg" width="{fw}" '
+            f'height="{total_h}" viewBox="0 0 {fw} {total_h}">'
+        )
 
         if include_chrome and chrome_h:
-            parts.append(f'<rect x="0" y="0" width="{fw}" height="{chrome_h}" '
-                         f'fill="#e0e0e0" rx="6" />')
+            parts.append(
+                f'<rect x="0" y="0" width="{fw}" height="{chrome_h}" '
+                f'fill="#e0e0e0" rx="6" />'
+            )
             # traffic lights
             for i, color in enumerate(["#ff5f56", "#ffbd2e", "#27c93f"]):
-                parts.append(f'<circle cx="{14 + i * 20}" cy="{chrome_h // 2}" '
-                             f'r="6" fill="{color}" />')
+                parts.append(
+                    f'<circle cx="{14 + i * 20}" cy="{chrome_h // 2}" '
+                    f'r="6" fill="{color}" />'
+                )
             # title
-            parts.append(f'<text x="{fw / 2}" y="{chrome_h // 2 + 4}" '
-                         f'text-anchor="middle" font-size="12" '
-                         f'font-family="sans-serif">{self._title}</text>')
+            parts.append(
+                f'<text x="{fw / 2}" y="{chrome_h // 2 + 4}" '
+                f'text-anchor="middle" font-size="12" '
+                f'font-family="sans-serif">{self._title}</text>'
+            )
 
         # content area
         parts.append(f'<g transform="translate(0,{chrome_h})">')
         parts.append(self._content_view.render_tree())
-        parts.append('</g>')
-        parts.append('</svg>')
+        parts.append("</g>")
+        parts.append("</svg>")
         return "\n".join(parts)
 
     @classmethod
@@ -256,8 +279,14 @@ class NSWindow(NSResponder):
 class NSPanel(NSWindow):
     """A special window for auxiliary controls (inspectors, dialogs)."""
 
-    def __init__(self, content_rect=None, style_mask=NSWindowStyleMask.TITLED | NSWindowStyleMask.CLOSABLE | NSWindowStyleMask.UTILITY_WINDOW,
-                 title="Panel"):
+    def __init__(
+        self,
+        content_rect=None,
+        style_mask=NSWindowStyleMask.TITLED
+        | NSWindowStyleMask.CLOSABLE
+        | NSWindowStyleMask.UTILITY_WINDOW,
+        title="Panel",
+    ):
         super().__init__(content_rect, style_mask, title)
         self._is_floating_panel = True
         self._becomes_key_only_if_needed = True

@@ -980,13 +980,13 @@ def verified_output(value: Any, operation: str, verified: bool = True) -> str:
     status = "✓ VERIFIED" if verified else "⚠️ UNVERIFIED"
     
     lines = []
-    lines.append(f"┌─────────────────────────────────────────────────────────────┐")
+    lines.append("┌─────────────────────────────────────────────────────────────┐")
     lines.append(f"│ {operation:^59} │")
-    lines.append(f"├─────────────────────────────────────────────────────────────┤")
+    lines.append("├─────────────────────────────────────────────────────────────┤")
     lines.append(f"│ Result: {str(value)[:50]:50} │")
     lines.append(f"│ Status: {status:50} │")
     lines.append(f"│ Time: {datetime.now().isoformat()[:19]:50} │")
-    lines.append(f"└─────────────────────────────────────────────────────────────┘")
+    lines.append("└─────────────────────────────────────────────────────────────┘")
     
     return '\n'.join(lines)
 

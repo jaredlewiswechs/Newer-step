@@ -15,8 +15,7 @@ import traceback
 from contextlib import redirect_stdout, redirect_stderr
 from dataclasses import dataclass, field as dataclass_field
 from datetime import datetime
-from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, Set
+from typing import Any, Dict, List, Optional, Set
 import hashlib
 
 from .schema import (

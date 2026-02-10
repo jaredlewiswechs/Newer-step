@@ -6,13 +6,13 @@ Real dragging, resizing, minimize, maximize, close.
 ═══════════════════════════════════════════════════════════════
 """
 
-from typing import Optional, Callable, Any
+from typing import Optional
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, 
     QPushButton, QSizeGrip, QFrame, QApplication
 )
-from PyQt6.QtCore import Qt, QPoint, QSize, QRectF, pyqtSignal, QPropertyAnimation, QEasingCurve
-from PyQt6.QtGui import QPainter, QColor, QPainterPath, QFont, QMouseEvent, QPaintEvent, QResizeEvent
+from PyQt6.QtCore import Qt, QPoint, QRectF, pyqtSignal
+from PyQt6.QtGui import QPainter, QColor, QMouseEvent, QPaintEvent, QResizeEvent
 
 from core.nobject import NObject
 from core.shapes import rounded_squircle_path

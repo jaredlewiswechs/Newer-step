@@ -76,7 +76,7 @@ def main():
         }
         obj = {"balance": 100}
         result = newton.constraint(constraint, obj)
-        print(f"Constraint: balance >= 0")
+        print("Constraint: balance >= 0")
         print(f"Object: {obj}")
         print(f"Result: {result.result}")
 

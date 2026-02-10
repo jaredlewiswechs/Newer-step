@@ -6,13 +6,12 @@ Time travel for your edits.
 ═══════════════════════════════════════════════════════════════
 """
 
-from typing import List, Optional, Dict, Any, Callable
+from typing import List, Optional, Dict, Any
 from dataclasses import dataclass, field
 from enum import Enum
 from PyQt6.QtCore import QObject, pyqtSignal
 import time
 import hashlib
-import json
 
 
 class HistoryAction(Enum):

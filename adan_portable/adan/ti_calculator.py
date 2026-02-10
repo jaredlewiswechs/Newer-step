@@ -19,7 +19,7 @@ All verified through Newton Logic Engine.
 
 import re
 import math
-from typing import Optional, Dict, Any, List, Union, Tuple
+from typing import Optional, Dict, Any, List, Tuple
 from dataclasses import dataclass
 
 

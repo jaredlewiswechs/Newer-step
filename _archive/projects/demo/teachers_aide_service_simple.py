@@ -13,7 +13,6 @@ Endpoints:
 import json
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
-from typing import Optional
 
 from tinytalk_py.education import get_teks_library
 from core.logic import LogicEngine, ExecutionContext

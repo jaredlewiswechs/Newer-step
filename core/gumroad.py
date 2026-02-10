@@ -24,20 +24,20 @@ import os
 import hmac
 import hashlib
 import secrets
-import time
 from datetime import datetime, timedelta
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Any
 from enum import Enum
 import requests
 
-
 # ═══════════════════════════════════════════════════════════════════════════════
 # PRODUCT DEFINITIONS
 # ═══════════════════════════════════════════════════════════════════════════════
 
+
 class ProductTier(Enum):
     """Product tiers with different capabilities."""
+
     # Teacher's Aide
     TEACHER_AIDE_PRO = "teacher_aide_pro"
 
@@ -58,6 +58,7 @@ class ProductTier(Enum):
 @dataclass
 class ProductConfig:
     """Configuration for a specific product tier."""
+
     tier: ProductTier
     name: str
     price_cents: int
@@ -82,16 +83,10 @@ PRODUCT_CATALOG: Dict[str, ProductConfig] = {
             "Assessment analysis with MAD",
             "PLC report generation",
             "Student grouping",
-            "50-minute NES lesson structure"
+            "50-minute NES lesson structure",
         ],
-        endpoints=[
-            "/education/*",
-            "/teachers/*",
-            "/ask",
-            "/statistics"
-        ]
+        endpoints=["/education/*", "/teachers/*", "/ask", "/statistics"],
     ),
-
     # Newton API Starter - $19 one-time
     "api_starter": ProductConfig(
         tier=ProductTier.API_STARTER,
@@ -104,7 +99,7 @@ PRODUCT_CATALOG: Dict[str, ProductConfig] = {
             "Constraint evaluation (CDL 3.0)",
             "Content safety checking",
             "Basic audit trail",
-            "Personal/non-commercial use"
+            "Personal/non-commercial use",
         ],
         endpoints=[
             "/ask",
@@ -112,10 +107,9 @@ PRODUCT_CATALOG: Dict[str, ProductConfig] = {
             "/calculate",
             "/constraint",
             "/ground",
-            "/statistics"
-        ]
+            "/statistics",
+        ],
     ),
-
     # Newton API Pro - $49 one-time
     "api_pro": ProductConfig(
         tier=ProductTier.API_PRO,
@@ -130,7 +124,7 @@ PRODUCT_CATALOG: Dict[str, ProductConfig] = {
             "Full Ledger access",
             "Glass Box transparency",
             "Commercial use license",
-            "Priority support"
+            "Priority support",
         ],
         endpoints=[
             "/ask",
@@ -145,10 +139,9 @@ PRODUCT_CATALOG: Dict[str, ProductConfig] = {
             "/policy/*",
             "/negotiator/*",
             "/merkle/*",
-            "/cartridge/*"
-        ]
+            "/cartridge/*",
+        ],
     ),
-
     # AI Safety Shield Startup - $29/month
     "safety_startup": ProductConfig(
         tier=ProductTier.SAFETY_STARTUP,
@@ -161,17 +154,10 @@ PRODUCT_CATALOG: Dict[str, ProductConfig] = {
             "Harm detection",
             "Medical/legal/financial safety",
             "Audit trail",
-            "Email support"
+            "Email support",
         ],
-        endpoints=[
-            "/verify",
-            "/verify/batch",
-            "/ask",
-            "/ledger",
-            "/ledger/*"
-        ]
+        endpoints=["/verify", "/verify/batch", "/ask", "/ledger", "/ledger/*"],
     ),
-
     # AI Safety Shield Scale - $99/month
     "safety_scale": ProductConfig(
         tier=ProductTier.SAFETY_SCALE,
@@ -184,7 +170,7 @@ PRODUCT_CATALOG: Dict[str, ProductConfig] = {
             "Custom policies",
             "Webhook alerts",
             "Priority support",
-            "SLA guarantee"
+            "SLA guarantee",
         ],
         endpoints=[
             "/verify",
@@ -193,10 +179,9 @@ PRODUCT_CATALOG: Dict[str, ProductConfig] = {
             "/ledger",
             "/ledger/*",
             "/policy/*",
-            "/negotiator/*"
-        ]
+            "/negotiator/*",
+        ],
     ),
-
     # AI Safety Shield Enterprise - Custom
     "safety_enterprise": ProductConfig(
         tier=ProductTier.SAFETY_ENTERPRISE,
@@ -210,11 +195,10 @@ PRODUCT_CATALOG: Dict[str, ProductConfig] = {
             "On-premise deployment option",
             "Dedicated support",
             "Custom integration",
-            "Custom SLA"
+            "Custom SLA",
         ],
-        endpoints=["*"]  # All endpoints
+        endpoints=["*"],  # All endpoints
     ),
-
     # Legacy beta tier (grandfather existing users)
     "legacy_beta": ProductConfig(
         tier=ProductTier.LEGACY_BETA,
@@ -223,9 +207,8 @@ PRODUCT_CATALOG: Dict[str, ProductConfig] = {
         is_recurring=False,
         monthly_verifications=10000,
         features=["Full API access (beta)"],
-        endpoints=["*"]
+        endpoints=["*"],
     ),
-
     # Test tier for development
     "test": ProductConfig(
         tier=ProductTier.TEST,
@@ -234,8 +217,8 @@ PRODUCT_CATALOG: Dict[str, ProductConfig] = {
         is_recurring=False,
         monthly_verifications=1000,
         features=["Development testing"],
-        endpoints=["*"]
-    )
+        endpoints=["*"],
+    ),
 }
 
 
@@ -263,20 +246,36 @@ def get_product_config(product_name: str) -> ProductConfig:
 # CONFIGURATION
 # ═══════════════════════════════════════════════════════════════════════════════
 
+
 @dataclass
 class GumroadConfig:
     """Configuration for Gumroad integration."""
+
     # Set these via environment variables
     product_id: str = field(default_factory=lambda: os.getenv("GUMROAD_PRODUCT_ID", ""))
-    access_token: str = field(default_factory=lambda: os.getenv("GUMROAD_ACCESS_TOKEN", ""))
-    webhook_secret: str = field(default_factory=lambda: os.getenv("GUMROAD_WEBHOOK_SECRET", ""))
+    access_token: str = field(
+        default_factory=lambda: os.getenv("GUMROAD_ACCESS_TOKEN", "")
+    )
+    webhook_secret: str = field(
+        default_factory=lambda: os.getenv("GUMROAD_WEBHOOK_SECRET", "")
+    )
 
     # Multiple products support
-    teacher_aide_product_id: str = field(default_factory=lambda: os.getenv("GUMROAD_TEACHER_AIDE_ID", ""))
-    api_starter_product_id: str = field(default_factory=lambda: os.getenv("GUMROAD_API_STARTER_ID", ""))
-    api_pro_product_id: str = field(default_factory=lambda: os.getenv("GUMROAD_API_PRO_ID", ""))
-    safety_startup_product_id: str = field(default_factory=lambda: os.getenv("GUMROAD_SAFETY_STARTUP_ID", ""))
-    safety_scale_product_id: str = field(default_factory=lambda: os.getenv("GUMROAD_SAFETY_SCALE_ID", ""))
+    teacher_aide_product_id: str = field(
+        default_factory=lambda: os.getenv("GUMROAD_TEACHER_AIDE_ID", "")
+    )
+    api_starter_product_id: str = field(
+        default_factory=lambda: os.getenv("GUMROAD_API_STARTER_ID", "")
+    )
+    api_pro_product_id: str = field(
+        default_factory=lambda: os.getenv("GUMROAD_API_PRO_ID", "")
+    )
+    safety_startup_product_id: str = field(
+        default_factory=lambda: os.getenv("GUMROAD_SAFETY_STARTUP_ID", "")
+    )
+    safety_scale_product_id: str = field(
+        default_factory=lambda: os.getenv("GUMROAD_SAFETY_SCALE_ID", "")
+    )
 
     # API settings
     verify_url: str = "https://api.gumroad.com/v2/licenses/verify"
@@ -292,9 +291,11 @@ class GumroadConfig:
 # DATA MODELS
 # ═══════════════════════════════════════════════════════════════════════════════
 
+
 @dataclass
 class Customer:
     """A Newton customer with tier-based access."""
+
     email: str
     license_key: str
     api_key: str
@@ -321,7 +322,7 @@ class Customer:
             "tier_name": config.name,
             "monthly_limit": config.monthly_verifications,
             "monthly_usage": self.monthly_usage,
-            "features": config.features
+            "features": config.features,
         }
 
     def check_usage_limit(self) -> bool:
@@ -338,7 +339,9 @@ class Customer:
             reset_date = datetime.fromisoformat(self.usage_reset_date)
             if datetime.now() >= reset_date:
                 self.monthly_usage = 0
-                self.usage_reset_date = (datetime.now() + timedelta(days=30)).isoformat()
+                self.usage_reset_date = (
+                    datetime.now() + timedelta(days=30)
+                ).isoformat()
 
         if not self.check_usage_limit():
             return False
@@ -350,6 +353,7 @@ class Customer:
     def can_access_endpoint(self, endpoint: str) -> bool:
         """Check if customer's tier allows access to an endpoint."""
         import fnmatch
+
         config = PRODUCT_CATALOG.get(self.tier, PRODUCT_CATALOG["legacy_beta"])
         for pattern in config.endpoints:
             if pattern == "*" or fnmatch.fnmatch(endpoint, pattern):
@@ -360,6 +364,7 @@ class Customer:
 @dataclass
 class Feedback:
     """Customer feedback."""
+
     id: str
     email: str
     message: str
@@ -375,13 +380,14 @@ class Feedback:
             "message": self.message,
             "rating": self.rating,
             "category": self.category,
-            "timestamp": self.timestamp
+            "timestamp": self.timestamp,
         }
 
 
 @dataclass
 class LicenseVerification:
     """Result of license verification."""
+
     valid: bool
     email: Optional[str] = None
     uses: int = 0
@@ -392,12 +398,14 @@ class LicenseVerification:
     def to_dict(self) -> Dict[str, Any]:
         result = {"valid": self.valid}
         if self.valid:
-            result.update({
-                "email": self.email,
-                "uses": self.uses,
-                "purchase_date": self.purchase_date,
-                "product_name": self.product_name
-            })
+            result.update(
+                {
+                    "email": self.email,
+                    "uses": self.uses,
+                    "purchase_date": self.purchase_date,
+                    "product_name": self.product_name,
+                }
+            )
         else:
             result["error"] = self.error
         return result
@@ -406,6 +414,7 @@ class LicenseVerification:
 # ═══════════════════════════════════════════════════════════════════════════════
 # GUMROAD SERVICE
 # ═══════════════════════════════════════════════════════════════════════════════
+
 
 class GumroadService:
     """
@@ -432,14 +441,16 @@ class GumroadService:
             "total_verifications": 0,
             "failed_verifications": 0,
             "total_feedback": 0,
-            "total_api_calls": 0
+            "total_api_calls": 0,
         }
 
     # ─────────────────────────────────────────────────────────────────────────
     # LICENSE VERIFICATION
     # ─────────────────────────────────────────────────────────────────────────
 
-    def verify_license(self, license_key: str, increment_uses: bool = True) -> LicenseVerification:
+    def verify_license(
+        self, license_key: str, increment_uses: bool = True
+    ) -> LicenseVerification:
         """
         Verify a Gumroad license key.
 
@@ -464,7 +475,7 @@ class GumroadService:
                     email=customer.email,
                     uses=customer.uses,
                     purchase_date=customer.purchase_date,
-                    product_name=customer.product_name
+                    product_name=customer.product_name,
                 )
 
         # Verify with Gumroad API
@@ -476,7 +487,7 @@ class GumroadService:
             self._stats["failed_verifications"] += 1
             return LicenseVerification(
                 valid=False,
-                error="Gumroad not configured. Set GUMROAD_PRODUCT_ID and GUMROAD_ACCESS_TOKEN."
+                error="Gumroad not configured. Set GUMROAD_PRODUCT_ID and GUMROAD_ACCESS_TOKEN.",
             )
 
         try:
@@ -485,10 +496,10 @@ class GumroadService:
                 data={
                     "product_id": self.config.product_id,
                     "license_key": license_key,
-                    "increment_uses_count": str(increment_uses).lower()
+                    "increment_uses_count": str(increment_uses).lower(),
                 },
                 headers={"Authorization": f"Bearer {self.config.access_token}"},
-                timeout=10
+                timeout=10,
             )
 
             if response.status_code == 200:
@@ -501,28 +512,28 @@ class GumroadService:
                         email=purchase.get("email", "unknown@email.com"),
                         license_key=license_key,
                         sale_id=purchase.get("sale_id"),
-                        product_name=purchase.get("product_name", "Newton Supercomputer Access")
+                        product_name=purchase.get(
+                            "product_name", "Newton Supercomputer Access"
+                        ),
                     )
 
                     return LicenseVerification(
                         valid=True,
                         email=customer.email,
                         uses=purchase.get("uses", 1),
-                        purchase_date=purchase.get("created_at", datetime.now().isoformat()),
-                        product_name=customer.product_name
+                        purchase_date=purchase.get(
+                            "created_at", datetime.now().isoformat()
+                        ),
+                        product_name=customer.product_name,
                     )
 
             self._stats["failed_verifications"] += 1
-            return LicenseVerification(
-                valid=False,
-                error="Invalid license key"
-            )
+            return LicenseVerification(valid=False, error="Invalid license key")
 
         except requests.RequestException as e:
             self._stats["failed_verifications"] += 1
             return LicenseVerification(
-                valid=False,
-                error=f"Could not verify license: {str(e)}"
+                valid=False, error=f"Could not verify license: {str(e)}"
             )
 
     def _create_test_customer(self, license_key: str) -> LicenseVerification:
@@ -531,14 +542,14 @@ class GumroadService:
         customer = self._register_customer(
             email=email,
             license_key=license_key,
-            product_name="Newton Supercomputer Access (TEST)"
+            product_name="Newton Supercomputer Access (TEST)",
         )
         return LicenseVerification(
             valid=True,
             email=customer.email,
             uses=1,
             purchase_date=customer.purchase_date,
-            product_name=customer.product_name
+            product_name=customer.product_name,
         )
 
     # ─────────────────────────────────────────────────────────────────────────
@@ -550,7 +561,7 @@ class GumroadService:
         email: str,
         license_key: str,
         sale_id: Optional[str] = None,
-        product_name: Optional[str] = None
+        product_name: Optional[str] = None,
     ) -> Customer:
         """Register a new customer or return existing one."""
 
@@ -563,7 +574,9 @@ class GumroadService:
         api_key = self._generate_api_key()
 
         # Determine tier from product name
-        product_config = get_product_config(product_name or "Newton Supercomputer Access")
+        product_config = get_product_config(
+            product_name or "Newton Supercomputer Access"
+        )
 
         customer = Customer(
             email=email,
@@ -574,7 +587,7 @@ class GumroadService:
             product_name=product_name or "Newton Supercomputer Access",
             tier=product_config.tier.value,
             monthly_usage=0,
-            usage_reset_date=(datetime.now() + timedelta(days=30)).isoformat()
+            usage_reset_date=(datetime.now() + timedelta(days=30)).isoformat(),
         )
 
         # Store customer
@@ -628,9 +641,7 @@ class GumroadService:
             return True
 
         expected = hmac.new(
-            self.config.webhook_secret.encode(),
-            payload,
-            hashlib.sha256
+            self.config.webhook_secret.encode(), payload, hashlib.sha256
         ).hexdigest()
 
         return hmac.compare_digest(expected, signature)
@@ -656,7 +667,7 @@ class GumroadService:
             "sale": self._handle_sale,
             "refund": self._handle_refund,
             "dispute": self._handle_dispute,
-            "dispute_won": self._handle_dispute_won
+            "dispute_won": self._handle_dispute_won,
         }
 
         handler = handlers.get(event_type)
@@ -679,7 +690,7 @@ class GumroadService:
             email=email,
             license_key=license_key,
             sale_id=sale_id,
-            product_name=product_name
+            product_name=product_name,
         )
 
         return {
@@ -687,7 +698,7 @@ class GumroadService:
             "event": "sale",
             "customer_email": email,
             "api_key": customer.api_key,
-            "message": f"Welcome to Newton! Your API key has been generated."
+            "message": "Welcome to Newton! Your API key has been generated.",
         }
 
     def _handle_refund(self, data: Dict[str, Any]) -> Dict[str, Any]:
@@ -703,10 +714,14 @@ class GumroadService:
                     "processed": True,
                     "event": "refund",
                     "customer_email": email,
-                    "message": "Customer access deactivated due to refund"
+                    "message": "Customer access deactivated due to refund",
                 }
 
-        return {"processed": True, "event": "refund", "message": "No matching customer found"}
+        return {
+            "processed": True,
+            "event": "refund",
+            "message": "No matching customer found",
+        }
 
     def _handle_dispute(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """Handle dispute webhook - temporarily suspend access."""
@@ -721,10 +736,14 @@ class GumroadService:
                     "processed": True,
                     "event": "dispute",
                     "customer_email": email,
-                    "message": "Customer access suspended pending dispute resolution"
+                    "message": "Customer access suspended pending dispute resolution",
                 }
 
-        return {"processed": True, "event": "dispute", "message": "No matching customer found"}
+        return {
+            "processed": True,
+            "event": "dispute",
+            "message": "No matching customer found",
+        }
 
     def _handle_dispute_won(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """Handle dispute won webhook - reactivate access."""
@@ -739,10 +758,14 @@ class GumroadService:
                     "processed": True,
                     "event": "dispute_won",
                     "customer_email": email,
-                    "message": "Customer access reactivated after dispute resolution"
+                    "message": "Customer access reactivated after dispute resolution",
                 }
 
-        return {"processed": True, "event": "dispute_won", "message": "No matching customer found"}
+        return {
+            "processed": True,
+            "event": "dispute_won",
+            "message": "No matching customer found",
+        }
 
     # ─────────────────────────────────────────────────────────────────────────
     # FEEDBACK COLLECTION
@@ -754,7 +777,7 @@ class GumroadService:
         email: str = "anonymous",
         rating: Optional[int] = None,
         category: str = "general",
-        api_key: Optional[str] = None
+        api_key: Optional[str] = None,
     ) -> Feedback:
         """
         Submit feedback.
@@ -785,7 +808,7 @@ class GumroadService:
             rating=rating,
             category=category,
             timestamp=datetime.now().isoformat(),
-            api_key=api_key
+            api_key=api_key,
         )
 
         self._feedback.append(feedback)
@@ -794,9 +817,7 @@ class GumroadService:
         return feedback
 
     def get_feedback(
-        self,
-        category: Optional[str] = None,
-        limit: int = 100
+        self, category: Optional[str] = None, limit: int = 100
     ) -> List[Feedback]:
         """Get feedback, optionally filtered by category."""
         feedback = self._feedback
@@ -814,7 +835,7 @@ class GumroadService:
                 "total": 0,
                 "by_category": {},
                 "average_rating": None,
-                "rating_distribution": {}
+                "rating_distribution": {},
             }
 
         by_category = {}
@@ -834,7 +855,7 @@ class GumroadService:
             "by_category": by_category,
             "average_rating": round(avg_rating, 2) if avg_rating else None,
             "rating_distribution": rating_dist,
-            "rated_count": len(ratings)
+            "rated_count": len(ratings),
         }
 
     # ─────────────────────────────────────────────────────────────────────────
@@ -847,7 +868,7 @@ class GumroadService:
             **self._stats,
             "active_customers": sum(1 for c in self._customers.values() if c.active),
             "total_customers": len(self._customers),
-            "feedback_count": len(self._feedback)
+            "feedback_count": len(self._feedback),
         }
 
     def get_pricing_info(self) -> Dict[str, Any]:
@@ -856,17 +877,23 @@ class GumroadService:
         for key, config in PRODUCT_CATALOG.items():
             if key in ["test", "legacy_beta"]:
                 continue  # Skip internal tiers
-            products.append({
-                "id": key,
-                "name": config.name,
-                "price": f"${config.price_cents / 100:.2f}",
-                "price_cents": config.price_cents,
-                "currency": "USD",
-                "type": "recurring" if config.is_recurring else "one-time",
-                "monthly_verifications": config.monthly_verifications if config.monthly_verifications > 0 else "unlimited",
-                "features": config.features,
-                "endpoints": config.endpoints
-            })
+            products.append(
+                {
+                    "id": key,
+                    "name": config.name,
+                    "price": f"${config.price_cents / 100:.2f}",
+                    "price_cents": config.price_cents,
+                    "currency": "USD",
+                    "type": "recurring" if config.is_recurring else "one-time",
+                    "monthly_verifications": (
+                        config.monthly_verifications
+                        if config.monthly_verifications > 0
+                        else "unlimited"
+                    ),
+                    "features": config.features,
+                    "endpoints": config.endpoints,
+                }
+            )
 
         return {
             "products": products,
@@ -875,23 +902,23 @@ class GumroadService:
                     "name": "Teacher's Aide Pro",
                     "description": "AI lesson planning for K-8 teachers",
                     "starting_price": "$9/month",
-                    "products": ["teacher_aide_pro"]
+                    "products": ["teacher_aide_pro"],
                 },
                 "developers": {
                     "name": "Newton API",
                     "description": "Verified computation for developers",
                     "starting_price": "$19 one-time",
-                    "products": ["api_starter", "api_pro"]
+                    "products": ["api_starter", "api_pro"],
                 },
                 "ai_safety": {
                     "name": "AI Safety Shield",
                     "description": "Real-time AI output verification",
                     "starting_price": "$29/month",
-                    "products": ["safety_startup", "safety_scale", "safety_enterprise"]
-                }
+                    "products": ["safety_startup", "safety_scale", "safety_enterprise"],
+                },
             },
             "guarantee": "30-day money-back guarantee on all products",
-            "support": "Email support included with all tiers"
+            "support": "Email support included with all tiers",
         }
 
 

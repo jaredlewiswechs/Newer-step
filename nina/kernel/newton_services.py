@@ -24,22 +24,28 @@ import sys
 import os
 import re
 import json
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 # Add project root
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from foghorn import (
-    Card, Query, ResultSet, Task, Receipt, LinkCurve, Rule,
-    ObjectType, FoghornObject,
-    service, ServiceCategory, get_object_store,
+    Card,
+    Query,
+    ResultSet,
+    Receipt,
+    LinkCurve,
+    FoghornObject,
+    service,
+    ServiceCategory,
+    get_object_store,
 )
-
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # SERVICE 1: COMPUTE (TI Calculator)
 # Verified arithmetic and logical operations
 # ═══════════════════════════════════════════════════════════════════════════════
+
 
 @service(
     name="Compute",
@@ -53,7 +59,7 @@ from foghorn import (
 def compute_service(obj: FoghornObject) -> List[FoghornObject]:
     """
     Verified computation using Newton's Logic Engine.
-    
+
     Supports:
     - Arithmetic: +, -, *, /, ^, sqrt, abs
     - Trigonometry: sin, cos, tan
@@ -67,59 +73,73 @@ def compute_service(obj: FoghornObject) -> List[FoghornObject]:
         expr_text = obj.content
     else:
         expr_text = str(obj)
-    
+
     try:
         # Try to import Newton's logic engine
         from core.logic import LogicEngine, ExecutionBounds
-        
+
         engine = LogicEngine()
         bounds = ExecutionBounds(max_iterations=10_000, max_operations=100_000)
-        
+
         # Parse expression (simplified JSON or infix)
         if expr_text.strip().startswith("{"):
             expr = json.loads(expr_text)
         else:
             # Convert simple infix to Newton format
             expr = _parse_infix(expr_text)
-        
+
         result = engine.evaluate(expr, bounds=bounds)
-        
-        return [Card(
-            title=f"= {result}",
-            content=f"Expression: {expr_text}\nResult: {result}\nVerified: True",
-            prev_hash=obj.hash,
-            verified=True,
-            metadata={"expression": expr_text, "result": result, "engine": "newton_logic"},
-        )]
-        
+
+        return [
+            Card(
+                title=f"= {result}",
+                content=f"Expression: {expr_text}\nResult: {result}\nVerified: True",
+                prev_hash=obj.hash,
+                verified=True,
+                metadata={
+                    "expression": expr_text,
+                    "result": result,
+                    "engine": "newton_logic",
+                },
+            )
+        ]
+
     except ImportError:
         # Fallback: safe eval for basic math
         result = _safe_eval(expr_text)
-        
-        return [Card(
-            title=f"= {result}",
-            content=f"Expression: {expr_text}\nResult: {result}\nVerified: True (basic)",
-            prev_hash=obj.hash,
-            verified=True,
-            metadata={"expression": expr_text, "result": result, "engine": "safe_eval"},
-        )]
-    
+
+        return [
+            Card(
+                title=f"= {result}",
+                content=f"Expression: {expr_text}\nResult: {result}\nVerified: True (basic)",
+                prev_hash=obj.hash,
+                verified=True,
+                metadata={
+                    "expression": expr_text,
+                    "result": result,
+                    "engine": "safe_eval",
+                },
+            )
+        ]
+
     except Exception as e:
-        return [Card(
-            title="Computation Error",
-            content=f"Expression: {expr_text}\nError: {str(e)}",
-            prev_hash=obj.hash,
-            verified=False,
-            metadata={"error": str(e)},
-        )]
+        return [
+            Card(
+                title="Computation Error",
+                content=f"Expression: {expr_text}\nError: {str(e)}",
+                prev_hash=obj.hash,
+                verified=False,
+                metadata={"error": str(e)},
+            )
+        ]
 
 
 def _parse_infix(expr: str) -> Dict:
     """Convert simple infix expression to Newton JSON format."""
     expr = expr.strip()
-    
+
     # Try simple arithmetic patterns
-    for op in ['+', '-', '*', '/', '^']:
+    for op in ["+", "-", "*", "/", "^"]:
         if op in expr:
             parts = expr.split(op, 1)
             if len(parts) == 2:
@@ -129,7 +149,7 @@ def _parse_infix(expr: str) -> Dict:
                     return {"op": op, "args": [left, right]}
                 except ValueError:
                     pass
-    
+
     # Single number
     try:
         return float(expr)
@@ -140,21 +160,30 @@ def _parse_infix(expr: str) -> Dict:
 def _safe_eval(expr: str) -> Any:
     """Safe evaluation of basic math expressions."""
     import math
-    
+
     # Whitelist of safe operations
     safe_dict = {
-        'abs': abs, 'round': round, 'min': min, 'max': max,
-        'sqrt': math.sqrt, 'sin': math.sin, 'cos': math.cos, 'tan': math.tan,
-        'log': math.log, 'log10': math.log10, 'exp': math.exp,
-        'pi': math.pi, 'e': math.e,
+        "abs": abs,
+        "round": round,
+        "min": min,
+        "max": max,
+        "sqrt": math.sqrt,
+        "sin": math.sin,
+        "cos": math.cos,
+        "tan": math.tan,
+        "log": math.log,
+        "log10": math.log10,
+        "exp": math.exp,
+        "pi": math.pi,
+        "e": math.e,
     }
-    
+
     # Remove anything dangerous
-    expr = re.sub(r'[^\d\s\+\-\*\/\.\(\)\,\w]', '', expr)
-    
+    expr = re.sub(r"[^\d\s\+\-\*\/\.\(\)\,\w]", "", expr)
+
     try:
         return eval(expr, {"__builtins__": {}}, safe_dict)
-    except Exception as e:
+    except Exception:
         raise ValueError(f"Cannot evaluate: {expr}")
 
 
@@ -162,6 +191,7 @@ def _safe_eval(expr: str) -> Any:
 # SERVICE 2: VERIFY CLAIM (Meta Newton)
 # Constraint-based claim verification
 # ═══════════════════════════════════════════════════════════════════════════════
+
 
 @service(
     name="Verify Claim",
@@ -172,10 +202,12 @@ def _safe_eval(expr: str) -> Any:
     max_ops=50_000,
     max_time_ms=10_000,
 )
-def verify_claim_service(obj: FoghornObject, constraints: List[Dict] = None) -> List[FoghornObject]:
+def verify_claim_service(
+    obj: FoghornObject, constraints: List[Dict] = None
+) -> List[FoghornObject]:
     """
     Verify a claim using Newton's constraint system.
-    
+
     Checks:
     - Safety violations (harm, medical, legal, security)
     - Logical consistency
@@ -188,7 +220,7 @@ def verify_claim_service(obj: FoghornObject, constraints: List[Dict] = None) -> 
         claim = obj.content
     else:
         claim = str(obj)
-    
+
     # Default safety constraints
     if constraints is None:
         constraints = [
@@ -196,10 +228,10 @@ def verify_claim_service(obj: FoghornObject, constraints: List[Dict] = None) -> 
             {"type": "safety", "patterns": ["medical advice", "diagnose", "prescribe"]},
             {"type": "safety", "patterns": ["legal advice", "lawyer", "sue"]},
         ]
-    
+
     violations = []
     verified = True
-    
+
     # Check safety patterns
     claim_lower = claim.lower()
     for constraint in constraints:
@@ -208,12 +240,13 @@ def verify_claim_service(obj: FoghornObject, constraints: List[Dict] = None) -> 
                 if pattern.lower() in claim_lower:
                     violations.append(f"Safety: contains '{pattern}'")
                     verified = False
-    
+
     # Try Newton's CDL for more advanced checks
     try:
         from core.cdl import CDLEvaluator
+
         evaluator = CDLEvaluator()
-        
+
         # Check logical constraints if provided
         for constraint in constraints:
             if constraint.get("type") == "cdl":
@@ -222,36 +255,39 @@ def verify_claim_service(obj: FoghornObject, constraints: List[Dict] = None) -> 
                 if not result:
                     violations.append(f"CDL: {cdl_constraint}")
                     verified = False
-                    
+
     except ImportError:
         pass  # Newton CDL not available
-    
+
     # Build result
     status = "VERIFIED" if verified else "FAILED"
     content = f"Claim: {claim}\n\nStatus: {status}"
-    
+
     if violations:
-        content += f"\n\nViolations:\n" + "\n".join(f"- {v}" for v in violations)
-    
-    return [Card(
-        title=f"Verification: {status}",
-        content=content,
-        prev_hash=obj.hash,
-        verified=verified,
-        tags=["verification"],
-        metadata={
-            "claim": claim,
-            "verified": verified,
-            "violations": violations,
-            "constraint_count": len(constraints),
-        },
-    )]
+        content += "\n\nViolations:\n" + "\n".join(f"- {v}" for v in violations)
+
+    return [
+        Card(
+            title=f"Verification: {status}",
+            content=content,
+            prev_hash=obj.hash,
+            verified=verified,
+            tags=["verification"],
+            metadata={
+                "claim": claim,
+                "verified": verified,
+                "violations": violations,
+                "constraint_count": len(constraints),
+            },
+        )
+    ]
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # SERVICE 3: GROUND FACTS (Grounding Engine)
 # Source attribution and fact-checking
 # ═══════════════════════════════════════════════════════════════════════════════
+
 
 @service(
     name="Ground Facts",
@@ -262,10 +298,12 @@ def verify_claim_service(obj: FoghornObject, constraints: List[Dict] = None) -> 
     max_ops=100_000,
     max_time_ms=30_000,
 )
-def ground_facts_service(obj: FoghornObject, max_sources: int = 5) -> List[FoghornObject]:
+def ground_facts_service(
+    obj: FoghornObject, max_sources: int = 5
+) -> List[FoghornObject]:
     """
     Ground a claim using Newton's grounding engine.
-    
+
     Returns sources with:
     - URL
     - Snippet
@@ -279,29 +317,31 @@ def ground_facts_service(obj: FoghornObject, max_sources: int = 5) -> List[Fogho
         claim = obj.content
     else:
         claim = str(obj)
-    
+
     results = []
     sources_checked = 0
-    
+
     try:
         # Try Newton's enhanced grounding engine
         from newton_agent.grounding_enhanced import EnhancedGroundingEngine
-        
+
         engine = EnhancedGroundingEngine()
         grounding_result = engine.verify_claim(claim, require_official=False)
-        
+
         # Convert GroundingResult to list of dicts
         results = []
         for source in grounding_result.sources:
-            results.append({
-                "title": source.get("title", "Source"),
-                "url": source.get("url", ""),
-                "snippet": source.get("snippet", ""),
-                "tier": source.get("tier", "unknown"),
-                "weight": source.get("weight", 1.0),
-            })
+            results.append(
+                {
+                    "title": source.get("title", "Source"),
+                    "url": source.get("url", ""),
+                    "snippet": source.get("snippet", ""),
+                    "tier": source.get("tier", "unknown"),
+                    "weight": source.get("weight", 1.0),
+                }
+            )
         sources_checked = grounding_result.sources_checked
-        
+
     except ImportError:
         # Fallback: simulate grounding
         results = [
@@ -314,7 +354,7 @@ def ground_facts_service(obj: FoghornObject, max_sources: int = 5) -> List[Fogho
             }
         ]
         sources_checked = 1
-    
+
     # Create ResultSet
     result_set = ResultSet(
         query_hash=obj.hash,
@@ -325,7 +365,7 @@ def ground_facts_service(obj: FoghornObject, max_sources: int = 5) -> List[Fogho
         verified=len(results) > 0,
         metadata={"claim": claim, "max_sources": max_sources},
     )
-    
+
     # Create summary card
     summary = Card(
         title=f"Grounding: {len(results)} sources found",
@@ -334,7 +374,7 @@ def ground_facts_service(obj: FoghornObject, max_sources: int = 5) -> List[Fogho
         verified=len(results) > 0,
         tags=["grounding", "sources"],
     )
-    
+
     return [result_set, summary]
 
 
@@ -342,6 +382,7 @@ def ground_facts_service(obj: FoghornObject, max_sources: int = 5) -> List[Fogho
 # SERVICE 4: ANALYZE (Ada Understanding)
 # Semantic analysis and understanding
 # ═══════════════════════════════════════════════════════════════════════════════
+
 
 @service(
     name="Analyze",
@@ -355,7 +396,7 @@ def ground_facts_service(obj: FoghornObject, max_sources: int = 5) -> List[Fogho
 def analyze_service(obj: FoghornObject) -> List[FoghornObject]:
     """
     Semantic analysis using Ada.
-    
+
     Returns:
     - Key entities
     - Sentiment
@@ -369,7 +410,7 @@ def analyze_service(obj: FoghornObject) -> List[FoghornObject]:
         text = obj.content
     else:
         text = str(obj)
-    
+
     analysis = {
         "text_length": len(text),
         "word_count": len(text.split()),
@@ -378,22 +419,31 @@ def analyze_service(obj: FoghornObject) -> List[FoghornObject]:
         "intent": "unknown",
         "shape_type": "linear",
     }
-    
+
     # Basic analysis (always runs)
     words = text.lower().split()
-    
+
     # Simple sentiment detection
-    positive = ["good", "great", "excellent", "love", "happy", "yes", "amazing", "wonderful"]
+    positive = [
+        "good",
+        "great",
+        "excellent",
+        "love",
+        "happy",
+        "yes",
+        "amazing",
+        "wonderful",
+    ]
     negative = ["bad", "terrible", "hate", "sad", "no", "wrong", "awful", "horrible"]
-    
+
     pos_count = sum(1 for w in words if w in positive)
     neg_count = sum(1 for w in words if w in negative)
-    
+
     if pos_count > neg_count:
         analysis["sentiment"] = "positive"
     elif neg_count > pos_count:
         analysis["sentiment"] = "negative"
-    
+
     # Simple intent detection
     if "?" in text:
         analysis["intent"] = "question"
@@ -401,33 +451,35 @@ def analyze_service(obj: FoghornObject) -> List[FoghornObject]:
         analysis["intent"] = "request"
     elif any(w in words for w in ["is", "are", "was", "were"]):
         analysis["intent"] = "statement"
-    
+
     try:
         # Try Ada's whisper detection (sentinel mode)
         from newton_agent.ada import get_ada, AlertLevel
-        
+
         ada = get_ada()
         if ada:
             # Ada watches for drift/anomalies
-            whisper = ada.whisper(text) if hasattr(ada, 'whisper') else None
+            whisper = ada.whisper(text) if hasattr(ada, "whisper") else None
             if whisper:
-                analysis["ada_alert"] = whisper.level.value if hasattr(whisper, 'level') else "quiet"
-        
+                analysis["ada_alert"] = (
+                    whisper.level.value if hasattr(whisper, "level") else "quiet"
+                )
+
     except (ImportError, Exception):
         pass  # Ada not available, continue with basic analysis
-    
+
     # Try kinematic linguistics for shape
     try:
         from newton_agent.kinematic_linguistics import KinematicLinguistics
-        
+
         kl = KinematicLinguistics()
         trajectory = kl.analyze(text)
         analysis["shape_type"] = trajectory.get("shape", "linear")
         analysis["bezier"] = trajectory.get("bezier", None)
-        
+
     except ImportError:
         pass
-    
+
     # Build result card
     content = f"Text: {text[:200]}{'...' if len(text) > 200 else ''}\n\n"
     content += "Analysis:\n"
@@ -435,24 +487,27 @@ def analyze_service(obj: FoghornObject) -> List[FoghornObject]:
     content += f"- Sentiment: {analysis['sentiment']}\n"
     content += f"- Intent: {analysis['intent']}\n"
     content += f"- Shape: {analysis['shape_type']}\n"
-    
+
     if analysis.get("entities"):
         content += f"- Entities: {', '.join(analysis['entities'])}\n"
-    
-    return [Card(
-        title=f"Analysis: {analysis['intent']} ({analysis['sentiment']})",
-        content=content,
-        prev_hash=obj.hash,
-        verified=True,
-        tags=["analysis", "ada"],
-        metadata=analysis,
-    )]
+
+    return [
+        Card(
+            title=f"Analysis: {analysis['intent']} ({analysis['sentiment']})",
+            content=content,
+            prev_hash=obj.hash,
+            verified=True,
+            tags=["analysis", "ada"],
+            metadata=analysis,
+        )
+    ]
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # SERVICE 5: TRANSPILE (tinyTalk)
 # Code generation via tinyTalk
 # ═══════════════════════════════════════════════════════════════════════════════
+
 
 @service(
     name="Transpile to JavaScript",
@@ -466,47 +521,53 @@ def analyze_service(obj: FoghornObject) -> List[FoghornObject]:
 def transpile_js_service(obj: Card) -> List[FoghornObject]:
     """Transpile tinyTalk source to JavaScript."""
     source = obj.content
-    
+
     try:
         # Try tinyTalk transpiler
         from tinytalk_py.lexer import Lexer
         from tinytalk_py.parser import Parser
         from tinytalk_py.emitter_js import JSEmitter
-        
+
         lexer = Lexer(source)
         tokens = lexer.tokenize()
-        
+
         parser = Parser(tokens)
         ast = parser.parse()
-        
+
         emitter = JSEmitter()
         js_code = emitter.emit(ast)
-        
-        return [Card(
-            title="JavaScript Output",
-            content=js_code,
-            prev_hash=obj.hash,
-            verified=True,
-            tags=["transpiled", "javascript"],
-            metadata={"source_lang": "tinytalk", "target_lang": "javascript"},
-        )]
-        
+
+        return [
+            Card(
+                title="JavaScript Output",
+                content=js_code,
+                prev_hash=obj.hash,
+                verified=True,
+                tags=["transpiled", "javascript"],
+                metadata={"source_lang": "tinytalk", "target_lang": "javascript"},
+            )
+        ]
+
     except ImportError:
-        return [Card(
-            title="Transpile Error",
-            content="tinyTalk transpiler not available",
-            prev_hash=obj.hash,
-            verified=False,
-            metadata={"error": "ImportError: tinytalk_py not found"},
-        )]
+        return [
+            Card(
+                title="Transpile Error",
+                content="tinyTalk transpiler not available",
+                prev_hash=obj.hash,
+                verified=False,
+                metadata={"error": "ImportError: tinytalk_py not found"},
+            )
+        ]
     except Exception as e:
-        return [Card(
-            title="Transpile Error",
-            content=f"Error: {str(e)}\n\nSource:\n{source}",
-            prev_hash=obj.hash,
-            verified=False,
-            metadata={"error": str(e)},
-        )]
+        return [
+            Card(
+                title="Transpile Error",
+                content=f"Error: {str(e)}\n\nSource:\n{source}",
+                prev_hash=obj.hash,
+                verified=False,
+                metadata={"error": str(e)},
+            )
+        ]
 
 
 @service(
@@ -521,52 +582,59 @@ def transpile_js_service(obj: Card) -> List[FoghornObject]:
 def transpile_python_service(obj: Card) -> List[FoghornObject]:
     """Transpile tinyTalk source to Python."""
     source = obj.content
-    
+
     try:
         from tinytalk_py.lexer import Lexer
         from tinytalk_py.parser import Parser
         from tinytalk_py.emitter_python import PythonEmitter
-        
+
         lexer = Lexer(source)
         tokens = lexer.tokenize()
-        
+
         parser = Parser(tokens)
         ast = parser.parse()
-        
+
         emitter = PythonEmitter()
         py_code = emitter.emit(ast)
-        
-        return [Card(
-            title="Python Output",
-            content=py_code,
-            prev_hash=obj.hash,
-            verified=True,
-            tags=["transpiled", "python"],
-            metadata={"source_lang": "tinytalk", "target_lang": "python"},
-        )]
-        
+
+        return [
+            Card(
+                title="Python Output",
+                content=py_code,
+                prev_hash=obj.hash,
+                verified=True,
+                tags=["transpiled", "python"],
+                metadata={"source_lang": "tinytalk", "target_lang": "python"},
+            )
+        ]
+
     except ImportError:
-        return [Card(
-            title="Transpile Error",
-            content="tinyTalk transpiler not available",
-            prev_hash=obj.hash,
-            verified=False,
-            metadata={"error": "ImportError: tinytalk_py not found"},
-        )]
+        return [
+            Card(
+                title="Transpile Error",
+                content="tinyTalk transpiler not available",
+                prev_hash=obj.hash,
+                verified=False,
+                metadata={"error": "ImportError: tinytalk_py not found"},
+            )
+        ]
     except Exception as e:
-        return [Card(
-            title="Transpile Error",
-            content=f"Error: {str(e)}\n\nSource:\n{source}",
-            prev_hash=obj.hash,
-            verified=False,
-            metadata={"error": str(e)},
-        )]
+        return [
+            Card(
+                title="Transpile Error",
+                content=f"Error: {str(e)}\n\nSource:\n{source}",
+                prev_hash=obj.hash,
+                verified=False,
+                metadata={"error": str(e)},
+            )
+        ]
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # SERVICE 6: CREATE LINK CURVE (Bézier)
 # Generate relationship curves between objects
 # ═══════════════════════════════════════════════════════════════════════════════
+
 
 @service(
     name="Create Bézier Link",
@@ -585,7 +653,7 @@ def create_bezier_link_service(
 ) -> List[FoghornObject]:
     """
     Create a Bézier LinkCurve between objects.
-    
+
     Curvature controls the bend:
     - 0.0 = straight line
     - 0.5 = gentle curve
@@ -593,17 +661,17 @@ def create_bezier_link_service(
     """
     if not target_hash:
         return []
-    
+
     store = get_object_store()
     target = store.get(target_hash)
-    
+
     if not target:
         return []
-    
+
     # Calculate control points based on curvature
     h1 = (0.33, curvature * 0.5)
     h2 = (0.67, 1.0 - curvature * 0.5)
-    
+
     link = LinkCurve(
         source_hash=obj.hash,
         target_hash=target.hash,
@@ -616,7 +684,7 @@ def create_bezier_link_service(
         p3=(1.0, 1.0),
         prev_hash=obj.hash,
     )
-    
+
     return [link]
 
 
@@ -624,6 +692,7 @@ def create_bezier_link_service(
 # REGISTER ALL SERVICES
 # This module auto-registers services when imported via the @service decorator
 # ═══════════════════════════════════════════════════════════════════════════════
+
 
 def get_newton_services() -> List[str]:
     """Return list of Newton service names."""

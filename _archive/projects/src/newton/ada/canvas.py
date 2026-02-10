@@ -7,16 +7,14 @@ Like ChatGPT Canvas but with verification and more capabilities.
 """
 
 import re
-import time
 from dataclasses import dataclass, field as dataclass_field
 from datetime import datetime
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 import hashlib
 
 from .schema import (
     CanvasDocument,
-    CanvasElement,
     CanvasType,
     CodeLanguage,
 )

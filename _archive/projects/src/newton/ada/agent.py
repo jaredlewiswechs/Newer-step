@@ -6,7 +6,6 @@ Autonomous task execution with planning and verification.
 Unlike ChatGPT's agent mode, Ada verifies each step before proceeding.
 """
 
-import time
 from dataclasses import dataclass, field as dataclass_field
 from datetime import datetime
 from enum import Enum
@@ -18,8 +17,6 @@ from .schema import (
     AgentPlan,
     AgentResult,
     AgentStatus,
-    CodeLanguage,
-    CodeResult,
 )
 
 
@@ -520,7 +517,7 @@ class AdaAgent:
         """Request approval for the plan."""
         if self._approval_callback:
             approval_message = f"Task: {plan.goal}\n"
-            approval_message += f"Steps requiring approval:\n"
+            approval_message += "Steps requiring approval:\n"
             for step in plan.requires_approval:
                 approval_message += f"  - {step}\n"
             return self._approval_callback(approval_message)

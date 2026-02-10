@@ -2,11 +2,12 @@
 
 Also includes NSCell and NSActionCell for cell-based controls.
 """
+
 from __future__ import annotations
 from typing import Optional, Any
 
 from Kernel.view.nsview import NSView, NSRect
-from Kernel.runtime.event import NSEvent, NSEventType
+from Kernel.runtime.event import NSEvent
 
 
 class NSCell:

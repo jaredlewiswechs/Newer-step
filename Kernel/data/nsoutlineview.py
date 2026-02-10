@@ -1,6 +1,7 @@
 """NSOutlineView — a hierarchical data view (tree table)."""
+
 from __future__ import annotations
-from typing import Optional, List, Any, Protocol, Dict
+from typing import Optional, List, Any, Protocol
 
 from Kernel.view.nsview import NSView, NSRect
 
@@ -95,20 +96,20 @@ class NSOutlineView(NSView):
     def item_at_row(self, row: int) -> Any:
         self._rebuild_flat()
         if 0 <= row < len(self._flat_rows):
-            return self._flat_rows[row]['item']
+            return self._flat_rows[row]["item"]
         return None
 
     def row_for_item(self, item: Any) -> int:
         self._rebuild_flat()
         for i, entry in enumerate(self._flat_rows):
-            if entry['item'] is item:
+            if entry["item"] is item:
                 return i
         return -1
 
     def level_for_row(self, row: int) -> int:
         self._rebuild_flat()
         if 0 <= row < len(self._flat_rows):
-            return self._flat_rows[row]['level']
+            return self._flat_rows[row]["level"]
         return -1
 
     def reload_data(self):
@@ -128,12 +129,14 @@ class NSOutlineView(NSView):
             child = self._data_source.child(i, parent, self)
             expandable = self._data_source.is_item_expandable(child, self)
             expanded = id(child) in self._expanded_items
-            self._flat_rows.append({
-                'item': child,
-                'level': level,
-                'expandable': expandable,
-                'expanded': expanded,
-            })
+            self._flat_rows.append(
+                {
+                    "item": child,
+                    "level": level,
+                    "expandable": expandable,
+                    "expanded": expanded,
+                }
+            )
             if expandable and expanded:
                 self._walk(child, level + 1)
 
@@ -147,19 +150,27 @@ class NSOutlineView(NSView):
     def draw(self, rect=None) -> str:
         self._rebuild_flat()
         w, h = self._bounds.width, self._bounds.height
-        parts = [f'<rect x="0" y="0" width="{w}" height="{h}" fill="white" stroke="#ccc" />']
+        parts = [
+            f'<rect x="0" y="0" width="{w}" height="{h}" fill="white" stroke="#ccc" />'
+        ]
         for r, entry in enumerate(self._flat_rows):
             ry = r * self._row_height
-            indent = entry['level'] * self._indentation_per_level
+            indent = entry["level"] * self._indentation_per_level
             bg = "#d0e0ff" if r in self._selected_row_indexes else "white"
-            parts.append(f'<rect x="0" y="{ry}" width="{w}" height="{self._row_height}" fill="{bg}" />')
+            parts.append(
+                f'<rect x="0" y="{ry}" width="{w}" height="{self._row_height}" fill="{bg}" />'
+            )
             # disclosure triangle
-            if entry['expandable']:
-                tri = "▼" if entry['expanded'] else "▶"
-                parts.append(f'<text x="{indent + 4}" y="{ry + 16}" font-size="10">{tri}</text>')
-            label = str(entry['item'])
-            parts.append(f'<text x="{indent + 20}" y="{ry + 16}" font-size="12" '
-                         f'font-family="sans-serif">{label}</text>')
+            if entry["expandable"]:
+                tri = "▼" if entry["expanded"] else "▶"
+                parts.append(
+                    f'<text x="{indent + 4}" y="{ry + 16}" font-size="10">{tri}</text>'
+                )
+            label = str(entry["item"])
+            parts.append(
+                f'<text x="{indent + 20}" y="{ry + 16}" font-size="12" '
+                f'font-family="sans-serif">{label}</text>'
+            )
         return "\n".join(parts)
 
     def __repr__(self):

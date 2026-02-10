@@ -7,8 +7,15 @@ This is Newton's core insight: finfr = f/g
 """
 
 from newton import (
-    Blueprint, field, law, forge, when, finfr,
-    ratio, finfr_if_undefined, LawViolation
+    Blueprint,
+    LawViolation,
+    field,
+    finfr,
+    finfr_if_undefined,
+    forge,
+    law,
+    ratio,
+    when,
 )
 
 

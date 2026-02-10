@@ -1,10 +1,12 @@
 """NSToolbar and NSToolbarItem — window toolbars."""
+
 from __future__ import annotations
-from typing import Optional, List, Any
+from typing import Optional, List
 
 
 class NSToolbarItemIdentifier:
     """Standard toolbar item identifiers."""
+
     SEPARATOR = "NSToolbarSeparatorItem"
     SPACE = "NSToolbarSpaceItem"
     FLEXIBLE_SPACE = "NSToolbarFlexibleSpaceItem"
@@ -190,7 +192,7 @@ class NSToolbar:
     def validate_visible_items(self):
         """Validate toolbar items by calling validate on targets."""
         for item in self._items:
-            if item.target and hasattr(item.target, 'validate_toolbar_item'):
+            if item.target and hasattr(item.target, "validate_toolbar_item"):
                 item.is_enabled = item.target.validate_toolbar_item(item)
 
     def __repr__(self):

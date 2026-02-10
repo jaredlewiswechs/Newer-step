@@ -18,10 +18,6 @@ These tests verify that the chatbot compiler correctly:
 import pytest
 from core.chatbot_compiler import (
     # Core classes
-    ChatbotCompiler,
-    ChatbotGovernor,
-
-    # Factory functions
     get_chatbot_compiler,
     get_chatbot_governor,
     compile_request,
@@ -33,12 +29,7 @@ from core.chatbot_compiler import (
     CompilerDecision,
 
     # Data classes
-    RequestClassification,
-    CompiledResponse,
-
-    # Constraint rules
     RESPONSE_CONSTRAINTS,
-    CLASSIFICATION_PATTERNS,
 )
 
 

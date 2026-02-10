@@ -1,6 +1,7 @@
 """NSLayoutManager and NSTextContainer — text layout engine."""
+
 from __future__ import annotations
-from typing import Optional, List, Tuple, Any
+from typing import Optional, List, Tuple
 
 from Kernel.view.nsview import NSRect, NSSize
 
@@ -61,9 +62,12 @@ class NSTextContainer:
 
 class _LayoutLine:
     """Internal representation of a laid-out line of text."""
-    __slots__ = ('char_start', 'char_end', 'origin_x', 'origin_y', 'width', 'height')
 
-    def __init__(self, char_start: int, char_end: int, x: float, y: float, w: float, h: float):
+    __slots__ = ("char_start", "char_end", "origin_x", "origin_y", "width", "height")
+
+    def __init__(
+        self, char_start: int, char_end: int, x: float, y: float, w: float, h: float
+    ):
         self.char_start = char_start
         self.char_end = char_end
         self.origin_x = x
@@ -136,14 +140,16 @@ class NSLayoutManager:
             return
         tc = self._text_containers[0]
         max_width = tc.size.width - 2 * tc.line_fragment_padding
-        chars_per_line = max(1, int(max_width / self._char_width)) if max_width > 0 else len(text)
+        chars_per_line = (
+            max(1, int(max_width / self._char_width)) if max_width > 0 else len(text)
+        )
 
         y = 0.0
         idx = 0
         line_count = 0
         while idx < len(text):
             # find next newline
-            nl = text.find('\n', idx)
+            nl = text.find("\n", idx)
             if nl == -1:
                 nl = len(text)
             segment = text[idx:nl]
@@ -152,13 +158,20 @@ class NSLayoutManager:
                 chunk = segment[:chars_per_line]
                 end_idx = idx + len(chunk)
                 w = len(chunk) * self._char_width
-                self._lines.append(_LayoutLine(idx, end_idx, tc.line_fragment_padding, y, w, self._line_height))
+                self._lines.append(
+                    _LayoutLine(
+                        idx, end_idx, tc.line_fragment_padding, y, w, self._line_height
+                    )
+                )
                 y += self._line_height
                 line_count += 1
-                if tc.maximum_number_of_lines and line_count >= tc.maximum_number_of_lines:
+                if (
+                    tc.maximum_number_of_lines
+                    and line_count >= tc.maximum_number_of_lines
+                ):
                     return
                 idx += len(chunk)
-                segment = segment[len(chunk):]
+                segment = segment[len(chunk) :]
             # account for the newline character
             if nl < len(text):
                 idx = nl + 1
@@ -192,14 +205,17 @@ class NSLayoutManager:
             return (0, 0)
         return (self._lines[0].char_start, self._lines[-1].char_end)
 
-    def character_index_for_point(self, point: Tuple[float, float],
-                                  text_container: NSTextContainer) -> int:
+    def character_index_for_point(
+        self, point: Tuple[float, float], text_container: NSTextContainer
+    ) -> int:
         self.ensure_layout()
         x, y = point
         for line in self._lines:
             if line.origin_y <= y < line.origin_y + line.height:
                 char_offset = int((x - line.origin_x) / self._char_width)
-                char_offset = max(0, min(char_offset, line.char_end - line.char_start - 1))
+                char_offset = max(
+                    0, min(char_offset, line.char_end - line.char_start - 1)
+                )
                 return line.char_start + char_offset
         # past the end
         if self._lines:
@@ -208,7 +224,7 @@ class NSLayoutManager:
 
     def bounding_rect_for_glyph_range(self, start: int, length: int) -> NSRect:
         self.ensure_layout()
-        min_x, min_y = float('inf'), float('inf')
+        min_x, min_y = float("inf"), float("inf")
         max_x, max_y = 0.0, 0.0
         end = start + length
         for line in self._lines:
@@ -222,9 +238,11 @@ class NSLayoutManager:
             min_y = min(min_y, line.origin_y)
             max_x = max(max_x, lx + lw)
             max_y = max(max_y, line.origin_y + line.height)
-        if min_x == float('inf'):
+        if min_x == float("inf"):
             return NSRect(0, 0, 0, 0)
         return NSRect(min_x, min_y, max_x - min_x, max_y - min_y)
 
     def __repr__(self):
-        return f"<NSLayoutManager lines={len(self._lines)} glyphs={self.number_of_glyphs}>"
+        return (
+            f"<NSLayoutManager lines={len(self._lines)} glyphs={self.number_of_glyphs}>"
+        )

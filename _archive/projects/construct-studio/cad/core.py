@@ -482,7 +482,7 @@ class Building:
     def summary(self) -> str:
         """Print building summary."""
         lines = [
-            f"",
+            "",
             f"╔{'═'*50}╗",
             f"║  {self.name:^46}  ║",
             f"╠{'═'*50}╣",

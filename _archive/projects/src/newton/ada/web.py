@@ -8,9 +8,7 @@ Provides REST API and WebSocket support.
 
 from dataclasses import dataclass, field as dataclass_field
 from datetime import datetime
-from enum import Enum
-from typing import Any, Callable, Dict, List, Optional
-import json
+from typing import Any, Dict, List, Optional
 import uuid
 
 try:
@@ -25,11 +23,8 @@ except ImportError:
 from .schema import (
     AdaConfig,
     AdaMode,
-    AdaResponse,
     CanvasType,
     CodeLanguage,
-    ResponseFormat,
-    TaskFrequency,
 )
 
 

@@ -38,12 +38,11 @@ from enum import Enum
 import re
 import time
 import hashlib
-from functools import reduce
-
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # DOMAINS - The seven kingdoms of constraint
 # ═══════════════════════════════════════════════════════════════════════════════
+
 
 class Domain(Enum):
     FINANCIAL = "financial"
@@ -58,6 +57,7 @@ class Domain(Enum):
 # ═══════════════════════════════════════════════════════════════════════════════
 # OPERATORS - The verbs of constraint
 # ═══════════════════════════════════════════════════════════════════════════════
+
 
 class Operator(Enum):
     # Comparison (CDL 2.0)
@@ -75,12 +75,12 @@ class Operator(Enum):
     EMPTY = "empty"
 
     # Temporal (CDL 3.0)
-    WITHIN = "within"      # field within duration of reference
-    AFTER = "after"        # field after reference
-    BEFORE = "before"      # field before reference
+    WITHIN = "within"  # field within duration of reference
+    AFTER = "after"  # field after reference
+    BEFORE = "before"  # field before reference
 
     # Aggregation (CDL 3.0)
-    SUM_LT = "sum_lt"      # sum of field < value over window
+    SUM_LT = "sum_lt"  # sum of field < value over window
     SUM_LE = "sum_le"
     SUM_GT = "sum_gt"
     SUM_GE = "sum_ge"
@@ -88,19 +88,19 @@ class Operator(Enum):
     COUNT_LE = "count_le"
     COUNT_GT = "count_gt"
     COUNT_GE = "count_ge"
-    AVG_LT = "avg_lt"      # average of field < value over window
+    AVG_LT = "avg_lt"  # average of field < value over window
     AVG_LE = "avg_le"
     AVG_GT = "avg_gt"
     AVG_GE = "avg_ge"
 
     # Ratio (CDL 3.0) - f/g dimensional analysis
     # finfr = f/g where f=forge/fact/function, g=ground/goal/governance
-    RATIO_LT = "ratio_lt"      # f/g < value
-    RATIO_LE = "ratio_le"      # f/g <= value
-    RATIO_GT = "ratio_gt"      # f/g > value
-    RATIO_GE = "ratio_ge"      # f/g >= value
-    RATIO_EQ = "ratio_eq"      # f/g == value (within epsilon)
-    RATIO_NE = "ratio_ne"      # f/g != value
+    RATIO_LT = "ratio_lt"  # f/g < value
+    RATIO_LE = "ratio_le"  # f/g <= value
+    RATIO_GT = "ratio_gt"  # f/g > value
+    RATIO_GE = "ratio_ge"  # f/g >= value
+    RATIO_EQ = "ratio_eq"  # f/g == value (within epsilon)
+    RATIO_NE = "ratio_ne"  # f/g != value
     RATIO_UNDEFINED = "ratio_undefined"  # f/g is undefined (g=0) → finfr
 
 
@@ -108,20 +108,23 @@ class Operator(Enum):
 # DURATION PARSER - For temporal constraints
 # ═══════════════════════════════════════════════════════════════════════════════
 
-DURATION_PATTERN = re.compile(r'^(\d+)(s|m|h|d|w)$')
+DURATION_PATTERN = re.compile(r"^(\d+)(s|m|h|d|w)$")
 DURATION_MULTIPLIERS = {
-    's': 1,
-    'm': 60,
-    'h': 3600,
-    'd': 86400,
-    'w': 604800,
+    "s": 1,
+    "m": 60,
+    "h": 3600,
+    "d": 86400,
+    "w": 604800,
 }
+
 
 def parse_duration(duration: str) -> int:
     """Parse duration string to seconds. E.g., '24h' -> 86400"""
     match = DURATION_PATTERN.match(duration.strip().lower())
     if not match:
-        raise ValueError(f"Invalid duration format: {duration}. Use format: 24h, 30m, 7d, etc.")
+        raise ValueError(
+            f"Invalid duration format: {duration}. Use format: 24h, 30m, 7d, etc."
+        )
     value, unit = match.groups()
     return int(value) * DURATION_MULTIPLIERS[unit]
 
@@ -130,9 +133,11 @@ def parse_duration(duration: str) -> int:
 # CONSTRAINT STRUCTURES
 # ═══════════════════════════════════════════════════════════════════════════════
 
+
 @dataclass
 class AtomicConstraint:
     """A single, indivisible constraint."""
+
     domain: Domain
     field: str
     operator: Operator
@@ -142,14 +147,14 @@ class AtomicConstraint:
     id: Optional[str] = None
 
     # CDL 3.0 extensions
-    window: Optional[str] = None      # For aggregations: "24h", "7d", etc.
-    group_by: Optional[str] = None    # For aggregations: field to group by
-    reference: Optional[str] = None   # For temporal: reference field
+    window: Optional[str] = None  # For aggregations: "24h", "7d", etc.
+    group_by: Optional[str] = None  # For aggregations: field to group by
+    reference: Optional[str] = None  # For temporal: reference field
 
     # Ratio extensions (f/g dimensional analysis)
     # For ratio operators: field is 'f' (numerator), denominator is 'g'
     denominator: Optional[str] = None  # The 'g' in f/g ratio
-    epsilon: float = 1e-9              # For ratio_eq comparison tolerance
+    epsilon: float = 1e-9  # For ratio_eq comparison tolerance
 
     def __post_init__(self):
         if self.id is None:
@@ -165,26 +170,32 @@ class AtomicConstraint:
 @dataclass
 class ConditionalConstraint:
     """CDL 3.0: If-then-else branching."""
-    condition: 'Constraint'
-    then_constraint: 'Constraint'
-    else_constraint: Optional['Constraint'] = None
+
+    condition: "Constraint"
+    then_constraint: "Constraint"
+    else_constraint: Optional["Constraint"] = None
     id: Optional[str] = None
 
     def __post_init__(self):
         if self.id is None:
-            self.id = f"COND_{hashlib.sha256(str(id(self)).encode()).hexdigest()[:8].upper()}"
+            self.id = (
+                f"COND_{hashlib.sha256(str(id(self)).encode()).hexdigest()[:8].upper()}"
+            )
 
 
 @dataclass
 class CompositeConstraint:
     """Logical composition of constraints."""
+
     logic: str  # "and", "or", "not"
-    constraints: List['Constraint']
+    constraints: List["Constraint"]
     id: Optional[str] = None
 
     def __post_init__(self):
         if self.id is None:
-            self.id = f"COMP_{hashlib.sha256(str(id(self)).encode()).hexdigest()[:8].upper()}"
+            self.id = (
+                f"COMP_{hashlib.sha256(str(id(self)).encode()).hexdigest()[:8].upper()}"
+            )
 
 
 @dataclass
@@ -203,15 +214,16 @@ class RatioConstraint:
         - Seizure safety: flicker_rate/safe_threshold > 1.0 → finfr
         - Leverage limit: liabilities/assets > max_leverage → finfr
     """
-    f_field: str                       # Numerator field path (f in f/g)
-    g_field: str                       # Denominator field path (g in f/g)
-    operator: Operator                 # How to compare the ratio
-    threshold: float                   # The threshold value
+
+    f_field: str  # Numerator field path (f in f/g)
+    g_field: str  # Denominator field path (g in f/g)
+    operator: Operator  # How to compare the ratio
+    threshold: float  # The threshold value
     domain: Domain = Domain.CUSTOM
     message: Optional[str] = None
     action: str = "reject"
     id: Optional[str] = None
-    epsilon: float = 1e-9              # For ratio_eq comparison tolerance
+    epsilon: float = 1e-9  # For ratio_eq comparison tolerance
 
     def __post_init__(self):
         if self.id is None:
@@ -225,16 +237,20 @@ class RatioConstraint:
 
 
 # Union type for all constraints
-Constraint = Union[AtomicConstraint, ConditionalConstraint, CompositeConstraint, RatioConstraint]
+Constraint = Union[
+    AtomicConstraint, ConditionalConstraint, CompositeConstraint, RatioConstraint
+]
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # EVALUATION RESULT
 # ═══════════════════════════════════════════════════════════════════════════════
 
+
 @dataclass
 class EvaluationResult:
     """Result of constraint evaluation. Binary: pass or fail."""
+
     passed: bool
     constraint_id: str
     message: Optional[str] = None
@@ -250,6 +266,7 @@ class EvaluationResult:
 # ═══════════════════════════════════════════════════════════════════════════════
 # AGGREGATION STATE - For stateful constraints
 # ═══════════════════════════════════════════════════════════════════════════════
+
 
 class AggregationState:
     """
@@ -300,6 +317,7 @@ class AggregationState:
 # ═══════════════════════════════════════════════════════════════════════════════
 # CDL EVALUATOR - The CPU of Newton
 # ═══════════════════════════════════════════════════════════════════════════════
+
 
 class CDLEvaluator:
     """
@@ -353,12 +371,12 @@ class CDLEvaluator:
             return EvaluationResult(
                 passed=False,
                 constraint_id="UNKNOWN",
-                message=f"Unknown constraint type: {type(constraint)}"
+                message=f"Unknown constraint type: {type(constraint)}",
             )
 
     def _get_field_value(self, obj: Dict[str, Any], field_path: str) -> Any:
         """Extract field value using dot notation."""
-        parts = field_path.split('.')
+        parts = field_path.split(".")
         value = obj
         for part in parts:
             if isinstance(value, dict) and part in value:
@@ -367,7 +385,9 @@ class CDLEvaluator:
                 return None
         return value
 
-    def _evaluate_atomic(self, c: AtomicConstraint, obj: Dict[str, Any]) -> EvaluationResult:
+    def _evaluate_atomic(
+        self, c: AtomicConstraint, obj: Dict[str, Any]
+    ) -> EvaluationResult:
         """Evaluate an atomic constraint."""
         field_value = self._get_field_value(obj, c.field)
 
@@ -376,15 +396,32 @@ class CDLEvaluator:
             return self._evaluate_temporal(c, obj, field_value)
 
         # Handle aggregation operators
-        if c.operator in (Operator.SUM_LT, Operator.SUM_LE, Operator.SUM_GT, Operator.SUM_GE,
-                          Operator.COUNT_LT, Operator.COUNT_LE, Operator.COUNT_GT, Operator.COUNT_GE,
-                          Operator.AVG_LT, Operator.AVG_LE, Operator.AVG_GT, Operator.AVG_GE):
+        if c.operator in (
+            Operator.SUM_LT,
+            Operator.SUM_LE,
+            Operator.SUM_GT,
+            Operator.SUM_GE,
+            Operator.COUNT_LT,
+            Operator.COUNT_LE,
+            Operator.COUNT_GT,
+            Operator.COUNT_GE,
+            Operator.AVG_LT,
+            Operator.AVG_LE,
+            Operator.AVG_GT,
+            Operator.AVG_GE,
+        ):
             return self._evaluate_aggregation(c, obj, field_value)
 
         # Handle ratio operators (f/g dimensional analysis)
-        if c.operator in (Operator.RATIO_LT, Operator.RATIO_LE, Operator.RATIO_GT,
-                          Operator.RATIO_GE, Operator.RATIO_EQ, Operator.RATIO_NE,
-                          Operator.RATIO_UNDEFINED):
+        if c.operator in (
+            Operator.RATIO_LT,
+            Operator.RATIO_LE,
+            Operator.RATIO_GT,
+            Operator.RATIO_GE,
+            Operator.RATIO_EQ,
+            Operator.RATIO_NE,
+            Operator.RATIO_UNDEFINED,
+        ):
             return self._evaluate_atomic_ratio(c, obj, field_value)
 
         # Standard comparison
@@ -394,30 +431,36 @@ class CDLEvaluator:
                 return EvaluationResult(
                     passed=passed,
                     constraint_id=c.id,
-                    message=c.message if not passed else None
+                    message=c.message if not passed else None,
                 )
             except Exception as e:
                 return EvaluationResult(
                     passed=False,
                     constraint_id=c.id,
-                    message=f"Evaluation error: {str(e)}"
+                    message=f"Evaluation error: {str(e)}",
                 )
 
         return EvaluationResult(
-            passed=False,
-            constraint_id=c.id,
-            message=f"Unknown operator: {c.operator}"
+            passed=False, constraint_id=c.id, message=f"Unknown operator: {c.operator}"
         )
 
-    def _evaluate_temporal(self, c: AtomicConstraint, obj: Dict[str, Any], field_value: Any) -> EvaluationResult:
+    def _evaluate_temporal(
+        self, c: AtomicConstraint, obj: Dict[str, Any], field_value: Any
+    ) -> EvaluationResult:
         """Evaluate temporal constraints (within, after, before)."""
         if field_value is None:
-            return EvaluationResult(passed=False, constraint_id=c.id, message="Field not found")
+            return EvaluationResult(
+                passed=False, constraint_id=c.id, message="Field not found"
+            )
 
         # Get reference timestamp
-        ref_value = self._get_field_value(obj, c.reference) if c.reference else time.time()
+        ref_value = (
+            self._get_field_value(obj, c.reference) if c.reference else time.time()
+        )
         if ref_value is None:
-            return EvaluationResult(passed=False, constraint_id=c.id, message="Reference field not found")
+            return EvaluationResult(
+                passed=False, constraint_id=c.id, message="Reference field not found"
+            )
 
         # Parse duration for WITHIN
         if c.operator == Operator.WITHIN:
@@ -426,7 +469,9 @@ class CDLEvaluator:
                 diff = abs(float(field_value) - float(ref_value))
                 passed = diff <= window
             except Exception as e:
-                return EvaluationResult(passed=False, constraint_id=c.id, message=str(e))
+                return EvaluationResult(
+                    passed=False, constraint_id=c.id, message=str(e)
+                )
         elif c.operator == Operator.AFTER:
             passed = float(field_value) > float(ref_value)
         elif c.operator == Operator.BEFORE:
@@ -435,15 +480,19 @@ class CDLEvaluator:
             passed = False
 
         return EvaluationResult(
-            passed=passed,
-            constraint_id=c.id,
-            message=c.message if not passed else None
+            passed=passed, constraint_id=c.id, message=c.message if not passed else None
         )
 
-    def _evaluate_aggregation(self, c: AtomicConstraint, obj: Dict[str, Any], field_value: Any) -> EvaluationResult:
+    def _evaluate_aggregation(
+        self, c: AtomicConstraint, obj: Dict[str, Any], field_value: Any
+    ) -> EvaluationResult:
         """Evaluate aggregation constraints (sum, count, avg over window)."""
         if c.window is None:
-            return EvaluationResult(passed=False, constraint_id=c.id, message="Window required for aggregation")
+            return EvaluationResult(
+                passed=False,
+                constraint_id=c.id,
+                message="Window required for aggregation",
+            )
 
         try:
             window_seconds = parse_duration(c.window)
@@ -465,24 +514,24 @@ class CDLEvaluator:
 
         # Calculate aggregate
         op_name = c.operator.value
-        if op_name.startswith('sum_'):
+        if op_name.startswith("sum_"):
             agg_value = self.aggregation_state.sum(group_key, window_seconds)
-        elif op_name.startswith('count_'):
+        elif op_name.startswith("count_"):
             agg_value = self.aggregation_state.count(group_key, window_seconds)
-        elif op_name.startswith('avg_'):
+        elif op_name.startswith("avg_"):
             agg_value = self.aggregation_state.avg(group_key, window_seconds)
         else:
             agg_value = 0
 
         # Compare
-        comparison = op_name.split('_')[1]  # lt, le, gt, ge
-        if comparison == 'lt':
+        comparison = op_name.split("_")[1]  # lt, le, gt, ge
+        if comparison == "lt":
             passed = agg_value < c.value
-        elif comparison == 'le':
+        elif comparison == "le":
             passed = agg_value <= c.value
-        elif comparison == 'gt':
+        elif comparison == "gt":
             passed = agg_value > c.value
-        elif comparison == 'ge':
+        elif comparison == "ge":
             passed = agg_value >= c.value
         else:
             passed = False
@@ -490,10 +539,16 @@ class CDLEvaluator:
         return EvaluationResult(
             passed=passed,
             constraint_id=c.id,
-            message=f"{op_name}({c.field}) = {agg_value}, limit = {c.value}" if not passed else None
+            message=(
+                f"{op_name}({c.field}) = {agg_value}, limit = {c.value}"
+                if not passed
+                else None
+            ),
         )
 
-    def _evaluate_atomic_ratio(self, c: AtomicConstraint, obj: Dict[str, Any], f_value: Any) -> EvaluationResult:
+    def _evaluate_atomic_ratio(
+        self, c: AtomicConstraint, obj: Dict[str, Any], f_value: Any
+    ) -> EvaluationResult:
         """
         Evaluate ratio operators on AtomicConstraint.
 
@@ -504,7 +559,7 @@ class CDLEvaluator:
             return EvaluationResult(
                 passed=False,
                 constraint_id=c.id,
-                message="Ratio operator requires 'denominator' field to be specified"
+                message="Ratio operator requires 'denominator' field to be specified",
             )
 
         g_value = self._get_field_value(obj, c.denominator)
@@ -513,13 +568,13 @@ class CDLEvaluator:
             return EvaluationResult(
                 passed=False,
                 constraint_id=c.id,
-                message=c.message or f"Numerator field '{c.field}' not found"
+                message=c.message or f"Numerator field '{c.field}' not found",
             )
         if g_value is None:
             return EvaluationResult(
                 passed=False,
                 constraint_id=c.id,
-                message=c.message or f"Denominator field '{c.denominator}' not found"
+                message=c.message or f"Denominator field '{c.denominator}' not found",
             )
 
         try:
@@ -529,7 +584,7 @@ class CDLEvaluator:
             return EvaluationResult(
                 passed=False,
                 constraint_id=c.id,
-                message=c.message or f"Cannot convert to numeric: {e}"
+                message=c.message or f"Cannot convert to numeric: {e}",
             )
 
         # Check for undefined ratio (g ≈ 0)
@@ -540,7 +595,8 @@ class CDLEvaluator:
                 return EvaluationResult(
                     passed=False,
                     constraint_id=c.id,
-                    message=c.message or f"finfr: ratio {c.field}/{c.denominator} is undefined (g ≈ 0)"
+                    message=c.message
+                    or f"finfr: ratio {c.field}/{c.denominator} is undefined (g ≈ 0)",
                 )
 
         ratio = f / g
@@ -563,13 +619,18 @@ class CDLEvaluator:
             passed = False
 
         if not passed:
-            message = c.message or f"finfr: {c.field}/{c.denominator} = {ratio:.4f} violates {c.operator.value} {c.value}"
+            message = (
+                c.message
+                or f"finfr: {c.field}/{c.denominator} = {ratio:.4f} violates {c.operator.value} {c.value}"
+            )
         else:
             message = None
 
         return EvaluationResult(passed=passed, constraint_id=c.id, message=message)
 
-    def _evaluate_conditional(self, c: ConditionalConstraint, obj: Dict[str, Any]) -> EvaluationResult:
+    def _evaluate_conditional(
+        self, c: ConditionalConstraint, obj: Dict[str, Any]
+    ) -> EvaluationResult:
         """Evaluate conditional (if/then/else) constraint."""
         condition_result = self.evaluate(c.condition, obj)
 
@@ -581,14 +642,20 @@ class CDLEvaluator:
             # No else clause, condition failed = pass
             return EvaluationResult(passed=True, constraint_id=c.id)
 
-    def _evaluate_composite(self, c: CompositeConstraint, obj: Dict[str, Any]) -> EvaluationResult:
+    def _evaluate_composite(
+        self, c: CompositeConstraint, obj: Dict[str, Any]
+    ) -> EvaluationResult:
         """Evaluate composite (AND, OR, NOT) constraint."""
         results = [self.evaluate(sub, obj) for sub in c.constraints]
 
         if c.logic.lower() == "and":
             passed = all(r.passed for r in results)
             failed = [r for r in results if not r.passed]
-            message = "; ".join(r.message for r in failed if r.message) if not passed else None
+            message = (
+                "; ".join(r.message for r in failed if r.message)
+                if not passed
+                else None
+            )
         elif c.logic.lower() == "or":
             passed = any(r.passed for r in results)
             message = "All constraints failed" if not passed else None
@@ -601,7 +668,9 @@ class CDLEvaluator:
 
         return EvaluationResult(passed=passed, constraint_id=c.id, message=message)
 
-    def _evaluate_ratio(self, c: RatioConstraint, obj: Dict[str, Any]) -> EvaluationResult:
+    def _evaluate_ratio(
+        self, c: RatioConstraint, obj: Dict[str, Any]
+    ) -> EvaluationResult:
         """
         Evaluate f/g ratio constraint - the core of Newton's dimensional analysis.
 
@@ -623,13 +692,13 @@ class CDLEvaluator:
             return EvaluationResult(
                 passed=False,
                 constraint_id=c.id,
-                message=c.message or f"Numerator field '{c.f_field}' not found"
+                message=c.message or f"Numerator field '{c.f_field}' not found",
             )
         if g_value is None:
             return EvaluationResult(
                 passed=False,
                 constraint_id=c.id,
-                message=c.message or f"Denominator field '{c.g_field}' not found"
+                message=c.message or f"Denominator field '{c.g_field}' not found",
             )
 
         # Convert to numeric
@@ -640,7 +709,7 @@ class CDLEvaluator:
             return EvaluationResult(
                 passed=False,
                 constraint_id=c.id,
-                message=c.message or f"Cannot convert to numeric: {e}"
+                message=c.message or f"Cannot convert to numeric: {e}",
             )
 
         # Check for undefined ratio (g ≈ 0) - this is always finfr
@@ -648,16 +717,14 @@ class CDLEvaluator:
             # Ratio is undefined - this is ontological death
             if c.operator == Operator.RATIO_UNDEFINED:
                 # Checking if ratio IS undefined - it is, so constraint passes
-                return EvaluationResult(
-                    passed=True,
-                    constraint_id=c.id
-                )
+                return EvaluationResult(passed=True, constraint_id=c.id)
             else:
                 # Any other ratio check with g=0 fails (undefined state)
                 return EvaluationResult(
                     passed=False,
                     constraint_id=c.id,
-                    message=c.message or f"finfr: ratio {c.f_field}/{c.g_field} is undefined (denominator ≈ 0)"
+                    message=c.message
+                    or f"finfr: ratio {c.f_field}/{c.g_field} is undefined (denominator ≈ 0)",
                 )
 
         # Calculate the ratio
@@ -683,19 +750,18 @@ class CDLEvaluator:
             return EvaluationResult(
                 passed=False,
                 constraint_id=c.id,
-                message=f"Unknown ratio operator: {c.operator}"
+                message=f"Unknown ratio operator: {c.operator}",
             )
 
         if not passed:
-            message = c.message or f"finfr: {c.f_field}/{c.g_field} = {ratio:.4f} violates {c.operator.value} {c.threshold}"
+            message = (
+                c.message
+                or f"finfr: {c.f_field}/{c.g_field} = {ratio:.4f} violates {c.operator.value} {c.threshold}"
+            )
         else:
             message = None
 
-        return EvaluationResult(
-            passed=passed,
-            constraint_id=c.id,
-            message=message
-        )
+        return EvaluationResult(passed=passed, constraint_id=c.id, message=message)
 
     @property
     def evaluation_count(self) -> int:
@@ -705,6 +771,7 @@ class CDLEvaluator:
 # ═══════════════════════════════════════════════════════════════════════════════
 # HALT CHECKER - Proves constraints terminate
 # ═══════════════════════════════════════════════════════════════════════════════
+
 
 class HaltChecker:
     """
@@ -717,7 +784,9 @@ class HaltChecker:
     MAX_DEPTH = 100
     MAX_CONSTRAINTS = 1000
 
-    def check(self, constraint: Constraint, depth: int = 0) -> tuple[bool, Optional[str]]:
+    def check(
+        self, constraint: Constraint, depth: int = 0
+    ) -> tuple[bool, Optional[str]]:
         """
         Check if constraint is guaranteed to halt.
         Returns (halts, reason) tuple.
@@ -739,7 +808,7 @@ class HaltChecker:
     def _check_atomic(self, c: AtomicConstraint) -> tuple[bool, Optional[str]]:
         """Atomic constraints always halt (O(1) or O(n) bounded)."""
         # Check aggregation window is bounded
-        if c.operator.value.startswith(('sum_', 'count_', 'avg_')):
+        if c.operator.value.startswith(("sum_", "count_", "avg_")):
             if c.window is None:
                 return False, "Aggregation requires bounded window"
             try:
@@ -757,7 +826,9 @@ class HaltChecker:
         # and comparison operation. No loops, no recursion.
         return True, None
 
-    def _check_conditional(self, c: ConditionalConstraint, depth: int) -> tuple[bool, Optional[str]]:
+    def _check_conditional(
+        self, c: ConditionalConstraint, depth: int
+    ) -> tuple[bool, Optional[str]]:
         """Check all branches of conditional."""
         for sub in [c.condition, c.then_constraint, c.else_constraint]:
             if sub is not None:
@@ -766,10 +837,15 @@ class HaltChecker:
                     return False, reason
         return True, None
 
-    def _check_composite(self, c: CompositeConstraint, depth: int) -> tuple[bool, Optional[str]]:
+    def _check_composite(
+        self, c: CompositeConstraint, depth: int
+    ) -> tuple[bool, Optional[str]]:
         """Check all children of composite."""
         if len(c.constraints) > self.MAX_CONSTRAINTS:
-            return False, f"Composite exceeds maximum constraints ({self.MAX_CONSTRAINTS})"
+            return (
+                False,
+                f"Composite exceeds maximum constraints ({self.MAX_CONSTRAINTS})",
+            )
 
         for sub in c.constraints:
             halts, reason = self.check(sub, depth + 1)
@@ -781,6 +857,7 @@ class HaltChecker:
 # ═══════════════════════════════════════════════════════════════════════════════
 # CDL PARSER - Parse dict/JSON to Constraint objects
 # ═══════════════════════════════════════════════════════════════════════════════
+
 
 class CDLParser:
     """Parse CDL 3.0 constraint definitions from dict/JSON."""
@@ -802,46 +879,48 @@ class CDLParser:
     def _parse_internal(self, d: Dict[str, Any]) -> Constraint:
         """Internal parsing logic."""
         # Check for conditional
-        if 'if' in d:
+        if "if" in d:
             return ConditionalConstraint(
-                condition=self._parse_internal(d['if']),
-                then_constraint=self._parse_internal(d['then']),
-                else_constraint=self._parse_internal(d['else']) if 'else' in d else None
+                condition=self._parse_internal(d["if"]),
+                then_constraint=self._parse_internal(d["then"]),
+                else_constraint=(
+                    self._parse_internal(d["else"]) if "else" in d else None
+                ),
             )
 
         # Check for composite
-        if 'logic' in d:
+        if "logic" in d:
             return CompositeConstraint(
-                logic=d['logic'],
-                constraints=[self._parse_internal(c) for c in d['constraints']]
+                logic=d["logic"],
+                constraints=[self._parse_internal(c) for c in d["constraints"]],
             )
 
         # Check for ratio constraint (f/g dimensional analysis)
-        if 'f_field' in d and 'g_field' in d:
+        if "f_field" in d and "g_field" in d:
             return RatioConstraint(
-                f_field=d['f_field'],
-                g_field=d['g_field'],
-                operator=Operator(d['operator']),
-                threshold=float(d.get('threshold', d.get('value', 1.0))),
-                domain=Domain(d.get('domain', 'custom')),
-                message=d.get('message'),
-                action=d.get('action', 'reject'),
-                epsilon=float(d.get('epsilon', 1e-9))
+                f_field=d["f_field"],
+                g_field=d["g_field"],
+                operator=Operator(d["operator"]),
+                threshold=float(d.get("threshold", d.get("value", 1.0))),
+                domain=Domain(d.get("domain", "custom")),
+                message=d.get("message"),
+                action=d.get("action", "reject"),
+                epsilon=float(d.get("epsilon", 1e-9)),
             )
 
         # Atomic constraint
         return AtomicConstraint(
-            domain=Domain(d.get('domain', 'custom')),
-            field=d['field'],
-            operator=Operator(d['operator']),
-            value=d.get('value'),
-            message=d.get('message'),
-            action=d.get('action', 'reject'),
-            window=d.get('window'),
-            group_by=d.get('group_by'),
-            reference=d.get('reference'),
-            denominator=d.get('denominator'),
-            epsilon=float(d.get('epsilon', 1e-9))
+            domain=Domain(d.get("domain", "custom")),
+            field=d["field"],
+            operator=Operator(d["operator"]),
+            value=d.get("value"),
+            message=d.get("message"),
+            action=d.get("action", "reject"),
+            window=d.get("window"),
+            group_by=d.get("group_by"),
+            reference=d.get("reference"),
+            denominator=d.get("denominator"),
+            epsilon=float(d.get("epsilon", 1e-9)),
         )
 
 
@@ -849,7 +928,10 @@ class CDLParser:
 # CONVENIENCE FUNCTIONS
 # ═══════════════════════════════════════════════════════════════════════════════
 
-def verify(constraint: Union[Constraint, Dict], obj: Dict[str, Any]) -> EvaluationResult:
+
+def verify(
+    constraint: Union[Constraint, Dict], obj: Dict[str, Any]
+) -> EvaluationResult:
     """
     One-liner verification.
 
@@ -865,30 +947,38 @@ def verify(constraint: Union[Constraint, Dict], obj: Dict[str, Any]) -> Evaluati
     return evaluator.evaluate(constraint, obj)
 
 
-def verify_all(constraints: List[Union[Constraint, Dict]], obj: Dict[str, Any]) -> List[EvaluationResult]:
+def verify_all(
+    constraints: List[Union[Constraint, Dict]], obj: Dict[str, Any]
+) -> List[EvaluationResult]:
     """Verify multiple constraints, return all results."""
     return [verify(c, obj) for c in constraints]
 
 
-def verify_and(constraints: List[Union[Constraint, Dict]], obj: Dict[str, Any]) -> EvaluationResult:
+def verify_and(
+    constraints: List[Union[Constraint, Dict]], obj: Dict[str, Any]
+) -> EvaluationResult:
     """All constraints must pass."""
     results = verify_all(constraints, obj)
     passed = all(r.passed for r in results)
     return EvaluationResult(
         passed=passed,
         constraint_id="AND_" + "_".join(r.constraint_id[:4] for r in results),
-        message="; ".join(r.message for r in results if r.message) if not passed else None
+        message=(
+            "; ".join(r.message for r in results if r.message) if not passed else None
+        ),
     )
 
 
-def verify_or(constraints: List[Union[Constraint, Dict]], obj: Dict[str, Any]) -> EvaluationResult:
+def verify_or(
+    constraints: List[Union[Constraint, Dict]], obj: Dict[str, Any]
+) -> EvaluationResult:
     """At least one constraint must pass."""
     results = verify_all(constraints, obj)
     passed = any(r.passed for r in results)
     return EvaluationResult(
         passed=passed,
         constraint_id="OR_" + "_".join(r.constraint_id[:4] for r in results),
-        message="All constraints failed" if not passed else None
+        message="All constraints failed" if not passed else None,
     )
 
 
@@ -898,7 +988,7 @@ def verify_ratio(
     operator: str,
     threshold: float,
     obj: Dict[str, Any],
-    message: Optional[str] = None
+    message: Optional[str] = None,
 ) -> EvaluationResult:
     """
     Verify an f/g ratio constraint - dimensional analysis for computation.
@@ -925,13 +1015,15 @@ def verify_ratio(
         g_field=g_field,
         operator=Operator(operator),
         threshold=threshold,
-        message=message
+        message=message,
     )
     evaluator = CDLEvaluator()
     return evaluator.evaluate(constraint, obj)
 
 
-def ratio(f_field: str, g_field: str, op: str = "ratio_le", threshold: float = 1.0) -> RatioConstraint:
+def ratio(
+    f_field: str, g_field: str, op: str = "ratio_le", threshold: float = 1.0
+) -> RatioConstraint:
     """
     Create a ratio constraint for f/g dimensional analysis.
 
@@ -958,16 +1050,14 @@ def ratio(f_field: str, g_field: str, op: str = "ratio_le", threshold: float = 1
         ratio("flicker_rate", "safe_limit", op="ratio_lt")
     """
     return RatioConstraint(
-        f_field=f_field,
-        g_field=g_field,
-        operator=Operator(op),
-        threshold=threshold
+        f_field=f_field, g_field=g_field, operator=Operator(op), threshold=threshold
     )
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # THE CLOSURE CONDITION
 # ═══════════════════════════════════════════════════════════════════════════════
+
 
 def newton(current: Any, goal: Any) -> bool:
     """
@@ -990,19 +1080,19 @@ if __name__ == "__main__":
     c1 = {"domain": "financial", "field": "amount", "operator": "lt", "value": 1000}
     obj = {"amount": 500, "user_id": "u123"}
     result = verify(c1, obj)
-    print(f"\nBasic: amount < 1000 where amount=500")
+    print("\nBasic: amount < 1000 where amount=500")
     print(f"  Result: {'PASS' if result.passed else 'FAIL'}")
 
     # Test conditional
     c2 = {
         "if": {"field": "amount", "operator": "gt", "value": 10000},
         "then": {"field": "manager_approved", "operator": "eq", "value": True},
-        "else": {"field": "auto_approved", "operator": "eq", "value": True}
+        "else": {"field": "auto_approved", "operator": "eq", "value": True},
     }
     obj2 = {"amount": 15000, "manager_approved": True, "auto_approved": False}
     result2 = verify(c2, obj2)
-    print(f"\nConditional: if amount > 10000 then manager_approved else auto_approved")
-    print(f"  Object: amount=15000, manager_approved=True")
+    print("\nConditional: if amount > 10000 then manager_approved else auto_approved")
+    print("  Object: amount=15000, manager_approved=True")
     print(f"  Result: {'PASS' if result2.passed else 'FAIL'}")
 
     # Test composite
@@ -1010,13 +1100,13 @@ if __name__ == "__main__":
         "logic": "and",
         "constraints": [
             {"field": "amount", "operator": "lt", "value": 5000},
-            {"field": "category", "operator": "ne", "value": "blocked"}
-        ]
+            {"field": "category", "operator": "ne", "value": "blocked"},
+        ],
     }
     obj3 = {"amount": 2000, "category": "allowed"}
     result3 = verify(c3, obj3)
-    print(f"\nComposite AND: amount < 5000 AND category != 'blocked'")
-    print(f"  Object: amount=2000, category='allowed'")
+    print("\nComposite AND: amount < 5000 AND category != 'blocked'")
+    print("  Object: amount=2000, category='allowed'")
     print(f"  Result: {'PASS' if result3.passed else 'FAIL'}")
 
     # Test ratio constraints (f/g dimensional analysis)
@@ -1025,29 +1115,34 @@ if __name__ == "__main__":
     print("-" * 60)
 
     # Test 1: Overdraft protection (liabilities/assets <= 1.0)
-    result4 = verify_ratio("liabilities", "assets", "ratio_le", 1.0,
-                           {"liabilities": 500, "assets": 1000})
-    print(f"\nOverdraft: liabilities/assets <= 1.0")
-    print(f"  Object: liabilities=500, assets=1000")
-    print(f"  Ratio: 0.5")
+    result4 = verify_ratio(
+        "liabilities", "assets", "ratio_le", 1.0, {"liabilities": 500, "assets": 1000}
+    )
+    print("\nOverdraft: liabilities/assets <= 1.0")
+    print("  Object: liabilities=500, assets=1000")
+    print("  Ratio: 0.5")
     print(f"  Result: {'PASS' if result4.passed else 'FAIL'}")
 
     # Test 2: Overdraft violation
-    result5 = verify_ratio("liabilities", "assets", "ratio_le", 1.0,
-                           {"liabilities": 1500, "assets": 1000})
-    print(f"\nOverdraft VIOLATION: liabilities/assets <= 1.0")
-    print(f"  Object: liabilities=1500, assets=1000")
-    print(f"  Ratio: 1.5")
+    result5 = verify_ratio(
+        "liabilities", "assets", "ratio_le", 1.0, {"liabilities": 1500, "assets": 1000}
+    )
+    print("\nOverdraft VIOLATION: liabilities/assets <= 1.0")
+    print("  Object: liabilities=1500, assets=1000")
+    print("  Ratio: 1.5")
     print(f"  Result: {'PASS' if result5.passed else 'FAIL'}")
     if result5.message:
         print(f"  Message: {result5.message}")
 
     # Test 3: Undefined ratio (division by zero) → finfr
-    result6 = verify_ratio("withdrawal", "balance", "ratio_le", 1.0,
-                           {"withdrawal": 100, "balance": 0})
-    print(f"\nUndefined Ratio (g=0): withdrawal/balance")
-    print(f"  Object: withdrawal=100, balance=0")
-    print(f"  Result: {'PASS' if result6.passed else 'FAIL'} (finfr - ontological death)")
+    result6 = verify_ratio(
+        "withdrawal", "balance", "ratio_le", 1.0, {"withdrawal": 100, "balance": 0}
+    )
+    print("\nUndefined Ratio (g=0): withdrawal/balance")
+    print("  Object: withdrawal=100, balance=0")
+    print(
+        f"  Result: {'PASS' if result6.passed else 'FAIL'} (finfr - ontological death)"
+    )
     if result6.message:
         print(f"  Message: {result6.message}")
 
@@ -1055,9 +1150,9 @@ if __name__ == "__main__":
     leverage_constraint = ratio("debt", "equity", threshold=3.0)
     evaluator = CDLEvaluator()
     result7 = evaluator.evaluate(leverage_constraint, {"debt": 2000, "equity": 1000})
-    print(f"\nLeverage Limit: debt/equity <= 3.0 (using ratio() function)")
-    print(f"  Object: debt=2000, equity=1000")
-    print(f"  Ratio: 2.0")
+    print("\nLeverage Limit: debt/equity <= 3.0 (using ratio() function)")
+    print("  Object: debt=2000, equity=1000")
+    print("  Ratio: 2.0")
     print(f"  Result: {'PASS' if result7.passed else 'FAIL'}")
 
     # Test 5: JSON/Dict ratio constraint
@@ -1067,13 +1162,13 @@ if __name__ == "__main__":
         "operator": "ratio_lt",
         "threshold": 1.0,
         "domain": "health",
-        "message": "finfr: Flicker rate exceeds seizure safety threshold"
+        "message": "finfr: Flicker rate exceeds seizure safety threshold",
     }
     obj4 = {"flicker_rate": 2.5, "safe_threshold": 3.0}
     result8 = verify(c4, obj4)
-    print(f"\nSeizure Safety: flicker_rate/safe_threshold < 1.0")
-    print(f"  Object: flicker_rate=2.5, safe_threshold=3.0")
-    print(f"  Ratio: 0.833")
+    print("\nSeizure Safety: flicker_rate/safe_threshold < 1.0")
+    print("  Object: flicker_rate=2.5, safe_threshold=3.0")
+    print("  Ratio: 0.833")
     print(f"  Result: {'PASS' if result8.passed else 'FAIL'}")
 
     print("\n" + "=" * 60)

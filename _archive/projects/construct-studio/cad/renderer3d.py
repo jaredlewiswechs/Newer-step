@@ -27,7 +27,7 @@ except ImportError:
     HAS_PIL = False
 
 from .geometry3d import (
-    Vec3, Mat4, Triangle, Quad, Box,
+    Vec3, Mat4, Triangle, Box,
     hex_to_rgb, shade_color, blend_colors, clamp
 )
 

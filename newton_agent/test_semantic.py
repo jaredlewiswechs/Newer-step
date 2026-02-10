@@ -30,7 +30,7 @@ for question, expected_type in tests:
         print(f'A: {conf} {fact_short}')
         print(f'   Type: {result.category} | Expected: {expected_type}')
     else:
-        print(f'A: No match found')
+        print('A: No match found')
         print(f'   Expected: {expected_type}')
 
 print('\n' + '=' * 70)

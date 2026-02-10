@@ -22,13 +22,12 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from typing import List, Dict, Tuple
-import math
 
 from cad.geometry3d import Vec3, hex_to_rgb, shade_color
 from cad.renderer3d import (
     Renderer3D, Render3DConfig, ProjectionType, ViewAngle,
     create_building_mesh, create_ground_plane,
-    FGState, FG_COLORS, get_fg_state, get_fg_color
+    FGState, FG_COLORS, get_fg_state
 )
 
 # Import building definition
@@ -168,7 +167,6 @@ def create_detailed_building_mesh_with_offset(levels_data: List[Dict], z_offset:
         levels_data: Level definitions with spaces
         z_offset: Vertical offset to apply (e.g., to lift basement to grade)
     """
-    from cad.geometry3d import Triangle, Box
 
     all_triangles = []
 
@@ -359,25 +357,25 @@ def generate_all_3d_renders():
     print("  Colors: GREEN=verified, AMBER=warning, RED=forbidden")
 
     # Full building with f/g colors
-    print(f"  Rendering: Full building - Newton f/g view...")
+    print("  Rendering: Full building - Newton f/g view...")
     img = render_parcri_3d(
         view=ViewAngle.ISOMETRIC_SW,
         use_fg_colors=True,
         title="parcRI HQ - Newton f/g Constraint View"
     )
-    path = os.path.join(export_dir, f"parcri_hq_3d_newton_fg.png")
+    path = os.path.join(export_dir, "parcri_hq_3d_newton_fg.png")
     img.save(path, "PNG")
     renders.append(path)
     print(f"    Saved: {path}")
 
     # Bird's eye f/g view (shows all constraint states)
-    print(f"  Rendering: Bird's eye - Newton f/g view...")
+    print("  Rendering: Bird's eye - Newton f/g view...")
     img = render_parcri_3d(
         view=ViewAngle.BIRD_EYE,
         use_fg_colors=True,
         title="parcRI HQ - Floor of Newton (f/g Constraint Map)"
     )
-    path = os.path.join(export_dir, f"parcri_hq_3d_newton_fg_bird.png")
+    path = os.path.join(export_dir, "parcri_hq_3d_newton_fg_bird.png")
     img.save(path, "PNG")
     renders.append(path)
     print(f"    Saved: {path}")

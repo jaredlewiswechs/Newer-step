@@ -1,4 +1,5 @@
 """NSMenu and NSMenuItem — application and context menus."""
+
 from __future__ import annotations
 from typing import Optional, List, Any
 
@@ -6,8 +7,9 @@ from typing import Optional, List, Any
 class NSMenuItem:
     """A single item in a menu."""
 
-    def __init__(self, title: str = "", action: Optional[str] = None,
-                 key_equivalent: str = ""):
+    def __init__(
+        self, title: str = "", action: Optional[str] = None, key_equivalent: str = ""
+    ):
         self._title = title
         self._action = action
         self._key_equivalent = key_equivalent
@@ -180,8 +182,9 @@ class NSMenu:
         item._menu = self
         self._items.append(item)
 
-    def add_item_with_title(self, title: str, action: Optional[str] = None,
-                            key_equivalent: str = "") -> NSMenuItem:
+    def add_item_with_title(
+        self, title: str, action: Optional[str] = None, key_equivalent: str = ""
+    ) -> NSMenuItem:
         item = NSMenuItem(title, action, key_equivalent)
         self.add_item(item)
         return item

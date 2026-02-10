@@ -14,22 +14,19 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from typing import Optional, Dict
 from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
-    QSplitter, QMenuBar, QMenu, QFileDialog, QMessageBox,
+    QFileDialog, QMessageBox,
     QInputDialog, QStatusBar, QLabel
 )
-from PyQt6.QtCore import Qt, QSize
-from PyQt6.QtGui import QAction, QKeySequence, QColor, QIcon
+from PyQt6.QtGui import QAction, QKeySequence, QColor
 
-from core.document import NDocument, NLayer, BlendMode
+from core.document import NDocument, NLayer
 from core.tools import (
     ToolType, NBrushTool, NEraserTool, NMoveTool,
     NRectSelectTool, NTextTool, NEyedropperTool
 )
 from core.history import NHistory, HistoryAction
 from core.filters import (
-    FilterType, BrightnessFilter, ContrastFilter,
-    SaturationFilter, GrayscaleFilter, InvertFilter,
-    SepiaFilter, BlurFilter, create_filter
+    FilterType, create_filter
 )
 
 from ui.canvas import NCanvas
@@ -687,7 +684,7 @@ class NImageEditor(QMainWindow):
             # For now, just apply directly
             result = filter_obj.apply(layer.image)
             layer.set_image(result)
-        except Exception as e:
+        except Exception:
             # Silently ignore during live adjustment
             pass
     

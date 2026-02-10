@@ -43,15 +43,13 @@ import sys
 import os
 import hashlib
 import time
-import copy
-from typing import Any, Dict, List, Callable, Tuple, Optional
+from typing import Any, Dict, List, Callable, Optional
 from dataclasses import dataclass, field as dc_field
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from tinytalk_py import (
-    Blueprint, field, law, forge, when, finfr, fin,
-    LawViolation, FinClosure, ratio, finfr_if_undefined
+    Blueprint, field, law, forge, when, finfr, LawViolation
 )
 
 

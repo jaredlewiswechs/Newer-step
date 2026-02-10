@@ -25,12 +25,11 @@ Philosophy:
 import time
 import hashlib
 from dataclasses import dataclass, field
-from typing import Optional, Dict, List, Tuple, Callable
+from typing import Optional, Dict, List, Tuple
 from enum import Enum
 
 from .matter import (
     GlyphGeometry,
-    GlyphProperties,
     DAMPING_SUBSTITUTIONS,
 )
 
@@ -426,7 +425,7 @@ class KinematicCinemaCompanion:
             scene_type = SceneType(scene_type.lower())
 
         if self.verbose:
-            print(f"--- PHASE 1-4: INGEST & COMPARE ---")
+            print("--- PHASE 1-4: INGEST & COMPARE ---")
 
         # Initial verification
         proof = self.forge.verify(comment, priority, scene_type, self.user_state)
@@ -447,7 +446,7 @@ class KinematicCinemaCompanion:
 
                 if damped_proof.can_speak:
                     if self.verbose:
-                        print(f"--- KINEMATIC DAMPING APPLIED ---")
+                        print("--- KINEMATIC DAMPING APPLIED ---")
                         print(f"Original Forbidden (f/g: {proof.ratio:.2f})")
                         print(f"Damped to {damped_proof.result.symbol} (f/g: {damped_proof.ratio:.2f})")
 
@@ -458,7 +457,7 @@ class KinematicCinemaCompanion:
         # Speak if verified/warning
         if proof.can_speak:
             if self.verbose:
-                print(f"--- PHASE 9: COMMIT (Speaking) ---")
+                print("--- PHASE 9: COMMIT (Speaking) ---")
             self._speak(comment, proof)
             self._record_event(comment, proof, True)
             self.silence_streak = 0  # Reset on successful speech
@@ -466,7 +465,7 @@ class KinematicCinemaCompanion:
 
         # Enforce silence
         if self.verbose:
-            print(f"--- FINFR: ONTOLOGICAL DEATH OF COMMENT ---")
+            print("--- FINFR: ONTOLOGICAL DEATH OF COMMENT ---")
             reason = (
                 "Ground is zero. Total silence required."
                 if proof.result == ForgeResult.IMPOSSIBLE
@@ -542,7 +541,7 @@ class KinematicCinemaCompanion:
         """
         self.silence_streak += 1
         if self.verbose:
-            print(f"🔴 Constraint updated: User requested silence.")
+            print("🔴 Constraint updated: User requested silence.")
             print(f"   Ground (g) modifier: {1.0 - self.silence_streak * 0.2:.2f}")
 
     def record_user_engagement(self) -> None:
@@ -553,7 +552,7 @@ class KinematicCinemaCompanion:
         """
         self.silence_streak = max(0, self.silence_streak - 1)
         if self.verbose:
-            print(f"🟢 Constraint updated: User engaged positively.")
+            print("🟢 Constraint updated: User engaged positively.")
 
     def set_mood(self, modifier: float) -> None:
         """

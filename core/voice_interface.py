@@ -20,9 +20,8 @@ Based on the Knowledge Navigator vision: Labs → Research → Feedback → New 
 """
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Callable, Union, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 from enum import Enum
-from datetime import datetime, timedelta
 import hashlib
 import json
 import re
@@ -30,25 +29,19 @@ import time
 import uuid
 from collections import defaultdict
 
-from .cdl import (
-    Domain, Operator, AtomicConstraint, CompositeConstraint,
-    ConditionalConstraint, RatioConstraint, verify, verify_and
-)
+from .cdl import verify
 from .forge import get_forge, ForgeConfig
 from .vault import get_vault, VaultConfig
 from .ledger import get_ledger, LedgerConfig
-from .logic import LogicEngine, ExecutionBounds, calculate
+from .logic import LogicEngine, ExecutionBounds
 from .constraint_extractor import (
     extract_constraints,
-    ConstraintCategory,
-    ConstraintStrength,
-    ExtractionResult,
 )
-
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # INTENT TYPES - From the sketches: "types: what? do or go/do/?..."
 # ═══════════════════════════════════════════════════════════════════════════════
+
 
 class IntentType(Enum):
     """
@@ -57,9 +50,10 @@ class IntentType(Enum):
     - DO: Actions, computations, transformations (operational)
     - GO: Navigation, deployment, execution (execution)
     """
-    WHAT = "what"      # Query/question - "What is...?", "How does...?"
-    DO = "do"          # Action/create - "Build...", "Calculate...", "Verify..."
-    GO = "go"          # Execute/deploy - "Deploy...", "Run...", "Launch..."
+
+    WHAT = "what"  # Query/question - "What is...?", "How does...?"
+    DO = "do"  # Action/create - "Build...", "Calculate...", "Verify..."
+    GO = "go"  # Execute/deploy - "Deploy...", "Run...", "Launch..."
     REMEMBER = "remember"  # Memory operations - "Save...", "Store...", "Remember..."
 
 
@@ -68,32 +62,36 @@ class DomainCategory(Enum):
     From sketches: Make | News | Sports | Finance | Lifestyle
     Extended with Newton's core domains.
     """
-    MAKE = "make"           # Creation, building, generating
-    NEWS = "news"           # Information, current events
-    SPORTS = "sports"       # Athletics, games, competition
-    FINANCE = "finance"     # Money, transactions, calculations
-    LIFESTYLE = "lifestyle" # Personal, wellness, daily life
-    EDUCATION = "education" # Learning, TEKS, curriculum
-    HEALTH = "health"       # Medical, wellness, safety
-    RESEARCH = "research"   # Labs, investigation, analysis
+
+    MAKE = "make"  # Creation, building, generating
+    NEWS = "news"  # Information, current events
+    SPORTS = "sports"  # Athletics, games, competition
+    FINANCE = "finance"  # Money, transactions, calculations
+    LIFESTYLE = "lifestyle"  # Personal, wellness, daily life
+    EDUCATION = "education"  # Learning, TEKS, curriculum
+    HEALTH = "health"  # Medical, wellness, safety
+    RESEARCH = "research"  # Labs, investigation, analysis
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # MEMORY SYSTEM - KeystoneObjects, Objects, PermaObjects
 # ═══════════════════════════════════════════════════════════════════════════════
 
+
 class MemoryType(Enum):
     """
     From sketches: remember (memory) → KeystoneObjects, Objects, PermaObjects
     """
-    KEYSTONE = "keystone"   # Critical, foundational objects (never expire)
-    OBJECT = "object"       # Regular session objects (expire with session)
-    PERMA = "perma"         # Permanent storage (persisted to Vault)
+
+    KEYSTONE = "keystone"  # Critical, foundational objects (never expire)
+    OBJECT = "object"  # Regular session objects (expire with session)
+    PERMA = "perma"  # Permanent storage (persisted to Vault)
 
 
 @dataclass
 class MemoryObject:
     """A memory object in Newton's conversational memory."""
+
     id: str
     memory_type: MemoryType
     key: str
@@ -139,7 +137,7 @@ class ConversationMemory:
         value: Any,
         memory_type: MemoryType = MemoryType.OBJECT,
         ttl_seconds: Optional[int] = None,
-        metadata: Optional[Dict[str, Any]] = None
+        metadata: Optional[Dict[str, Any]] = None,
     ) -> str:
         """Store something in memory."""
         memory_id = f"mem_{hashlib.sha256(f'{self.session_id}:{key}:{time.time()}'.encode()).hexdigest()[:12]}"
@@ -155,7 +153,7 @@ class ConversationMemory:
             created_at=now,
             accessed_at=now,
             metadata=metadata or {},
-            expires_at=expires_at
+            expires_at=expires_at,
         )
 
         if memory_type == MemoryType.KEYSTONE:
@@ -174,7 +172,7 @@ class ConversationMemory:
                 owner_id=self.session_id,
                 passphrase=self.session_id,  # Session-derived key
                 data={"key": key, "value": value, "metadata": metadata},
-                metadata={"memory_id": memory_id, "type": "perma"}
+                metadata={"memory_id": memory_id, "type": "perma"},
             )
 
         return memory_id
@@ -229,7 +227,7 @@ class ConversationMemory:
         for arg in args:
             if isinstance(arg, str):
                 # Simple word extraction
-                words = re.findall(r'\b\w{3,}\b', arg.lower())
+                words = re.findall(r"\b\w{3,}\b", arg.lower())
                 keywords.extend(words)
             elif isinstance(arg, dict):
                 keywords.extend(self._extract_keywords(*arg.keys(), *arg.values()))
@@ -239,8 +237,10 @@ class ConversationMemory:
         """Get full memory context for conversation."""
         return {
             "keystones": {k: v.value for k, v in self._keystones.items()},
-            "objects": {k: v.value for k, v in self._memory.items() if not v.is_expired()},
-            "session_id": self.session_id
+            "objects": {
+                k: v.value for k, v in self._memory.items() if not v.is_expired()
+            },
+            "session_id": self.session_id,
         }
 
 
@@ -248,9 +248,11 @@ class ConversationMemory:
 # INTENT PARSER - Understanding what the user wants
 # ═══════════════════════════════════════════════════════════════════════════════
 
+
 @dataclass
 class ParsedIntent:
     """A parsed user intent."""
+
     intent_type: IntentType
     domain: DomainCategory
     action: str
@@ -266,7 +268,7 @@ class ParsedIntent:
             "action": self.action,
             "entities": self.entities,
             "confidence": self.confidence,
-            "constraints": self.constraints
+            "constraints": self.constraints,
         }
 
 
@@ -281,109 +283,109 @@ class IntentParser:
 
     # Intent patterns
     WHAT_PATTERNS = [
-        r'^what\s+(?:is|are|was|were)\b',
-        r'^how\s+(?:do|does|did|can|could|would|should)\b',
-        r'^why\b',
-        r'^when\b',
-        r'^where\b',
-        r'^who\b',
-        r'^which\b',
-        r'^\?',
-        r'\?$',
-        r'^tell\s+me\s+about\b',
-        r'^explain\b',
-        r'^describe\b',
-        r'^show\s+me\b',
-        r'^find\b',
-        r'^search\b',
-        r'^look\s+up\b',
+        r"^what\s+(?:is|are|was|were)\b",
+        r"^how\s+(?:do|does|did|can|could|would|should)\b",
+        r"^why\b",
+        r"^when\b",
+        r"^where\b",
+        r"^who\b",
+        r"^which\b",
+        r"^\?",
+        r"\?$",
+        r"^tell\s+me\s+about\b",
+        r"^explain\b",
+        r"^describe\b",
+        r"^show\s+me\b",
+        r"^find\b",
+        r"^search\b",
+        r"^look\s+up\b",
     ]
 
     DO_PATTERNS = [
-        r'^build\b',
-        r'^create\b',
-        r'^make\b',
-        r'^generate\b',
-        r'^calculate\b',
-        r'^compute\b',
-        r'^verify\b',
-        r'^check\b',
-        r'^validate\b',
-        r'^analyze\b',
-        r'^convert\b',
-        r'^transform\b',
-        r'^add\b',
-        r'^remove\b',
-        r'^update\b',
-        r'^modify\b',
-        r'^design\b',
-        r'^plan\b',
-        r'^write\b',
-        r'^draft\b',
+        r"^build\b",
+        r"^create\b",
+        r"^make\b",
+        r"^generate\b",
+        r"^calculate\b",
+        r"^compute\b",
+        r"^verify\b",
+        r"^check\b",
+        r"^validate\b",
+        r"^analyze\b",
+        r"^convert\b",
+        r"^transform\b",
+        r"^add\b",
+        r"^remove\b",
+        r"^update\b",
+        r"^modify\b",
+        r"^design\b",
+        r"^plan\b",
+        r"^write\b",
+        r"^draft\b",
     ]
 
     GO_PATTERNS = [
-        r'^deploy\b',
-        r'^run\b',
-        r'^execute\b',
-        r'^launch\b',
-        r'^start\b',
-        r'^go\b',
-        r'^publish\b',
-        r'^ship\b',
-        r'^release\b',
-        r'^activate\b',
-        r'^enable\b',
+        r"^deploy\b",
+        r"^run\b",
+        r"^execute\b",
+        r"^launch\b",
+        r"^start\b",
+        r"^go\b",
+        r"^publish\b",
+        r"^ship\b",
+        r"^release\b",
+        r"^activate\b",
+        r"^enable\b",
     ]
 
     REMEMBER_PATTERNS = [
-        r'^remember\b',
-        r'^save\b',
-        r'^store\b',
-        r'^keep\b',
-        r'^note\b',
-        r'^record\b',
+        r"^remember\b",
+        r"^save\b",
+        r"^store\b",
+        r"^keep\b",
+        r"^note\b",
+        r"^record\b",
     ]
 
     # Domain patterns
     DOMAIN_PATTERNS = {
         DomainCategory.FINANCE: [
-            r'\b(?:money|dollar|price|cost|budget|payment|transaction|bank|invest|stock|crypto|loan|mortgage|tax|income|expense|profit|loss|balance|account|calculate|calculator|compound|interest|amortiz)\b',
+            r"\b(?:money|dollar|price|cost|budget|payment|transaction|bank|invest|stock|crypto|loan|mortgage|tax|income|expense|profit|loss|balance|account|calculate|calculator|compound|interest|amortiz)\b",
         ],
         DomainCategory.EDUCATION: [
-            r'\b(?:lesson|teach|learn|student|class|grade|teks|curriculum|quiz|test|exam|assess|school|homework|assignment|standard|objective|education)\b',
+            r"\b(?:lesson|teach|learn|student|class|grade|teks|curriculum|quiz|test|exam|assess|school|homework|assignment|standard|objective|education)\b",
         ],
         DomainCategory.HEALTH: [
-            r'\b(?:health|medical|doctor|symptom|medicine|drug|treatment|diagnosis|patient|wellness|fitness|nutrition|exercise|mental|therapy)\b',
+            r"\b(?:health|medical|doctor|symptom|medicine|drug|treatment|diagnosis|patient|wellness|fitness|nutrition|exercise|mental|therapy)\b",
         ],
         DomainCategory.MAKE: [
-            r'\b(?:build|create|make|generate|design|develop|construct|produce|fabricate|craft|app|website|interface|ui|component|feature)\b',
+            r"\b(?:build|create|make|generate|design|develop|construct|produce|fabricate|craft|app|website|interface|ui|component|feature)\b",
         ],
         DomainCategory.RESEARCH: [
-            r'\b(?:research|analyze|study|investigate|explore|examine|data|statistics|evidence|hypothesis|experiment|lab|science)\b',
+            r"\b(?:research|analyze|study|investigate|explore|examine|data|statistics|evidence|hypothesis|experiment|lab|science)\b",
         ],
         DomainCategory.NEWS: [
-            r'\b(?:news|current|event|happening|today|yesterday|update|report|headline|story|article)\b',
+            r"\b(?:news|current|event|happening|today|yesterday|update|report|headline|story|article)\b",
         ],
         DomainCategory.SPORTS: [
-            r'\b(?:sport|game|team|player|score|match|tournament|league|championship|athlete|fitness|competition)\b',
+            r"\b(?:sport|game|team|player|score|match|tournament|league|championship|athlete|fitness|competition)\b",
         ],
         DomainCategory.LIFESTYLE: [
-            r'\b(?:lifestyle|personal|home|family|food|travel|hobby|entertainment|music|movie|book|recipe|fashion)\b',
+            r"\b(?:lifestyle|personal|home|family|food|travel|hobby|entertainment|music|movie|book|recipe|fashion)\b",
         ],
     }
 
     # Entity extraction patterns
     ENTITY_PATTERNS = {
-        "number": r'\b(\d+(?:\.\d+)?)\b',
-        "percentage": r'\b(\d+(?:\.\d+)?)\s*%',
-        "currency": r'\$\s*(\d+(?:,\d{3})*(?:\.\d{2})?)',
-        "date": r'\b(\d{1,2}[/-]\d{1,2}[/-]\d{2,4})\b',
-        "time_duration": r'\b(\d+)\s*(second|minute|hour|day|week|month|year)s?\b',
-        "grade_level": r'\b(?:grade\s*)?(\d{1,2})(?:st|nd|rd|th)?\s*grade\b',
-        "teks_code": r'\b(\d+\.\d+[A-Z]?)\b',
-        "email": r'\b([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})\b',
-        "url": r'(https?://[^\s]+)',
+        "number": r"\b(\d+(?:\.\d+)?)\b",
+        "percentage": r"\b(\d+(?:\.\d+)?)\s*%",
+        "currency": r"\$\s*(\d+(?:,\d{3})*(?:\.\d{2})?)",
+        "date": r"\b(\d{1,2}[/-]\d{1,2}[/-]\d{2,4})\b",
+        "time_duration": r"\b(\d+)\s*(second|minute|hour|day|week|month|year)s?\b",
+        "grade_level": r"\b(?:grade\s*)?(\d{1,2})(?:st|nd|rd|th)?\s*grade\b",
+        "teks_code": r"\b(\d+\.\d+[A-Z]?)\b",
+        "email": r"\b([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})\b",
+        "url": r"(https?://[^\s]+)",
     }
 
     def __init__(self):
@@ -391,7 +393,9 @@ class IntentParser:
         self._what_re = [re.compile(p, re.IGNORECASE) for p in self.WHAT_PATTERNS]
         self._do_re = [re.compile(p, re.IGNORECASE) for p in self.DO_PATTERNS]
         self._go_re = [re.compile(p, re.IGNORECASE) for p in self.GO_PATTERNS]
-        self._remember_re = [re.compile(p, re.IGNORECASE) for p in self.REMEMBER_PATTERNS]
+        self._remember_re = [
+            re.compile(p, re.IGNORECASE) for p in self.REMEMBER_PATTERNS
+        ]
 
         self._domain_re = {
             domain: [re.compile(p, re.IGNORECASE) for p in patterns]
@@ -432,7 +436,7 @@ class IntentParser:
             entities=entities,
             raw_input=text,
             confidence=confidence,
-            constraints=constraints
+            constraints=constraints,
         )
 
     def _detect_intent_type(self, text: str) -> Tuple[IntentType, float]:
@@ -504,14 +508,45 @@ class IntentParser:
 
         # Action verb patterns by intent type
         if intent_type == IntentType.WHAT:
-            verbs = ['find', 'search', 'show', 'explain', 'describe', 'tell', 'get', 'lookup']
+            verbs = [
+                "find",
+                "search",
+                "show",
+                "explain",
+                "describe",
+                "tell",
+                "get",
+                "lookup",
+            ]
         elif intent_type == IntentType.DO:
-            verbs = ['build', 'create', 'make', 'generate', 'calculate', 'verify', 'check',
-                     'analyze', 'convert', 'add', 'update', 'design', 'write', 'plan']
+            verbs = [
+                "build",
+                "create",
+                "make",
+                "generate",
+                "calculate",
+                "verify",
+                "check",
+                "analyze",
+                "convert",
+                "add",
+                "update",
+                "design",
+                "write",
+                "plan",
+            ]
         elif intent_type == IntentType.GO:
-            verbs = ['deploy', 'run', 'execute', 'launch', 'start', 'publish', 'activate']
+            verbs = [
+                "deploy",
+                "run",
+                "execute",
+                "launch",
+                "start",
+                "publish",
+                "activate",
+            ]
         else:  # REMEMBER
-            verbs = ['remember', 'save', 'store', 'keep', 'note', 'record']
+            verbs = ["remember", "save", "store", "keep", "note", "record"]
 
         for verb in verbs:
             if verb in text_lower:
@@ -522,7 +557,7 @@ class IntentParser:
             IntentType.WHAT: "query",
             IntentType.DO: "create",
             IntentType.GO: "execute",
-            IntentType.REMEMBER: "store"
+            IntentType.REMEMBER: "store",
         }
         return defaults.get(intent_type, "process")
 
@@ -531,55 +566,101 @@ class IntentParser:
         intent_type: IntentType,
         domain: DomainCategory,
         entities: Dict[str, Any],
-        text: str
+        text: str,
     ) -> List[Dict[str, Any]]:
         """Generate suggested CDL constraints based on intent."""
         constraints = []
 
         # Domain-specific constraints
         if domain == DomainCategory.FINANCE:
-            constraints.extend([
-                {"field": "amount", "operator": "ge", "value": 0, "domain": "financial"},
-                {"field": "verified", "operator": "eq", "value": True, "domain": "financial"},
-            ])
+            constraints.extend(
+                [
+                    {
+                        "field": "amount",
+                        "operator": "ge",
+                        "value": 0,
+                        "domain": "financial",
+                    },
+                    {
+                        "field": "verified",
+                        "operator": "eq",
+                        "value": True,
+                        "domain": "financial",
+                    },
+                ]
+            )
             if "number" in entities:
-                constraints.append({
-                    "field": "precision",
-                    "operator": "le",
-                    "value": 2,
-                    "domain": "financial",
-                    "message": "Financial values limited to 2 decimal places"
-                })
+                constraints.append(
+                    {
+                        "field": "precision",
+                        "operator": "le",
+                        "value": 2,
+                        "domain": "financial",
+                        "message": "Financial values limited to 2 decimal places",
+                    }
+                )
 
         elif domain == DomainCategory.EDUCATION:
-            constraints.extend([
-                {"field": "content_safe", "operator": "eq", "value": True, "domain": "communication"},
-                {"field": "age_appropriate", "operator": "eq", "value": True, "domain": "communication"},
-            ])
+            constraints.extend(
+                [
+                    {
+                        "field": "content_safe",
+                        "operator": "eq",
+                        "value": True,
+                        "domain": "communication",
+                    },
+                    {
+                        "field": "age_appropriate",
+                        "operator": "eq",
+                        "value": True,
+                        "domain": "communication",
+                    },
+                ]
+            )
             if "grade_level" in entities:
-                grade = int(entities["grade_level"]) if isinstance(entities["grade_level"], str) else entities["grade_level"]
-                constraints.append({
-                    "field": "grade_level",
-                    "operator": "eq",
-                    "value": grade,
-                    "domain": "custom"
-                })
+                grade = (
+                    int(entities["grade_level"])
+                    if isinstance(entities["grade_level"], str)
+                    else entities["grade_level"]
+                )
+                constraints.append(
+                    {
+                        "field": "grade_level",
+                        "operator": "eq",
+                        "value": grade,
+                        "domain": "custom",
+                    }
+                )
 
         elif domain == DomainCategory.HEALTH:
-            constraints.extend([
-                {"field": "medical_disclaimer", "operator": "eq", "value": True, "domain": "health"},
-                {"field": "verified_source", "operator": "eq", "value": True, "domain": "epistemic"},
-            ])
+            constraints.extend(
+                [
+                    {
+                        "field": "medical_disclaimer",
+                        "operator": "eq",
+                        "value": True,
+                        "domain": "health",
+                    },
+                    {
+                        "field": "verified_source",
+                        "operator": "eq",
+                        "value": True,
+                        "domain": "epistemic",
+                    },
+                ]
+            )
 
         # Always add content safety for user-facing outputs
         if intent_type in [IntentType.DO, IntentType.GO]:
-            constraints.append({
-                "field": "forge_verified",
-                "operator": "eq",
-                "value": True,
-                "domain": "communication",
-                "message": "Content must pass Forge safety verification"
-            })
+            constraints.append(
+                {
+                    "field": "forge_verified",
+                    "operator": "eq",
+                    "value": True,
+                    "domain": "communication",
+                    "message": "Content must pass Forge safety verification",
+                }
+            )
 
         return constraints
 
@@ -588,9 +669,11 @@ class IntentParser:
 # PATTERN LIBRARY - Templates for common applications
 # ═══════════════════════════════════════════════════════════════════════════════
 
+
 @dataclass
 class AppPattern:
     """A template pattern for generating applications."""
+
     id: str
     name: str
     description: str
@@ -615,28 +698,46 @@ class PatternLibrary:
             name="Basic Calculator",
             description="Simple verified arithmetic calculator",
             domain=DomainCategory.FINANCE,
-            keywords=["calculator", "calculate", "math", "arithmetic", "add", "subtract", "multiply", "divide"],
+            keywords=[
+                "calculator",
+                "calculate",
+                "math",
+                "arithmetic",
+                "add",
+                "subtract",
+                "multiply",
+                "divide",
+            ],
             cdl_template={
                 "constraints": [
                     {"field": "result", "operator": "exists", "value": True},
                     {"field": "precision", "operator": "le", "value": 10},
-                    {"field": "verified", "operator": "eq", "value": True}
+                    {"field": "verified", "operator": "eq", "value": True},
                 ]
             },
             interface_template="calculator-basic",
             example_prompts=[
                 "I need a calculator",
                 "Build me a math calculator",
-                "Create a simple calculator"
-            ]
+                "Create a simple calculator",
+            ],
         ),
-
         "calculator_financial": AppPattern(
             id="calculator_financial",
             name="Financial Calculator",
             description="Compound interest, loan amortization, present value with proofs",
             domain=DomainCategory.FINANCE,
-            keywords=["financial", "compound", "interest", "loan", "mortgage", "amortization", "present value", "future value", "investment"],
+            keywords=[
+                "financial",
+                "compound",
+                "interest",
+                "loan",
+                "mortgage",
+                "amortization",
+                "present value",
+                "future value",
+                "investment",
+            ],
             cdl_template={
                 "constraints": [
                     {"field": "principal", "operator": "ge", "value": 0},
@@ -644,17 +745,16 @@ class PatternLibrary:
                     {"field": "rate", "operator": "le", "value": 1},
                     {"field": "periods", "operator": "ge", "value": 1},
                     {"field": "calculation_verified", "operator": "eq", "value": True},
-                    {"field": "proof_generated", "operator": "eq", "value": True}
+                    {"field": "proof_generated", "operator": "eq", "value": True},
                 ]
             },
             interface_template="calculator-financial",
             example_prompts=[
                 "I need a financial calculator that proves its math",
                 "Build a compound interest calculator",
-                "Create a loan amortization calculator with verification"
-            ]
+                "Create a loan amortization calculator with verification",
+            ],
         ),
-
         "expense_tracker": AppPattern(
             id="expense_tracker",
             name="Expense Tracker",
@@ -666,40 +766,46 @@ class PatternLibrary:
                     {"field": "amount", "operator": "ge", "value": 0},
                     {"field": "category", "operator": "exists", "value": True},
                     {"field": "date", "operator": "exists", "value": True},
-                    {"field": "audit_logged", "operator": "eq", "value": True}
+                    {"field": "audit_logged", "operator": "eq", "value": True},
                 ]
             },
             interface_template="form-expense",
             example_prompts=[
                 "Build an expense tracker",
                 "I need to track my spending",
-                "Create a budget tracker with audit trails"
-            ]
+                "Create a budget tracker with audit trails",
+            ],
         ),
-
         # Education Patterns
         "lesson_planner": AppPattern(
             id="lesson_planner",
             name="NES Lesson Planner",
             description="50-minute lesson plans with TEKS alignment",
             domain=DomainCategory.EDUCATION,
-            keywords=["lesson", "plan", "teach", "teks", "curriculum", "class", "instruction"],
+            keywords=[
+                "lesson",
+                "plan",
+                "teach",
+                "teks",
+                "curriculum",
+                "class",
+                "instruction",
+            ],
             cdl_template={
                 "constraints": [
                     {"field": "duration", "operator": "eq", "value": 50},
                     {"field": "teks_aligned", "operator": "eq", "value": True},
                     {"field": "phases_complete", "operator": "eq", "value": True},
-                    {"field": "content_safe", "operator": "eq", "value": True}
+                    {"field": "content_safe", "operator": "eq", "value": True},
                 ]
             },
             interface_template="lesson-planner",
             example_prompts=[
                 "Create a lesson plan for 5th grade math",
                 "I need a TEKS-aligned lesson on fractions",
-                "Build a lesson planner"
-            ]
+                "Build a lesson planner",
+            ],
         ),
-
         "quiz_builder": AppPattern(
             id="quiz_builder",
             name="Quiz Builder",
@@ -711,17 +817,16 @@ class PatternLibrary:
                     {"field": "questions", "operator": "ge", "value": 1},
                     {"field": "answers_verified", "operator": "eq", "value": True},
                     {"field": "grading_fair", "operator": "eq", "value": True},
-                    {"field": "age_appropriate", "operator": "eq", "value": True}
+                    {"field": "age_appropriate", "operator": "eq", "value": True},
                 ]
             },
             interface_template="quiz-builder",
             example_prompts=[
                 "Create a quiz app that proves it grades fairly",
                 "Build a verified quiz for my class",
-                "I need an assessment tool"
-            ]
+                "I need an assessment tool",
+            ],
         ),
-
         # Health Patterns
         "symptom_checker": AppPattern(
             id="symptom_checker",
@@ -734,16 +839,15 @@ class PatternLibrary:
                     {"field": "disclaimer_shown", "operator": "eq", "value": True},
                     {"field": "source_verified", "operator": "eq", "value": True},
                     {"field": "no_diagnosis", "operator": "eq", "value": True},
-                    {"field": "seek_professional", "operator": "eq", "value": True}
+                    {"field": "seek_professional", "operator": "eq", "value": True},
                 ]
             },
             interface_template="health-info",
             example_prompts=[
                 "Build a symptom information tool",
-                "Create a health checker"
-            ]
+                "Create a health checker",
+            ],
         ),
-
         # Make/Create Patterns
         "form_builder": AppPattern(
             id="form_builder",
@@ -755,38 +859,44 @@ class PatternLibrary:
                 "constraints": [
                     {"field": "fields_defined", "operator": "eq", "value": True},
                     {"field": "validation_rules", "operator": "exists", "value": True},
-                    {"field": "submission_verified", "operator": "eq", "value": True}
+                    {"field": "submission_verified", "operator": "eq", "value": True},
                 ]
             },
             interface_template="form-builder",
             example_prompts=[
                 "Build a contact form",
                 "Create a registration form",
-                "I need a form for collecting data"
-            ]
+                "I need a form for collecting data",
+            ],
         ),
-
         "dashboard": AppPattern(
             id="dashboard",
             name="Dashboard",
             description="Metrics dashboard with live data",
             domain=DomainCategory.MAKE,
-            keywords=["dashboard", "metrics", "analytics", "chart", "graph", "report", "overview"],
+            keywords=[
+                "dashboard",
+                "metrics",
+                "analytics",
+                "chart",
+                "graph",
+                "report",
+                "overview",
+            ],
             cdl_template={
                 "constraints": [
                     {"field": "metrics_defined", "operator": "eq", "value": True},
                     {"field": "data_fresh", "operator": "eq", "value": True},
-                    {"field": "layout_valid", "operator": "eq", "value": True}
+                    {"field": "layout_valid", "operator": "eq", "value": True},
                 ]
             },
             interface_template="dashboard-basic",
             example_prompts=[
                 "Build a dashboard",
                 "Create a metrics overview",
-                "I need an analytics dashboard"
-            ]
+                "I need an analytics dashboard",
+            ],
         ),
-
         # Research Patterns
         "data_analyzer": AppPattern(
             id="data_analyzer",
@@ -798,17 +908,16 @@ class PatternLibrary:
                 "constraints": [
                     {"field": "data_valid", "operator": "eq", "value": True},
                     {"field": "method_sound", "operator": "eq", "value": True},
-                    {"field": "results_verified", "operator": "eq", "value": True}
+                    {"field": "results_verified", "operator": "eq", "value": True},
                 ]
             },
             interface_template="data-analyzer",
             example_prompts=[
                 "Analyze this data",
                 "Build a data analysis tool",
-                "I need statistical analysis"
-            ]
+                "I need statistical analysis",
+            ],
         ),
-
         # Content Safety Pattern
         "content_checker": AppPattern(
             id="content_checker",
@@ -820,38 +929,45 @@ class PatternLibrary:
                 "constraints": [
                     {"field": "harm_free", "operator": "eq", "value": True},
                     {"field": "age_appropriate", "operator": "eq", "value": True},
-                    {"field": "forge_verified", "operator": "eq", "value": True}
+                    {"field": "forge_verified", "operator": "eq", "value": True},
                 ]
             },
             interface_template="content-checker",
             example_prompts=[
                 "Check if this content is safe",
                 "Add content moderation",
-                "Verify content safety"
-            ]
+                "Verify content safety",
+            ],
         ),
-
         # Inventory Pattern (from MOAD example)
         "inventory_tracker": AppPattern(
             id="inventory_tracker",
             name="Inventory Tracker",
             description="Track inventory with verification",
             domain=DomainCategory.MAKE,
-            keywords=["inventory", "stock", "track", "warehouse", "restaurant", "count", "item"],
+            keywords=[
+                "inventory",
+                "stock",
+                "track",
+                "warehouse",
+                "restaurant",
+                "count",
+                "item",
+            ],
             cdl_template={
                 "constraints": [
                     {"field": "quantity", "operator": "ge", "value": 0},
                     {"field": "item_name", "operator": "exists", "value": True},
                     {"field": "changes_logged", "operator": "eq", "value": True},
-                    {"field": "audit_trail", "operator": "eq", "value": True}
+                    {"field": "audit_trail", "operator": "eq", "value": True},
                 ]
             },
             interface_template="inventory-tracker",
             example_prompts=[
                 "Build an inventory tracker",
                 "Create a stock management system",
-                "Restaurant inventory tracker with verification"
-            ]
+                "Restaurant inventory tracker with verification",
+            ],
         ),
     }
 
@@ -889,7 +1005,9 @@ class PatternLibrary:
         """Get a pattern by ID."""
         return self.PATTERNS.get(pattern_id)
 
-    def list_patterns(self, domain: Optional[DomainCategory] = None) -> List[AppPattern]:
+    def list_patterns(
+        self, domain: Optional[DomainCategory] = None
+    ) -> List[AppPattern]:
         """List all patterns, optionally filtered by domain."""
         patterns = list(self.PATTERNS.values())
         if domain:
@@ -899,7 +1017,7 @@ class PatternLibrary:
     def search_patterns(self, query: str, limit: int = 5) -> List[AppPattern]:
         """Search patterns by query."""
         query_lower = query.lower()
-        words = re.findall(r'\b\w{3,}\b', query_lower)
+        words = re.findall(r"\b\w{3,}\b", query_lower)
 
         scores = {}
         for pattern_id, pattern in self.PATTERNS.items():
@@ -926,6 +1044,7 @@ class PatternLibrary:
 # CDL GENERATOR - Generate constraints from natural language
 # ═══════════════════════════════════════════════════════════════════════════════
 
+
 class CDLGenerator:
     """
     Generate CDL constraints from natural language intent.
@@ -948,7 +1067,9 @@ class CDLGenerator:
         else:
             return self._from_intent(intent)
 
-    def _from_pattern(self, pattern: AppPattern, intent: ParsedIntent) -> Dict[str, Any]:
+    def _from_pattern(
+        self, pattern: AppPattern, intent: ParsedIntent
+    ) -> Dict[str, Any]:
         """Generate CDL from a matched pattern."""
         cdl = {
             "id": f"cdl_{pattern.id}_{int(time.time())}",
@@ -959,7 +1080,7 @@ class CDLGenerator:
             "constraints": pattern.cdl_template.get("constraints", []).copy(),
             "interface_template": pattern.interface_template,
             "generated_at": int(time.time() * 1000),
-            "intent": intent.to_dict()
+            "intent": intent.to_dict(),
         }
 
         # Add intent-specific constraints
@@ -981,7 +1102,7 @@ class CDLGenerator:
             "constraints": intent.constraints.copy(),
             "interface_template": None,
             "generated_at": int(time.time() * 1000),
-            "intent": intent.to_dict()
+            "intent": intent.to_dict(),
         }
 
         # Add default constraints based on domain
@@ -989,7 +1110,9 @@ class CDLGenerator:
 
         return cdl
 
-    def _extract_variables(self, entities: Dict[str, Any], pattern: AppPattern) -> Dict[str, Any]:
+    def _extract_variables(
+        self, entities: Dict[str, Any], pattern: AppPattern
+    ) -> Dict[str, Any]:
         """Extract template variables from entities."""
         variables = {}
 
@@ -1025,7 +1148,9 @@ class CDLGenerator:
         }
         return defaults.get(domain, [])
 
-    def generate_with_extraction(self, text: str, intent: Optional[ParsedIntent] = None) -> Dict[str, Any]:
+    def generate_with_extraction(
+        self, text: str, intent: Optional[ParsedIntent] = None
+    ) -> Dict[str, Any]:
         """
         Generate CDL using the enhanced constraint extraction system.
 
@@ -1040,15 +1165,21 @@ class CDLGenerator:
         # Convert to CDL format
         cdl_constraints = []
         for c in extraction.constraints:
-            cdl_constraints.append({
-                "field": c.field,
-                "operator": c.operator.value,
-                "value": c.value,
-                "strength": c.strength.value,
-                "category": c.category.value,
-                "confidence": c.confidence,
-                "source": c.source_text[:50] + "..." if len(c.source_text) > 50 else c.source_text
-            })
+            cdl_constraints.append(
+                {
+                    "field": c.field,
+                    "operator": c.operator.value,
+                    "value": c.value,
+                    "strength": c.strength.value,
+                    "category": c.category.value,
+                    "confidence": c.confidence,
+                    "source": (
+                        c.source_text[:50] + "..."
+                        if len(c.source_text) > 50
+                        else c.source_text
+                    ),
+                }
+            )
 
         cdl = {
             "id": f"cdl_extracted_{extraction.id}",
@@ -1066,7 +1197,7 @@ class CDLGenerator:
             "verification": {
                 "merkle_root": extraction.merkle_root,
                 "signature": extraction.signature,
-                "timestamp": extraction.timestamp
+                "timestamp": extraction.timestamp,
             },
             "generated_at": int(time.time() * 1000),
         }
@@ -1083,9 +1214,11 @@ class CDLGenerator:
 # SESSION MANAGER - Track conversation state
 # ═══════════════════════════════════════════════════════════════════════════════
 
+
 @dataclass
 class ConversationTurn:
     """A single turn in the conversation."""
+
     id: str
     timestamp: float
     user_input: str
@@ -1098,6 +1231,7 @@ class ConversationTurn:
 @dataclass
 class Session:
     """A conversation session."""
+
     id: str
     created_at: float
     updated_at: float
@@ -1129,7 +1263,7 @@ class SessionManager:
             created_at=now,
             updated_at=now,
             user_id=user_id,
-            memory=ConversationMemory(session_id, self.vault)
+            memory=ConversationMemory(session_id, self.vault),
         )
 
         self._sessions[session_id] = session
@@ -1145,7 +1279,9 @@ class SessionManager:
                 return None
         return session
 
-    def get_or_create(self, session_id: Optional[str] = None, user_id: Optional[str] = None) -> Session:
+    def get_or_create(
+        self, session_id: Optional[str] = None, user_id: Optional[str] = None
+    ) -> Session:
         """Get existing session or create new one."""
         if session_id:
             session = self.get_session(session_id)
@@ -1157,7 +1293,8 @@ class SessionManager:
         """Remove expired sessions."""
         now = time.time()
         expired = [
-            sid for sid, session in self._sessions.items()
+            sid
+            for sid, session in self._sessions.items()
             if now - session.updated_at > self._session_ttl
         ]
         for sid in expired:
@@ -1168,9 +1305,11 @@ class SessionManager:
 # NEWTON VOICE INTERFACE - The main interface
 # ═══════════════════════════════════════════════════════════════════════════════
 
+
 @dataclass
 class VoiceResponse:
     """Response from Newton Voice Interface."""
+
     session_id: str
     turn_id: str
     intent: Dict[str, Any]
@@ -1212,7 +1351,7 @@ class NewtonVoiceInterface:
         self,
         query: str,
         session_id: Optional[str] = None,
-        user_id: Optional[str] = None
+        user_id: Optional[str] = None,
     ) -> VoiceResponse:
         """
         Ask Newton anything.
@@ -1258,7 +1397,7 @@ class NewtonVoiceInterface:
             intent=intent,
             cdl=cdl,
             result=result,
-            verified=verified
+            verified=verified,
         )
         session.add_turn(turn)
 
@@ -1280,19 +1419,17 @@ class NewtonVoiceInterface:
             proof=proof,
             message=message,
             suggestions=suggestions,
-            elapsed_us=elapsed_us
+            elapsed_us=elapsed_us,
         )
 
-    def _handle_query(self, intent: ParsedIntent, cdl: Dict, session: Session) -> Dict[str, Any]:
+    def _handle_query(
+        self, intent: ParsedIntent, cdl: Dict, session: Session
+    ) -> Dict[str, Any]:
         """Handle WHAT intent - queries and lookups."""
         # Check memory first
         memory_result = session.memory.search(intent.raw_input)
         if memory_result:
-            return {
-                "type": "memory_recall",
-                "data": memory_result,
-                "source": "memory"
-            }
+            return {"type": "memory_recall", "data": memory_result, "source": "memory"}
 
         # Find relevant pattern info
         pattern = self.patterns.find_pattern(intent.raw_input)
@@ -1303,9 +1440,9 @@ class NewtonVoiceInterface:
                     "id": pattern.id,
                     "name": pattern.name,
                     "description": pattern.description,
-                    "example_prompts": pattern.example_prompts
+                    "example_prompts": pattern.example_prompts,
                 },
-                "source": "pattern_library"
+                "source": "pattern_library",
             }
 
         # Return guidance
@@ -1316,12 +1453,14 @@ class NewtonVoiceInterface:
                 "Build a calculator",
                 "Create a lesson plan",
                 "Track expenses",
-                "Analyze data"
+                "Analyze data",
             ],
-            "source": "newton"
+            "source": "newton",
         }
 
-    def _handle_action(self, intent: ParsedIntent, cdl: Dict, session: Session) -> Dict[str, Any]:
+    def _handle_action(
+        self, intent: ParsedIntent, cdl: Dict, session: Session
+    ) -> Dict[str, Any]:
         """Handle DO intent - creation and computation."""
         pattern = self.patterns.find_pattern(intent.raw_input)
 
@@ -1336,30 +1475,32 @@ class NewtonVoiceInterface:
                     "constraints": cdl["constraints"],
                     "interface_template": pattern.interface_template,
                     "variables": cdl.get("variables", {}),
-                    "ready": True
+                    "ready": True,
                 },
                 "deploy_url": f"/interface/build?template={pattern.interface_template}",
-                "source": "pattern_library"
+                "source": "pattern_library",
             }
 
         # Handle calculations
         if intent.domain == DomainCategory.FINANCE and "number" in intent.entities:
             try:
                 # Simple calculation example
-                result = self.logic.evaluate({
-                    "op": "block",
-                    "body": [
-                        {"op": "literal", "value": float(intent.entities["number"])}
-                    ]
-                })
+                result = self.logic.evaluate(
+                    {
+                        "op": "block",
+                        "body": [
+                            {"op": "literal", "value": float(intent.entities["number"])}
+                        ],
+                    }
+                )
                 return {
                     "type": "calculation",
                     "result": result.value.data if result.value else None,
                     "verified": result.verified,
                     "operations": result.operations_count,
-                    "source": "logic_engine"
+                    "source": "logic_engine",
                 }
-            except Exception as e:
+            except Exception:
                 pass
 
         # Return CDL for custom implementation
@@ -1367,10 +1508,12 @@ class NewtonVoiceInterface:
             "type": "cdl_generated",
             "cdl": cdl,
             "message": "Constraints generated. Ready for implementation.",
-            "source": "cdl_generator"
+            "source": "cdl_generator",
         }
 
-    def _handle_execute(self, intent: ParsedIntent, cdl: Dict, session: Session) -> Dict[str, Any]:
+    def _handle_execute(
+        self, intent: ParsedIntent, cdl: Dict, session: Session
+    ) -> Dict[str, Any]:
         """Handle GO intent - deployment and execution."""
         pattern = self.patterns.find_pattern(intent.raw_input)
 
@@ -1384,37 +1527,35 @@ class NewtonVoiceInterface:
                     "url": f"https://newton.cloud/{deploy_id}",
                     "template": pattern.interface_template,
                     "status": "live",
-                    "created_at": int(time.time() * 1000)
+                    "created_at": int(time.time() * 1000),
                 },
                 "message": f"App deployed! Access at newton.cloud/{deploy_id}",
-                "source": "newton_deploy"
+                "source": "newton_deploy",
             }
 
         return {
             "type": "execution_ready",
             "cdl": cdl,
             "message": "Ready to execute. Constraints verified.",
-            "source": "newton"
+            "source": "newton",
         }
 
-    def _handle_remember(self, intent: ParsedIntent, cdl: Dict, session: Session) -> Dict[str, Any]:
+    def _handle_remember(
+        self, intent: ParsedIntent, cdl: Dict, session: Session
+    ) -> Dict[str, Any]:
         """Handle REMEMBER intent - memory operations."""
         # Store in session memory
         memory_id = session.memory.remember(
             key=intent.raw_input,
-            value={
-                "intent": intent.to_dict(),
-                "cdl": cdl,
-                "timestamp": time.time()
-            },
-            memory_type=MemoryType.OBJECT
+            value={"intent": intent.to_dict(), "cdl": cdl, "timestamp": time.time()},
+            memory_type=MemoryType.OBJECT,
         )
 
         return {
             "type": "remembered",
             "memory_id": memory_id,
             "message": "Got it, I'll remember that.",
-            "source": "memory"
+            "source": "memory",
         }
 
     def _verify_result(self, result: Dict[str, Any], cdl: Dict) -> bool:
@@ -1434,14 +1575,20 @@ class NewtonVoiceInterface:
         except Exception:
             return True  # Lenient on verification errors for demo
 
-    def _generate_proof(self, result: Dict, cdl: Dict, verified: bool) -> Dict[str, Any]:
+    def _generate_proof(
+        self, result: Dict, cdl: Dict, verified: bool
+    ) -> Dict[str, Any]:
         """Generate cryptographic proof of verification."""
         proof_data = {
-            "result_hash": hashlib.sha256(json.dumps(result, sort_keys=True).encode()).hexdigest(),
-            "cdl_hash": hashlib.sha256(json.dumps(cdl, sort_keys=True).encode()).hexdigest(),
+            "result_hash": hashlib.sha256(
+                json.dumps(result, sort_keys=True).encode()
+            ).hexdigest(),
+            "cdl_hash": hashlib.sha256(
+                json.dumps(cdl, sort_keys=True).encode()
+            ).hexdigest(),
             "verified": verified,
             "timestamp": int(time.time() * 1000),
-            "engine": "Newton Supercomputer"
+            "engine": "Newton Supercomputer",
         }
 
         # Create signature (simplified - in production use proper signing)
@@ -1450,7 +1597,14 @@ class NewtonVoiceInterface:
 
         return proof_data
 
-    def _log_operation(self, session_id: str, intent: ParsedIntent, cdl: Dict, result: Dict, verified: bool):
+    def _log_operation(
+        self,
+        session_id: str,
+        intent: ParsedIntent,
+        cdl: Dict,
+        result: Dict,
+        verified: bool,
+    ):
         """Log operation to immutable ledger."""
         self.ledger.append(
             operation="voice_interface",
@@ -1460,12 +1614,14 @@ class NewtonVoiceInterface:
                 "domain": intent.domain.value,
                 "action": intent.action,
                 "cdl_id": cdl.get("id"),
-                "verified": verified
+                "verified": verified,
             },
-            result="pass" if verified else "fail"
+            result="pass" if verified else "fail",
         )
 
-    def _generate_message(self, intent: ParsedIntent, result: Dict, verified: bool) -> str:
+    def _generate_message(
+        self, intent: ParsedIntent, result: Dict, verified: bool
+    ) -> str:
         """Generate a natural language response message."""
         result_type = result.get("type", "unknown")
 
@@ -1477,7 +1633,7 @@ class NewtonVoiceInterface:
             "remembered": "Got it, I'll remember that.",
             "memory_recall": "I found this in my memory.",
             "pattern_info": f"Here's what I know about {result.get('pattern', {}).get('name', 'that')}.",
-            "guidance": result.get("message", "How can I help?")
+            "guidance": result.get("message", "How can I help?"),
         }
 
         base_message = messages.get(result_type, "Done!")
@@ -1495,31 +1651,48 @@ class NewtonVoiceInterface:
                 "Deploy this app",
                 "Add more constraints",
                 "Modify the interface",
-                "Show me the proof"
+                "Show me the proof",
             ]
         elif result.get("type") == "deployed":
             suggestions = [
                 "Show the audit trail",
                 "Verify the deployment",
                 "Create another app",
-                "Modify the app"
+                "Modify the app",
             ]
         elif intent.intent_type == IntentType.WHAT:
             suggestions = [
                 "Build this for me",
                 "Tell me more",
                 "Show examples",
-                "What else can you do?"
+                "What else can you do?",
             ]
         else:
             # Domain-specific suggestions
             domain_suggestions = {
-                DomainCategory.FINANCE: ["Calculate compound interest", "Track my expenses", "Verify a transaction"],
-                DomainCategory.EDUCATION: ["Create a lesson plan", "Build a quiz", "Align to TEKS"],
-                DomainCategory.HEALTH: ["Check symptom information", "Add health disclaimers"],
-                DomainCategory.MAKE: ["Build a form", "Create a dashboard", "Design an interface"],
+                DomainCategory.FINANCE: [
+                    "Calculate compound interest",
+                    "Track my expenses",
+                    "Verify a transaction",
+                ],
+                DomainCategory.EDUCATION: [
+                    "Create a lesson plan",
+                    "Build a quiz",
+                    "Align to TEKS",
+                ],
+                DomainCategory.HEALTH: [
+                    "Check symptom information",
+                    "Add health disclaimers",
+                ],
+                DomainCategory.MAKE: [
+                    "Build a form",
+                    "Create a dashboard",
+                    "Design an interface",
+                ],
             }
-            suggestions = domain_suggestions.get(intent.domain, ["What can you help me with?"])
+            suggestions = domain_suggestions.get(
+                intent.domain, ["What can you help me with?"]
+            )
 
         return suggestions
 
@@ -1536,7 +1709,7 @@ class NewtonVoiceInterface:
                 "description": p.description,
                 "domain": p.domain.value,
                 "keywords": p.keywords,
-                "example_prompts": p.example_prompts
+                "example_prompts": p.example_prompts,
             }
             for p in patterns
         ]
@@ -1554,7 +1727,7 @@ class NewtonVoiceInterface:
                 "user_input": turn.user_input,
                 "intent": turn.intent.to_dict(),
                 "result": turn.result,
-                "verified": turn.verified
+                "verified": turn.verified,
             }
             for turn in session.turns
         ]
@@ -1563,6 +1736,7 @@ class NewtonVoiceInterface:
 # ═══════════════════════════════════════════════════════════════════════════════
 # STREAMING INTERFACE - For real-time responses
 # ═══════════════════════════════════════════════════════════════════════════════
+
 
 class StreamingVoiceInterface(NewtonVoiceInterface):
     """
@@ -1575,7 +1749,7 @@ class StreamingVoiceInterface(NewtonVoiceInterface):
         self,
         query: str,
         session_id: Optional[str] = None,
-        user_id: Optional[str] = None
+        user_id: Optional[str] = None,
     ):
         """
         Ask Newton with streaming responses.
@@ -1596,7 +1770,7 @@ class StreamingVoiceInterface(NewtonVoiceInterface):
             "status": "intent_parsed",
             "intent_type": intent.intent_type.value,
             "domain": intent.domain.value,
-            "confidence": intent.confidence
+            "confidence": intent.confidence,
         }
 
         # Generate CDL
@@ -1605,7 +1779,7 @@ class StreamingVoiceInterface(NewtonVoiceInterface):
         yield {
             "status": "cdl_generated",
             "constraint_count": len(cdl.get("constraints", [])),
-            "pattern_matched": cdl.get("pattern_id")
+            "pattern_matched": cdl.get("pattern_id"),
         }
 
         # Execute
@@ -1629,7 +1803,10 @@ class StreamingVoiceInterface(NewtonVoiceInterface):
         # Generate proof
         proof = self._generate_proof(result, cdl, verified) if verified else None
         if proof:
-            yield {"status": "proof_generated", "proof_hash": proof.get("signature", "")[:16]}
+            yield {
+                "status": "proof_generated",
+                "proof_hash": proof.get("signature", "")[:16],
+            }
 
         # Log
         self._log_operation(session.id, intent, cdl, result, verified)
@@ -1649,7 +1826,7 @@ class StreamingVoiceInterface(NewtonVoiceInterface):
             "proof": proof,
             "message": message,
             "suggestions": suggestions,
-            "elapsed_us": elapsed_us
+            "elapsed_us": elapsed_us,
         }
 
 
@@ -1680,6 +1857,7 @@ def get_streaming_interface() -> StreamingVoiceInterface:
 # ═══════════════════════════════════════════════════════════════════════════════
 # CONVENIENCE FUNCTIONS
 # ═══════════════════════════════════════════════════════════════════════════════
+
 
 def ask_newton(query: str, session_id: Optional[str] = None) -> VoiceResponse:
     """

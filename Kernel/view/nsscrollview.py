@@ -1,4 +1,5 @@
 """NSScrollView and NSClipView — scrollable container views."""
+
 from __future__ import annotations
 from typing import Optional
 
@@ -32,8 +33,9 @@ class NSClipView(NSView):
 
     @property
     def document_visible_rect(self) -> NSRect:
-        return NSRect(self._bounds.x, self._bounds.y,
-                      self._frame.width, self._frame.height)
+        return NSRect(
+            self._bounds.x, self._bounds.y, self._frame.width, self._frame.height
+        )
 
 
 class NSScrollView(NSView):
@@ -41,9 +43,9 @@ class NSScrollView(NSView):
 
     def __init__(self, frame: Optional[NSRect] = None):
         super().__init__(frame)
-        self._content_view = NSClipView(NSRect(0, 0,
-                                               frame.width if frame else 0,
-                                               frame.height if frame else 0))
+        self._content_view = NSClipView(
+            NSRect(0, 0, frame.width if frame else 0, frame.height if frame else 0)
+        )
         self.add_subview(self._content_view)
         self._has_vertical_scroller = True
         self._has_horizontal_scroller = True
@@ -91,7 +93,7 @@ class NSScrollView(NSView):
     def draw(self, rect=None) -> str:
         parts = [super().draw(rect)]
         if self._has_vertical_scroller:
-            parts.append(f'<!-- vertical scroller at x={self._frame.width - 12} -->')
+            parts.append(f"<!-- vertical scroller at x={self._frame.width - 12} -->")
         if self._has_horizontal_scroller:
-            parts.append(f'<!-- horizontal scroller at y={self._frame.height - 12} -->')
+            parts.append(f"<!-- horizontal scroller at y={self._frame.height - 12} -->")
         return "\n".join(parts)

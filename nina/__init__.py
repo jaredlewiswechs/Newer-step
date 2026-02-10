@@ -126,7 +126,6 @@ __all__ = [
     "__version__",
     "__author__",
     "__company__",
-    
     # Objects
     "FoghornObject",
     "ObjectType",
@@ -140,7 +139,6 @@ __all__ = [
     "Rule",
     "ObjectStore",
     "get_object_store",
-    
     # Services
     "ServiceRegistry",
     "ServiceCategory",
@@ -149,7 +147,6 @@ __all__ = [
     "service",
     "get_service_registry",
     "execute_service",
-    
     # Commands
     "Command",
     "CommandState",
@@ -165,7 +162,6 @@ __all__ = [
     "add_object",
     "update_object",
     "delete_object",
-    
     # Inspector
     "InspectorData",
     "InspectorSection",
@@ -173,7 +169,6 @@ __all__ = [
     "get_inspector",
     "inspect",
     "inspect_by_hash",
-    
     # Bézier
     "Point",
     "BezierCurve",
@@ -183,7 +178,6 @@ __all__ = [
     "CurveStore",
     "get_curve_store",
     "render_curves_svg",
-    
     # API
     "router",
     "mount_nina_api",

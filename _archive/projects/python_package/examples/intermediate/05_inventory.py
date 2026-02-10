@@ -6,8 +6,9 @@ An inventory system that can never have negative stock.
 Demonstrates practical business logic constraints.
 """
 
-from newton import Blueprint, field, law, forge, when, finfr, LawViolation
 from typing import Dict
+
+from newton import Blueprint, LawViolation, field, finfr, forge, law, when
 
 
 class Product(Blueprint):

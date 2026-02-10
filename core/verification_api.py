@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-from typing import Any, Dict, List, Optional
+from typing import List, Optional
 
 from core.schemas import Omega
 from core.live_checker import compute_envelope_distance
@@ -21,7 +21,12 @@ class LiveVerifyRequest(BaseModel):
 async def verify_live(req: LiveVerifyRequest):
     try:
         result = compute_envelope_distance(req.omega, req.draft_text)
-        log_event("verify_live", payload={"word_count": result.get("word_count")}, result="ok", metadata={"overall": result.get("overall_percentage")})
+        log_event(
+            "verify_live",
+            payload={"word_count": result.get("word_count")},
+            result="ok",
+            metadata={"overall": result.get("overall_percentage")},
+        )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     return result
@@ -36,7 +41,12 @@ class WitnessRequest(BaseModel):
 async def witnesses(req: WitnessRequest):
     try:
         examples = fetch_witness_examples(req.handles, req.max_examples)
-        log_event("witnesses", payload={"handles": req.handles}, result="ok", metadata={"count": len(examples)})
+        log_event(
+            "witnesses",
+            payload={"handles": req.handles},
+            result="ok",
+            metadata={"count": len(examples)},
+        )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     return {"examples": examples}

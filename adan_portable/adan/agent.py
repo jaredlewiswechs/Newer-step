@@ -21,18 +21,16 @@ Every action the agent takes is:
 """
 
 import time
-import hashlib
 import re
-import json
 from datetime import datetime
 from dataclasses import dataclass, field
-from typing import List, Dict, Optional, Any, Callable
+from typing import List, Dict, Optional, Callable
 from enum import Enum
 
-from .grounding_enhanced import EnhancedGroundingEngine, GroundingResult, SourceTier
-from .memory import AgentMemory, ConversationTurn, TurnRole, ConstraintCheck, GroundingInfo
-from .knowledge_base import get_knowledge_base, VerifiedFact
-from .trajectory_verifier import get_trajectory_verifier, TrajectoryVerification
+from .grounding_enhanced import EnhancedGroundingEngine
+from .memory import AgentMemory, TurnRole, ConstraintCheck, GroundingInfo
+from .knowledge_base import get_knowledge_base
+from .trajectory_verifier import get_trajectory_verifier
 
 # Import new components: Ada (sentinel), Meta Newton (self-verifier), Knowledge Mesh
 try:

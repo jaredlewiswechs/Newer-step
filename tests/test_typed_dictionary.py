@@ -27,7 +27,6 @@ from core.typed_dictionary import (
     SemanticType,
     ConstraintRole,
     RelationType,
-    ConstraintCompiler,
     create_financial_dictionary,
     create_safety_dictionary,
 )

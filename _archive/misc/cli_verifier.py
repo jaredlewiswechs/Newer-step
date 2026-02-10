@@ -13,7 +13,7 @@ import argparse
 import json
 import sys
 import hashlib
-from typing import Dict, Any, List
+from typing import Dict, List
 
 
 def verify_merkle_proof(
@@ -34,7 +34,7 @@ def verify_merkle_proof(
     """
     current_hash = entry_hash
     
-    print(f"Starting verification:")
+    print("Starting verification:")
     print(f"  Entry hash: {entry_hash}")
     print(f"  Target root: {merkle_root}")
     print(f"  Proof steps: {len(proof_path)}")
@@ -116,7 +116,7 @@ def verify_certificate(certificate_path: str) -> bool:
         print(f"Error: Certificate file not found: {certificate_path}")
         return False
     except json.JSONDecodeError:
-        print(f"Error: Invalid JSON in certificate file")
+        print("Error: Invalid JSON in certificate file")
         return False
     except Exception as e:
         print(f"Error: {str(e)}")

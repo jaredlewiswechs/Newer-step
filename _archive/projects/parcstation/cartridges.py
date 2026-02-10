@@ -11,13 +11,12 @@ No API keys required. All free/local APIs.
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from typing import Optional, List, Dict, Any
+from typing import List, Dict, Any
 import aiohttp
 import asyncio
 import json
 import re
 from datetime import datetime, timedelta
-from dataclasses import dataclass
 import urllib.parse
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -401,7 +400,7 @@ async def export_markdown(req: ExportRequest):
     """Export stacks as Markdown."""
     lines = [
         "# parcStation Export",
-        f"",
+        "",
         f"*Exported: {datetime.now().strftime('%B %d, %Y at %H:%M')}*",
         "",
         "---",

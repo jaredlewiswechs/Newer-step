@@ -14,7 +14,6 @@ These tests analyze the JavaScript source to verify logic completeness.
 ═══════════════════════════════════════════════════════════════════════════════
 """
 
-import re
 import sys
 from pathlib import Path
 

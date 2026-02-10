@@ -17,7 +17,7 @@ El Capitan is just fast guessing.
 """
 
 from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, List, Optional, Union, Tuple
+from typing import Any, Callable, Dict, List, Optional, Union
 from enum import Enum
 import math
 import hashlib

@@ -17,12 +17,11 @@ Every user action that modifies state goes through the command bus.
 import time
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, List, Optional, Generic, TypeVar
+from typing import Any, Callable, Dict, List, Optional, TypeVar
 from enum import Enum
 
 from .objects import (
-    FoghornObject, ObjectType, Receipt,
-    get_object_store
+    FoghornObject, get_object_store
 )
 
 

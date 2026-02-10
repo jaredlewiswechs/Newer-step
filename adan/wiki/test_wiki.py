@@ -42,7 +42,7 @@ def test_get_facts():
         
         # Sample a few
         if data['facts']:
-            print(f"\n   Sample facts:")
+            print("\n   Sample facts:")
             for fact in data['facts'][:3]:
                 print(f"   • {fact['key']}: {fact['fact'][:60]}...")
         return True
@@ -104,7 +104,7 @@ def test_add_fact():
         )
         data = r.json()
         if data.get('success'):
-            print(f"   ✓ Fact added successfully")
+            print("   ✓ Fact added successfully")
             return True
         else:
             print(f"   ✗ Failed: {data}")
@@ -152,7 +152,7 @@ def test_verify_imported():
         print(f"   Wikipedia facts: {len(wiki_facts)}")
         
         if wiki_facts:
-            print(f"   Sample Wikipedia import:")
+            print("   Sample Wikipedia import:")
             for wf in wiki_facts[:3]:
                 print(f"   • {wf['key']}")
         

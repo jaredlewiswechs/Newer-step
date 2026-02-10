@@ -6,7 +6,7 @@ The classic bank account that can't overdraft.
 This demonstrates the core "No-First" philosophy.
 """
 
-from newton import Blueprint, field, law, forge, when, finfr, LawViolation
+from newton import Blueprint, LawViolation, field, finfr, forge, law, when
 
 
 class BankAccount(Blueprint):

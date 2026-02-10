@@ -25,12 +25,8 @@ finfr in circuit form: g2 * 1 = 0 (the unrepresentable state)
 """
 
 from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union, Set
+from typing import Any, Dict, List, Optional, Union, Set
 from enum import Enum, auto
-import re
-import hashlib
-from fractions import Fraction
-
 
 # ===============================================================================
 # FIELD ARITHMETIC - BN254 Scalar Field
@@ -38,7 +34,9 @@ from fractions import Fraction
 
 # BN254 (alt_bn128) scalar field prime
 # This is the order of the scalar field used in Ethereum's precompiles
-BN254_PRIME = 21888242871839275222246405745257275088548364400416034343698204186575808495617
+BN254_PRIME = (
+    21888242871839275222246405745257275088548364400416034343698204186575808495617
+)
 
 # For testing with smaller field
 TEST_PRIME = 2**31 - 1  # Mersenne prime
@@ -62,16 +60,16 @@ class FieldElement:
         """Set the global prime for all field elements."""
         cls._prime = prime
 
-    def __add__(self, other: 'FieldElement') -> 'FieldElement':
+    def __add__(self, other: "FieldElement") -> "FieldElement":
         return FieldElement((self.value + other.value) % self.prime, self.prime)
 
-    def __sub__(self, other: 'FieldElement') -> 'FieldElement':
+    def __sub__(self, other: "FieldElement") -> "FieldElement":
         return FieldElement((self.value - other.value) % self.prime, self.prime)
 
-    def __mul__(self, other: 'FieldElement') -> 'FieldElement':
+    def __mul__(self, other: "FieldElement") -> "FieldElement":
         return FieldElement((self.value * other.value) % self.prime, self.prime)
 
-    def __neg__(self) -> 'FieldElement':
+    def __neg__(self) -> "FieldElement":
         return FieldElement((-self.value) % self.prime, self.prime)
 
     def __eq__(self, other) -> bool:
@@ -85,21 +83,21 @@ class FieldElement:
     def __repr__(self) -> str:
         return f"F({self.value})"
 
-    def inverse(self) -> 'FieldElement':
+    def inverse(self) -> "FieldElement":
         """Multiplicative inverse using extended Euclidean algorithm."""
         if self.value == 0:
             raise ValueError("Cannot invert zero")
         return FieldElement(pow(self.value, self.prime - 2, self.prime), self.prime)
 
-    def __truediv__(self, other: 'FieldElement') -> 'FieldElement':
+    def __truediv__(self, other: "FieldElement") -> "FieldElement":
         return self * other.inverse()
 
     @classmethod
-    def zero(cls, prime: Optional[int] = None) -> 'FieldElement':
+    def zero(cls, prime: Optional[int] = None) -> "FieldElement":
         return cls(0, prime)
 
     @classmethod
-    def one(cls, prime: Optional[int] = None) -> 'FieldElement':
+    def one(cls, prime: Optional[int] = None) -> "FieldElement":
         return cls(1, prime)
 
 
@@ -111,6 +109,7 @@ def F(value: int, prime: Optional[int] = None) -> FieldElement:
 # ===============================================================================
 # LEXER - Token Types and Tokenization
 # ===============================================================================
+
 
 class TokenType(Enum):
     # Keywords
@@ -125,12 +124,12 @@ class TokenType(Enum):
     FALSE = auto()
 
     # Operators
-    EQEQ = auto()      # ==
-    NE = auto()        # !=
-    LT = auto()        # <
-    GT = auto()        # >
-    LE = auto()        # <=
-    GE = auto()        # >=
+    EQEQ = auto()  # ==
+    NE = auto()  # !=
+    LT = auto()  # <
+    GT = auto()  # >
+    LE = auto()  # <=
+    GE = auto()  # >=
 
     # Delimiters
     LPAREN = auto()
@@ -151,6 +150,7 @@ class TokenType(Enum):
 @dataclass
 class Token:
     """A lexer token."""
+
     type: TokenType
     value: Any
     line: int = 0
@@ -170,15 +170,15 @@ class Lexer:
     """
 
     KEYWORDS = {
-        'when': TokenType.WHEN,
-        'fin': TokenType.FIN,
-        'finfr': TokenType.FINFR,
-        'and': TokenType.AND,
-        'or': TokenType.OR,
-        'not': TokenType.NOT,
-        'in': TokenType.IN,
-        'true': TokenType.TRUE,
-        'false': TokenType.FALSE,
+        "when": TokenType.WHEN,
+        "fin": TokenType.FIN,
+        "finfr": TokenType.FINFR,
+        "and": TokenType.AND,
+        "or": TokenType.OR,
+        "not": TokenType.NOT,
+        "in": TokenType.IN,
+        "true": TokenType.TRUE,
+        "false": TokenType.FALSE,
     }
 
     def __init__(self, source: str):
@@ -201,13 +201,15 @@ class Lexer:
             char = self.source[self.pos]
 
             # Skip comments
-            if char == '#':
+            if char == "#":
                 self._skip_comment()
                 continue
 
             # Newline
-            if char == '\n':
-                self.tokens.append(Token(TokenType.NEWLINE, None, self.line, self.column))
+            if char == "\n":
+                self.tokens.append(
+                    Token(TokenType.NEWLINE, None, self.line, self.column)
+                )
                 self._advance()
                 self.line += 1
                 self.column = 1
@@ -219,54 +221,62 @@ class Lexer:
                 continue
 
             # Numbers
-            if char.isdigit() or (char == '-' and self._peek(1).isdigit()):
+            if char.isdigit() or (char == "-" and self._peek(1).isdigit()):
                 self.tokens.append(self._read_number())
                 continue
 
             # Identifiers and keywords
-            if char.isalpha() or char == '_':
+            if char.isalpha() or char == "_":
                 self.tokens.append(self._read_identifier())
                 continue
 
             # Two-character operators
             if self.pos + 1 < len(self.source):
-                two_char = self.source[self.pos:self.pos + 2]
-                if two_char == '==':
-                    self.tokens.append(Token(TokenType.EQEQ, '==', self.line, self.column))
+                two_char = self.source[self.pos : self.pos + 2]
+                if two_char == "==":
+                    self.tokens.append(
+                        Token(TokenType.EQEQ, "==", self.line, self.column)
+                    )
                     self._advance(2)
                     continue
-                elif two_char == '!=':
-                    self.tokens.append(Token(TokenType.NE, '!=', self.line, self.column))
+                elif two_char == "!=":
+                    self.tokens.append(
+                        Token(TokenType.NE, "!=", self.line, self.column)
+                    )
                     self._advance(2)
                     continue
-                elif two_char == '<=':
-                    self.tokens.append(Token(TokenType.LE, '<=', self.line, self.column))
+                elif two_char == "<=":
+                    self.tokens.append(
+                        Token(TokenType.LE, "<=", self.line, self.column)
+                    )
                     self._advance(2)
                     continue
-                elif two_char == '>=':
-                    self.tokens.append(Token(TokenType.GE, '>=', self.line, self.column))
+                elif two_char == ">=":
+                    self.tokens.append(
+                        Token(TokenType.GE, ">=", self.line, self.column)
+                    )
                     self._advance(2)
                     continue
 
             # Single-character operators
-            if char == '<':
-                self.tokens.append(Token(TokenType.LT, '<', self.line, self.column))
+            if char == "<":
+                self.tokens.append(Token(TokenType.LT, "<", self.line, self.column))
                 self._advance()
                 continue
-            elif char == '>':
-                self.tokens.append(Token(TokenType.GT, '>', self.line, self.column))
+            elif char == ">":
+                self.tokens.append(Token(TokenType.GT, ">", self.line, self.column))
                 self._advance()
                 continue
-            elif char == '(':
-                self.tokens.append(Token(TokenType.LPAREN, '(', self.line, self.column))
+            elif char == "(":
+                self.tokens.append(Token(TokenType.LPAREN, "(", self.line, self.column))
                 self._advance()
                 continue
-            elif char == ')':
-                self.tokens.append(Token(TokenType.RPAREN, ')', self.line, self.column))
+            elif char == ")":
+                self.tokens.append(Token(TokenType.RPAREN, ")", self.line, self.column))
                 self._advance()
                 continue
-            elif char == ',':
-                self.tokens.append(Token(TokenType.COMMA, ',', self.line, self.column))
+            elif char == ",":
+                self.tokens.append(Token(TokenType.COMMA, ",", self.line, self.column))
                 self._advance()
                 continue
 
@@ -286,16 +296,16 @@ class Lexer:
     def _peek(self, offset: int = 0) -> str:
         """Peek at character at current position + offset."""
         idx = self.pos + offset
-        return self.source[idx] if idx < len(self.source) else ''
+        return self.source[idx] if idx < len(self.source) else ""
 
     def _skip_whitespace(self):
         """Skip whitespace except newlines."""
-        while self.pos < len(self.source) and self.source[self.pos] in ' \t\r':
+        while self.pos < len(self.source) and self.source[self.pos] in " \t\r":
             self._advance()
 
     def _skip_comment(self):
         """Skip comment until end of line."""
-        while self.pos < len(self.source) and self.source[self.pos] != '\n':
+        while self.pos < len(self.source) and self.source[self.pos] != "\n":
             self._advance()
 
     def _read_string(self) -> Token:
@@ -305,12 +315,12 @@ class Lexer:
 
         value = ""
         while self.pos < len(self.source) and self.source[self.pos] != '"':
-            if self.source[self.pos] == '\\' and self.pos + 1 < len(self.source):
+            if self.source[self.pos] == "\\" and self.pos + 1 < len(self.source):
                 self._advance()
-                if self.source[self.pos] == 'n':
-                    value += '\n'
-                elif self.source[self.pos] == 't':
-                    value += '\t'
+                if self.source[self.pos] == "n":
+                    value += "\n"
+                elif self.source[self.pos] == "t":
+                    value += "\t"
                 else:
                     value += self.source[self.pos]
             else:
@@ -325,14 +335,16 @@ class Lexer:
         start_col = self.column
         start_pos = self.pos
 
-        if self.source[self.pos] == '-':
+        if self.source[self.pos] == "-":
             self._advance()
 
-        while self.pos < len(self.source) and (self.source[self.pos].isdigit() or self.source[self.pos] == '.'):
+        while self.pos < len(self.source) and (
+            self.source[self.pos].isdigit() or self.source[self.pos] == "."
+        ):
             self._advance()
 
-        value_str = self.source[start_pos:self.pos]
-        if '.' in value_str:
+        value_str = self.source[start_pos : self.pos]
+        if "." in value_str:
             value = float(value_str)
         else:
             value = int(value_str)
@@ -344,16 +356,20 @@ class Lexer:
         start_col = self.column
         start_pos = self.pos
 
-        while self.pos < len(self.source) and (self.source[self.pos].isalnum() or self.source[self.pos] == '_'):
+        while self.pos < len(self.source) and (
+            self.source[self.pos].isalnum() or self.source[self.pos] == "_"
+        ):
             self._advance()
 
-        value = self.source[start_pos:self.pos]
+        value = self.source[start_pos : self.pos]
 
         # Check for keywords
         if value.lower() in self.KEYWORDS:
             token_type = self.KEYWORDS[value.lower()]
             if token_type in (TokenType.TRUE, TokenType.FALSE):
-                return Token(TokenType.BOOL, value.lower() == 'true', self.line, start_col)
+                return Token(
+                    TokenType.BOOL, value.lower() == "true", self.line, start_col
+                )
             return Token(token_type, value, self.line, start_col)
 
         return Token(TokenType.IDENT, value, self.line, start_col)
@@ -363,34 +379,40 @@ class Lexer:
 # AST - Abstract Syntax Tree Nodes
 # ===============================================================================
 
+
 @dataclass
 class ASTNode:
     """Base class for AST nodes."""
+
     pass
 
 
 @dataclass
 class Program(ASTNode):
     """Root node containing all rules."""
-    rules: List['Rule']
+
+    rules: List["Rule"]
 
 
 @dataclass
 class Rule(ASTNode):
     """A when/fin/finfr rule."""
-    guard: 'Expression'
+
+    guard: "Expression"
     action: str  # 'fin' or 'finfr' or action name
 
 
 @dataclass
 class Expression(ASTNode):
     """Base class for expressions."""
+
     pass
 
 
 @dataclass
 class BinaryOp(Expression):
     """Binary operation (and, or, ==, etc.)."""
+
     op: str
     left: Expression
     right: Expression
@@ -399,6 +421,7 @@ class BinaryOp(Expression):
 @dataclass
 class UnaryOp(Expression):
     """Unary operation (not)."""
+
     op: str
     operand: Expression
 
@@ -406,6 +429,7 @@ class UnaryOp(Expression):
 @dataclass
 class Comparison(Expression):
     """Comparison operation."""
+
     op: str  # '==', '!=', '<', '>', '<=', '>='
     left: Expression
     right: Expression
@@ -414,6 +438,7 @@ class Comparison(Expression):
 @dataclass
 class InExpr(Expression):
     """Set membership check."""
+
     element: Expression
     set_name: str
 
@@ -421,18 +446,21 @@ class InExpr(Expression):
 @dataclass
 class Identifier(Expression):
     """Variable reference."""
+
     name: str
 
 
 @dataclass
 class Literal(Expression):
     """Literal value."""
+
     value: Any
 
 
 # ===============================================================================
 # PARSER - Build AST from Tokens
 # ===============================================================================
+
 
 class Parser:
     """
@@ -626,9 +654,11 @@ class Parser:
 # SYMBOL TABLE - Enum and Variable Bindings
 # ===============================================================================
 
+
 @dataclass
 class EnumTable:
     """Maps string values to field integers."""
+
     name: str
     values: Dict[str, int] = field(default_factory=dict)
     next_value: int = 1
@@ -647,6 +677,7 @@ class EnumTable:
 @dataclass
 class SetTable:
     """Represents a set for membership checks."""
+
     name: str
     elements: Set[str] = field(default_factory=set)
 
@@ -701,7 +732,7 @@ class SymbolTable:
             "enums": {k: v.to_dict() for k, v in self.enums.items()},
             "sets": {k: v.to_dict() for k, v in self.sets.items()},
             "witness_vars": self.witness_vars,
-            "next_witness_idx": self.next_witness_idx
+            "next_witness_idx": self.next_witness_idx,
         }
 
 
@@ -709,21 +740,25 @@ class SymbolTable:
 # IR - Intermediate Representation (SSA-like)
 # ===============================================================================
 
+
 @dataclass
 class IRInstruction:
     """Base class for IR instructions."""
+
     result: str  # Result variable name
 
 
 @dataclass
 class IRConst(IRInstruction):
     """Load constant value."""
+
     value: int
 
 
 @dataclass
 class IRSub(IRInstruction):
     """Subtraction: result = left - right."""
+
     left: str
     right: Union[str, int]
 
@@ -731,6 +766,7 @@ class IRSub(IRInstruction):
 @dataclass
 class IRMul(IRInstruction):
     """Multiplication: result = left * right."""
+
     left: str
     right: str
 
@@ -738,6 +774,7 @@ class IRMul(IRInstruction):
 @dataclass
 class IRIsZero(IRInstruction):
     """isZero gadget: produces (eq, inv) pair."""
+
     input: str
     eq_var: str
     inv_var: str
@@ -746,6 +783,7 @@ class IRIsZero(IRInstruction):
 @dataclass
 class IRMembership(IRInstruction):
     """Set membership check."""
+
     element: str
     set_name: str
 
@@ -753,12 +791,14 @@ class IRMembership(IRInstruction):
 @dataclass
 class IRNot(IRInstruction):
     """Logical NOT: result = 1 - input."""
+
     input: str
 
 
 @dataclass
 class IRAssert(IRInstruction):
     """Assert constraint: variable must equal value."""
+
     variable: str
     value: int
 
@@ -784,11 +824,13 @@ class IRBuilder:
 
             if rule.action == "finfr":
                 # FINFR: guard must be false (guard == 0)
-                self.instructions.append(IRAssert(
-                    result=f"_assert_{len(self.instructions)}",
-                    variable=guard_var,
-                    value=0
-                ))
+                self.instructions.append(
+                    IRAssert(
+                        result=f"_assert_{len(self.instructions)}",
+                        variable=guard_var,
+                        value=0,
+                    )
+                )
             else:
                 # FIN: allowed action, no constraint needed
                 pass
@@ -849,14 +891,20 @@ class IRBuilder:
             self.symbols.allocate_witness(eq_var)
             self.symbols.allocate_witness(inv_var)
 
-            self.instructions.append(IRSub(result=diff_var, left=left_var, right=right_var))
-            self.instructions.append(IRIsZero(result=eq_var, input=diff_var, eq_var=eq_var, inv_var=inv_var))
+            self.instructions.append(
+                IRSub(result=diff_var, left=left_var, right=right_var)
+            )
+            self.instructions.append(
+                IRIsZero(result=eq_var, input=diff_var, eq_var=eq_var, inv_var=inv_var)
+            )
 
             return eq_var
 
         elif comp.op == "!=":
             # x != y is NOT isZero(x - y)
-            eq_var = self._compile_comparison(Comparison(op="==", left=comp.left, right=comp.right))
+            eq_var = self._compile_comparison(
+                Comparison(op="==", left=comp.left, right=comp.right)
+            )
             not_var = self._new_temp()
             self.symbols.allocate_witness(not_var)
             self.instructions.append(IRNot(result=not_var, input=eq_var))
@@ -865,7 +913,9 @@ class IRBuilder:
         else:
             # <, >, <=, >= - for now, treat as range checks
             # In full implementation, would need comparison gadgets
-            raise NotImplementedError(f"Comparison operator {comp.op} not yet implemented in circuit form")
+            raise NotImplementedError(
+                f"Comparison operator {comp.op} not yet implemented in circuit form"
+            )
 
     def _compile_binary(self, binop: BinaryOp) -> str:
         """Compile binary operation."""
@@ -876,7 +926,9 @@ class IRBuilder:
             # AND = multiplication of booleans
             result_var = self._new_temp()
             self.symbols.allocate_witness(result_var)
-            self.instructions.append(IRMul(result=result_var, left=left_var, right=right_var))
+            self.instructions.append(
+                IRMul(result=result_var, left=left_var, right=right_var)
+            )
             return result_var
 
         elif binop.op == "or":
@@ -894,7 +946,9 @@ class IRBuilder:
 
             self.instructions.append(IRNot(result=not_a, input=left_var))
             self.instructions.append(IRNot(result=not_b, input=right_var))
-            self.instructions.append(IRMul(result=not_a_and_not_b, left=not_a, right=not_b))
+            self.instructions.append(
+                IRMul(result=not_a_and_not_b, left=not_a, right=not_b)
+            )
             self.instructions.append(IRNot(result=result_var, input=not_a_and_not_b))
 
             return result_var
@@ -922,11 +976,11 @@ class IRBuilder:
         self.symbols.allocate_witness(result_var)
         self.symbols.get_or_create_set(in_expr.set_name)
 
-        self.instructions.append(IRMembership(
-            result=result_var,
-            element=element_var,
-            set_name=in_expr.set_name
-        ))
+        self.instructions.append(
+            IRMembership(
+                result=result_var, element=element_var, set_name=in_expr.set_name
+            )
+        )
 
         return result_var
 
@@ -941,6 +995,7 @@ class IRBuilder:
 # R1CS - Rank-1 Constraint System
 # ===============================================================================
 
+
 @dataclass
 class R1CSConstraint:
     """
@@ -948,18 +1003,14 @@ class R1CSConstraint:
 
     Where A, B, C are coefficient vectors and w is the witness vector.
     """
+
     A: Dict[int, int]  # {witness_index: coefficient}
     B: Dict[int, int]
     C: Dict[int, int]
     label: str = ""
 
     def to_dict(self) -> Dict[str, Any]:
-        return {
-            "A": self.A,
-            "B": self.B,
-            "C": self.C,
-            "label": self.label
-        }
+        return {"A": self.A, "B": self.B, "C": self.C, "label": self.label}
 
 
 class R1CSBuilder:
@@ -1006,12 +1057,14 @@ class R1CSBuilder:
         """Emit constraint: result = value (const * 1 = result)."""
         result_idx = self._get_idx(instr.result)
         # value * 1 = result -> A={value at w0}, B={1 at w0}, C={1 at result}
-        self.constraints.append(R1CSConstraint(
-            A={0: instr.value},
-            B={0: 1},
-            C={result_idx: 1},
-            label=f"{instr.result} = {instr.value}"
-        ))
+        self.constraints.append(
+            R1CSConstraint(
+                A={0: instr.value},
+                B={0: 1},
+                C={result_idx: 1},
+                label=f"{instr.result} = {instr.value}",
+            )
+        )
 
     def _emit_sub(self, instr: IRSub):
         """Emit constraint: result = left - right."""
@@ -1020,21 +1073,25 @@ class R1CSBuilder:
 
         if isinstance(instr.right, int):
             # result = left - const -> (left - const) * 1 = result
-            self.constraints.append(R1CSConstraint(
-                A={left_idx: 1, 0: -instr.right},
-                B={0: 1},
-                C={result_idx: 1},
-                label=f"{instr.result} = {instr.left} - {instr.right}"
-            ))
+            self.constraints.append(
+                R1CSConstraint(
+                    A={left_idx: 1, 0: -instr.right},
+                    B={0: 1},
+                    C={result_idx: 1},
+                    label=f"{instr.result} = {instr.left} - {instr.right}",
+                )
+            )
         else:
             right_idx = self._get_idx(instr.right)
             # result = left - right -> (left - right) * 1 = result
-            self.constraints.append(R1CSConstraint(
-                A={left_idx: 1, right_idx: -1},
-                B={0: 1},
-                C={result_idx: 1},
-                label=f"{instr.result} = {instr.left} - {instr.right}"
-            ))
+            self.constraints.append(
+                R1CSConstraint(
+                    A={left_idx: 1, right_idx: -1},
+                    B={0: 1},
+                    C={result_idx: 1},
+                    label=f"{instr.result} = {instr.left} - {instr.right}",
+                )
+            )
 
     def _emit_mul(self, instr: IRMul):
         """Emit constraint: result = left * right."""
@@ -1042,12 +1099,14 @@ class R1CSBuilder:
         left_idx = self._get_idx(instr.left)
         right_idx = self._get_idx(instr.right)
 
-        self.constraints.append(R1CSConstraint(
-            A={left_idx: 1},
-            B={right_idx: 1},
-            C={result_idx: 1},
-            label=f"{instr.result} = {instr.left} * {instr.right}"
-        ))
+        self.constraints.append(
+            R1CSConstraint(
+                A={left_idx: 1},
+                B={right_idx: 1},
+                C={result_idx: 1},
+                label=f"{instr.result} = {instr.left} * {instr.right}",
+            )
+        )
 
     def _emit_is_zero(self, instr: IRIsZero):
         """
@@ -1067,28 +1126,34 @@ class R1CSBuilder:
         inv_idx = self._get_idx(instr.inv_var)
 
         # Constraint 1: z * inv = 1 - eq
-        self.constraints.append(R1CSConstraint(
-            A={z_idx: 1},
-            B={inv_idx: 1},
-            C={0: 1, eq_idx: -1},
-            label=f"{instr.input} * {instr.inv_var} = 1 - {instr.eq_var}"
-        ))
+        self.constraints.append(
+            R1CSConstraint(
+                A={z_idx: 1},
+                B={inv_idx: 1},
+                C={0: 1, eq_idx: -1},
+                label=f"{instr.input} * {instr.inv_var} = 1 - {instr.eq_var}",
+            )
+        )
 
         # Constraint 2: eq * z = 0
-        self.constraints.append(R1CSConstraint(
-            A={eq_idx: 1},
-            B={z_idx: 1},
-            C={},
-            label=f"{instr.eq_var} * {instr.input} = 0"
-        ))
+        self.constraints.append(
+            R1CSConstraint(
+                A={eq_idx: 1},
+                B={z_idx: 1},
+                C={},
+                label=f"{instr.eq_var} * {instr.input} = 0",
+            )
+        )
 
         # Constraint 3: eq * (eq - 1) = 0 (boolean constraint)
-        self.constraints.append(R1CSConstraint(
-            A={eq_idx: 1},
-            B={eq_idx: 1, 0: -1},
-            C={},
-            label=f"{instr.eq_var} * ({instr.eq_var} - 1) = 0"
-        ))
+        self.constraints.append(
+            R1CSConstraint(
+                A={eq_idx: 1},
+                B={eq_idx: 1, 0: -1},
+                C={},
+                label=f"{instr.eq_var} * ({instr.eq_var} - 1) = 0",
+            )
+        )
 
     def _emit_not(self, instr: IRNot):
         """Emit NOT constraint: result = 1 - input."""
@@ -1096,12 +1161,14 @@ class R1CSBuilder:
         input_idx = self._get_idx(instr.input)
 
         # (1 - input) * 1 = result
-        self.constraints.append(R1CSConstraint(
-            A={0: 1, input_idx: -1},
-            B={0: 1},
-            C={result_idx: 1},
-            label=f"{instr.result} = 1 - {instr.input}"
-        ))
+        self.constraints.append(
+            R1CSConstraint(
+                A={0: 1, input_idx: -1},
+                B={0: 1},
+                C={result_idx: 1},
+                label=f"{instr.result} = 1 - {instr.input}",
+            )
+        )
 
     def _emit_membership(self, instr: IRMembership):
         """
@@ -1118,12 +1185,14 @@ class R1CSBuilder:
 
         # Placeholder: membership witness variable
         # In full implementation, would expand to set-specific constraints
-        self.constraints.append(R1CSConstraint(
-            A={result_idx: 1},
-            B={result_idx: 1, 0: -1},
-            C={},
-            label=f"isMember({instr.element}, {instr.set_name}) boolean"
-        ))
+        self.constraints.append(
+            R1CSConstraint(
+                A={result_idx: 1},
+                B={result_idx: 1, 0: -1},
+                C={},
+                label=f"isMember({instr.element}, {instr.set_name}) boolean",
+            )
+        )
 
     def _emit_assert(self, instr: IRAssert):
         """Emit assertion constraint: variable = value."""
@@ -1131,25 +1200,27 @@ class R1CSBuilder:
 
         if instr.value == 0:
             # variable * 1 = 0
-            self.constraints.append(R1CSConstraint(
-                A={var_idx: 1},
-                B={0: 1},
-                C={},
-                label=f"FINFR: {instr.variable} = 0"
-            ))
+            self.constraints.append(
+                R1CSConstraint(
+                    A={var_idx: 1}, B={0: 1}, C={}, label=f"FINFR: {instr.variable} = 0"
+                )
+            )
         else:
             # variable * 1 = value
-            self.constraints.append(R1CSConstraint(
-                A={var_idx: 1},
-                B={0: 1},
-                C={0: instr.value},
-                label=f"assert {instr.variable} = {instr.value}"
-            ))
+            self.constraints.append(
+                R1CSConstraint(
+                    A={var_idx: 1},
+                    B={0: 1},
+                    C={0: instr.value},
+                    label=f"assert {instr.variable} = {instr.value}",
+                )
+            )
 
 
 # ===============================================================================
 # QAP - Quadratic Arithmetic Program
 # ===============================================================================
+
 
 @dataclass
 class QAPPolynomial:
@@ -1158,6 +1229,7 @@ class QAPPolynomial:
 
     Coefficients are indexed from degree 0 (constant term) upward.
     """
+
     coefficients: List[FieldElement]
 
     def evaluate(self, x: FieldElement) -> FieldElement:
@@ -1203,7 +1275,9 @@ class QAPBuilder:
         self.num_constraints: int = 0
         self.num_witness: int = 0
 
-    def build(self, constraints: List[R1CSConstraint], num_witness: int) -> 'QAPBuilder':
+    def build(
+        self, constraints: List[R1CSConstraint], num_witness: int
+    ) -> "QAPBuilder":
         """Build QAP from R1CS constraints."""
         self.num_constraints = len(constraints)
         self.num_witness = num_witness
@@ -1220,15 +1294,9 @@ class QAPBuilder:
         # For each witness variable, build A_j, B_j, C_j polynomials
         for j in range(num_witness):
             # Extract coefficient of w_j in each constraint's A vector
-            a_values = [
-                constraints[i].A.get(j, 0) for i in range(self.num_constraints)
-            ]
-            b_values = [
-                constraints[i].B.get(j, 0) for i in range(self.num_constraints)
-            ]
-            c_values = [
-                constraints[i].C.get(j, 0) for i in range(self.num_constraints)
-            ]
+            a_values = [constraints[i].A.get(j, 0) for i in range(self.num_constraints)]
+            b_values = [constraints[i].B.get(j, 0) for i in range(self.num_constraints)]
+            c_values = [constraints[i].C.get(j, 0) for i in range(self.num_constraints)]
 
             # Interpolate polynomials passing through (r_i, value_i)
             self.A_polys[j] = self._lagrange_interpolate(self.roots, a_values)
@@ -1256,7 +1324,9 @@ class QAPBuilder:
 
         return QAPPolynomial(coefficients=coeffs)
 
-    def _lagrange_interpolate(self, points: List[int], values: List[int]) -> QAPPolynomial:
+    def _lagrange_interpolate(
+        self, points: List[int], values: List[int]
+    ) -> QAPPolynomial:
         """
         Lagrange interpolation to find polynomial passing through given points.
 
@@ -1281,7 +1351,9 @@ class QAPBuilder:
             # Multiply by y_i and add to result
             for j, coeff in enumerate(basis.coefficients):
                 if j < len(result_coeffs):
-                    result_coeffs[j] = result_coeffs[j] + coeff * F(values[i], self.prime)
+                    result_coeffs[j] = result_coeffs[j] + coeff * F(
+                        values[i], self.prime
+                    )
 
         return QAPPolynomial(coefficients=result_coeffs)
 
@@ -1328,7 +1400,7 @@ class QAPBuilder:
             "target_poly": self.target_poly.to_list() if self.target_poly else [],
             "A_polys": {k: v.to_list() for k, v in self.A_polys.items()},
             "B_polys": {k: v.to_list() for k, v in self.B_polys.items()},
-            "C_polys": {k: v.to_list() for k, v in self.C_polys.items()}
+            "C_polys": {k: v.to_list() for k, v in self.C_polys.items()},
         }
 
 
@@ -1336,9 +1408,11 @@ class QAPBuilder:
 # QAP COMPILER - Main Entry Point
 # ===============================================================================
 
+
 @dataclass
 class CompilationResult:
     """Result of compiling tinyTalk to QAP."""
+
     success: bool
     tokens: List[Token]
     ast: Optional[Program]
@@ -1351,29 +1425,57 @@ class CompilationResult:
     def to_dict(self) -> Dict[str, Any]:
         return {
             "success": self.success,
-            "tokens": [{"type": t.type.name, "value": t.value, "line": t.line, "col": t.column} for t in self.tokens],
+            "tokens": [
+                {"type": t.type.name, "value": t.value, "line": t.line, "col": t.column}
+                for t in self.tokens
+            ],
             "ast": self._ast_to_dict(self.ast) if self.ast else None,
             "symbols": self.symbols.to_dict() if self.symbols else None,
             "ir": [self._ir_to_dict(i) for i in self.ir],
             "r1cs": [c.to_dict() for c in self.r1cs],
             "qap": self.qap.to_dict() if self.qap else None,
-            "errors": self.errors
+            "errors": self.errors,
         }
 
     def _ast_to_dict(self, node: ASTNode) -> Dict[str, Any]:
         """Convert AST node to dictionary."""
         if isinstance(node, Program):
-            return {"type": "Program", "rules": [self._ast_to_dict(r) for r in node.rules]}
+            return {
+                "type": "Program",
+                "rules": [self._ast_to_dict(r) for r in node.rules],
+            }
         elif isinstance(node, Rule):
-            return {"type": "Rule", "guard": self._ast_to_dict(node.guard), "action": node.action}
+            return {
+                "type": "Rule",
+                "guard": self._ast_to_dict(node.guard),
+                "action": node.action,
+            }
         elif isinstance(node, BinaryOp):
-            return {"type": "BinaryOp", "op": node.op, "left": self._ast_to_dict(node.left), "right": self._ast_to_dict(node.right)}
+            return {
+                "type": "BinaryOp",
+                "op": node.op,
+                "left": self._ast_to_dict(node.left),
+                "right": self._ast_to_dict(node.right),
+            }
         elif isinstance(node, UnaryOp):
-            return {"type": "UnaryOp", "op": node.op, "operand": self._ast_to_dict(node.operand)}
+            return {
+                "type": "UnaryOp",
+                "op": node.op,
+                "operand": self._ast_to_dict(node.operand),
+            }
         elif isinstance(node, Comparison):
-            return {"type": "Comparison", "op": node.op, "left": self._ast_to_dict(node.left), "right": self._ast_to_dict(node.right)}
+            return {
+                "type": "Comparison",
+                "op": node.op,
+                "left": self._ast_to_dict(node.left),
+                "right": self._ast_to_dict(node.right),
+            }
         elif isinstance(node, InExpr):
-            return {"type": "InExpr", "element": self._ast_to_dict(node.element), "set_name": node.set_name}
+            return {
+                "type": "InExpr",
+                "element": self._ast_to_dict(node.element),
+                "set_name": node.set_name,
+            }
         elif isinstance(node, Identifier):
             return {"type": "Identifier", "name": node.name}
         elif isinstance(node, Literal):
@@ -1488,7 +1590,7 @@ class QAPCompiler:
                 ir=ir,
                 r1cs=r1cs,
                 qap=qap,
-                errors=errors
+                errors=errors,
             )
 
         except Exception as e:
@@ -1501,21 +1603,23 @@ class QAPCompiler:
                 ir=ir,
                 r1cs=r1cs,
                 qap=qap,
-                errors=errors
+                errors=errors,
             )
 
     def _debug_print(self, phase: str, data: Any):
         """Print debug output for a compilation phase."""
         print(f"\n[QAP→{phase}]")
         print("-" * 60)
-        if hasattr(data, '__iter__') and not isinstance(data, (str, dict)):
+        if hasattr(data, "__iter__") and not isinstance(data, (str, dict)):
             for item in data:
                 print(f"  {item}")
         else:
             print(f"  {data}")
 
 
-def compile_to_qap(source: str, prime: int = BN254_PRIME, debug: bool = False) -> CompilationResult:
+def compile_to_qap(
+    source: str, prime: int = BN254_PRIME, debug: bool = False
+) -> CompilationResult:
     """
     Convenience function to compile tinyTalk to QAP.
 
@@ -1534,6 +1638,7 @@ def compile_to_qap(source: str, prime: int = BN254_PRIME, debug: bool = False) -
 # ===============================================================================
 # PRETTY PRINTER - Human-readable output
 # ===============================================================================
+
 
 def format_compilation_output(result: CompilationResult) -> str:
     """Format compilation result as human-readable string."""
@@ -1575,7 +1680,9 @@ def format_compilation_output(result: CompilationResult) -> str:
                 lines.append(f"    {name}: {set_table.elements}")
 
         lines.append("  Witness Layout:")
-        for name, idx in sorted(result.symbols.witness_vars.items(), key=lambda x: x[1]):
+        for name, idx in sorted(
+            result.symbols.witness_vars.items(), key=lambda x: x[1]
+        ):
             lines.append(f"    w[{idx}] = {name}")
 
     # IR
@@ -1603,13 +1710,25 @@ def format_compilation_output(result: CompilationResult) -> str:
         lines.append(f"  Roots: {result.qap.roots}")
 
         if result.qap.target_poly:
-            lines.append(f"  T(x) = prod(x - r_i)")
+            lines.append("  T(x) = prod(x - r_i)")
 
         lines.append("  Polynomials:")
         for j in sorted(result.qap.A_polys.keys()):
-            a_deg = result.qap.A_polys[j].degree() if result.qap.A_polys[j].coefficients else 0
-            b_deg = result.qap.B_polys[j].degree() if result.qap.B_polys[j].coefficients else 0
-            c_deg = result.qap.C_polys[j].degree() if result.qap.C_polys[j].coefficients else 0
+            a_deg = (
+                result.qap.A_polys[j].degree()
+                if result.qap.A_polys[j].coefficients
+                else 0
+            )
+            b_deg = (
+                result.qap.B_polys[j].degree()
+                if result.qap.B_polys[j].coefficients
+                else 0
+            )
+            c_deg = (
+                result.qap.C_polys[j].degree()
+                if result.qap.C_polys[j].coefficients
+                else 0
+            )
             lines.append(f"    w[{j}]: A deg={a_deg}, B deg={b_deg}, C deg={c_deg}")
 
     # Errors
@@ -1669,7 +1788,7 @@ def _format_ir(instr: IRInstruction) -> str:
 
 if __name__ == "__main__":
     # Demo: Compile the example from the specification
-    source = '''
+    source = """
 when user_intent == "homework_help" and
      topic in approved_curriculum and
      response_tone == "educational" and
@@ -1679,7 +1798,7 @@ fin generate_educational_response
 when user_intent == "request_direct_answer" and
      context == "assessment"
 finfr
-'''
+"""
 
     print("Newton QAP Compiler - tinyTalk to Quadratic Arithmetic Program")
     print("=" * 70)

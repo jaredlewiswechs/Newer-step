@@ -8,10 +8,9 @@ Built with verification-first design principles.
 
 from dataclasses import dataclass, field as dataclass_field
 from datetime import datetime
-from enum import Enum, auto
-from typing import Any, Callable, Dict, List, Optional, Union
+from enum import Enum
+from typing import Any, Dict, List, Optional
 import hashlib
-import json
 import uuid
 
 

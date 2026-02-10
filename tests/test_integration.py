@@ -20,10 +20,8 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pytest
-import time
 import tempfile
 import shutil
-from typing import Dict, Any
 
 # Import core components
 from core.forge import Forge, ForgeConfig, VerificationResult
@@ -33,7 +31,7 @@ from core.cdl import (
     CDLEvaluator, CDLParser, AtomicConstraint, CompositeConstraint,
     Domain, Operator, verify, newton
 )
-from core.bridge import Bridge, NodeIdentity, LocalBridge
+from core.bridge import LocalBridge
 
 
 # ═══════════════════════════════════════════════════════════════════════════════

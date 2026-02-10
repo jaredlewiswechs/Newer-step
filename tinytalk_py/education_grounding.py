@@ -19,15 +19,13 @@ import sys
 import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Tuple
+from dataclasses import dataclass
+from typing import Any, Dict, List, Optional
 from enum import Enum
 import time
-import hashlib
-import re
 
 # Import grounding engine
-from core.grounding import GroundingEngine, TRUSTED_DOMAINS
+from core.grounding import GroundingEngine
 
 
 # ===============================================================================

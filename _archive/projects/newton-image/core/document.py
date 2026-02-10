@@ -7,9 +7,9 @@ Every change is tracked, verified, and reversible.
 """
 
 from typing import List, Optional, Dict, Any, Tuple
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import Enum
-from PyQt6.QtCore import QObject, pyqtSignal, QPointF, QRectF, QSize
+from PyQt6.QtCore import QObject, pyqtSignal, QSize
 from PyQt6.QtGui import QImage, QColor, QPainter, QPixmap
 import uuid
 import time
@@ -245,7 +245,6 @@ class NLayer(QObject):
     
     def get_state(self) -> LayerState:
         """Capture current state for undo/history."""
-        import io
         from PyQt6.QtCore import QBuffer, QIODevice
         
         buffer = QBuffer()

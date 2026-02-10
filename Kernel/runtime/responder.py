@@ -1,5 +1,6 @@
 from typing import Optional
 
+
 class NSResponder:
     """Base class for objects that handle events. Supports a responder chain."""
 

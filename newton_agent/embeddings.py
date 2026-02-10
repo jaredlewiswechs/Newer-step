@@ -14,7 +14,6 @@ Newton Philosophy:
 import math
 import hashlib
 import json
-import os
 from dataclasses import dataclass
 from typing import List, Dict, Optional, Tuple
 from pathlib import Path
@@ -300,6 +299,6 @@ if __name__ == "__main__":
         if match:
             print(f"   ✓ [{match.similarity:.3f}] {match.text}")
         else:
-            print(f"   ✗ No match above threshold")
+            print("   ✗ No match above threshold")
     
     print(f"\n📊 Final stats: {engine.get_stats()}")

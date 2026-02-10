@@ -52,9 +52,11 @@ SOURCE_IMPACT = 0.5
 # DATA STRUCTURES
 # =============================================================================
 
+
 @dataclass
 class Evidence:
     """A single piece of supporting evidence."""
+
     url: str
     title: str
     source_weight: float
@@ -64,6 +66,7 @@ class Evidence:
 # =============================================================================
 # GROUNDING ENGINE
 # =============================================================================
+
 
 class GroundingEngine:
     """
@@ -106,7 +109,7 @@ class GroundingEngine:
                 score=BASE_CONFIDENCE_SCORE,
                 sources=[],
                 status="UNVERIFIED",
-                note=f"Search unavailable: {str(e)}"
+                note=f"Search unavailable: {str(e)}",
             )
 
         # 2. No results = maximum uncertainty
@@ -116,7 +119,7 @@ class GroundingEngine:
                 score=BASE_CONFIDENCE_SCORE,
                 sources=[],
                 status="UNVERIFIED",
-                note="No sources found"
+                note="No sources found",
             )
 
         # 3. Evaluate each source and calculate confidence
@@ -127,21 +130,23 @@ class GroundingEngine:
             weight = 1.0
 
             # Boost weight for trusted domains
-            url = getattr(result, 'url', str(result))
-            title = getattr(result, 'title', '')
+            url = getattr(result, "url", str(result))
+            title = getattr(result, "title", "")
 
             if any(domain in url for domain in TRUSTED_DOMAINS):
                 weight += TRUSTED_SOURCE_BONUS
 
-            evidence_chain.append(Evidence(
-                url=url,
-                title=title,
-                source_weight=weight,
-                retrieved_at=int(time.time())
-            ))
+            evidence_chain.append(
+                Evidence(
+                    url=url,
+                    title=title,
+                    source_weight=weight,
+                    retrieved_at=int(time.time()),
+                )
+            )
 
             # Each source reduces uncertainty
-            running_score -= (weight * SOURCE_IMPACT)
+            running_score -= weight * SOURCE_IMPACT
 
         # 4. Calculate final score (minimum 0)
         final_score = max(0.0, round(running_score, 2))
@@ -160,7 +165,7 @@ class GroundingEngine:
             claim=claim,
             score=final_score,
             sources=[e.url for e in evidence_chain[:3]],
-            status=status
+            status=status,
         )
 
     def _build_result(
@@ -169,7 +174,7 @@ class GroundingEngine:
         score: float,
         sources: List[str],
         status: str,
-        note: Optional[str] = None
+        note: Optional[str] = None,
     ) -> dict:
         """Build a standardized result dictionary."""
         timestamp = int(time.time())
@@ -180,7 +185,7 @@ class GroundingEngine:
             "status": status,
             "sources": sources,
             "timestamp": timestamp,
-            "signature": self._generate_signature(claim, score, timestamp)
+            "signature": self._generate_signature(claim, score, timestamp),
         }
 
         if note:

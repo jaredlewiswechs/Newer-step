@@ -27,7 +27,7 @@ import hashlib
 import json
 import time
 
-from .core import Blueprint, field, law, forge, when, finfr, LawViolation
+from .core import Blueprint, field, law, forge, LawViolation
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -728,15 +728,15 @@ if __name__ == "__main__":
     print("-" * 70)
     
     result = gradebook.add_grade("student_001", "Math Quiz 1", 85)
-    print(f"  Added grade: 85 for student_001/Math Quiz 1")
+    print("  Added grade: 85 for student_001/Math Quiz 1")
     print(f"  Verified: {result['proof']['verified']}")
     print(f"  Fingerprint: {result['entry']['fingerprint']}")
     
     result = gradebook.add_grade("student_002", "Math Quiz 1", 92)
-    print(f"  Added grade: 92 for student_002/Math Quiz 1")
+    print("  Added grade: 92 for student_002/Math Quiz 1")
     
     result = gradebook.add_grade("student_001", "Science Test", 78)
-    print(f"  Added grade: 78 for student_001/Science Test")
+    print("  Added grade: 78 for student_001/Science Test")
     print()
     
     # Test 2: Try to add invalid grades
@@ -748,14 +748,14 @@ if __name__ == "__main__":
         gradebook.add_grade("student_003", "History Essay", 105)  # Above 100
         print("  ERROR: Should have been blocked!")
     except LawViolation as e:
-        print(f"  ✓ BLOCKED: Grade 105 rejected (above 100)")
+        print("  ✓ BLOCKED: Grade 105 rejected (above 100)")
         print(f"    Law: {e.law_name}")
     
     try:
         gradebook.add_grade("student_003", "History Essay", -5)  # Below 0
         print("  ERROR: Should have been blocked!")
     except LawViolation as e:
-        print(f"  ✓ BLOCKED: Grade -5 rejected (below 0)")
+        print("  ✓ BLOCKED: Grade -5 rejected (below 0)")
         print(f"    Law: {e.law_name}")
     print()
     
@@ -765,7 +765,7 @@ if __name__ == "__main__":
     print("-" * 70)
     
     result = gradebook.submit_grade("student_001", "Math Quiz 1")
-    print(f"  Submitted: student_001/Math Quiz 1")
+    print("  Submitted: student_001/Math Quiz 1")
     print(f"  Is Final: {result['entry']['is_final']}")
     print(f"  Submitted At: {result['entry']['submitted_at']}")
     print(f"  Proof Merkle Root: {result['proof']['merkle_root']}")
@@ -780,7 +780,7 @@ if __name__ == "__main__":
         gradebook.update_grade("student_001", "Math Quiz 1", 90)  # Try to change
         print("  ERROR: Should have been blocked!")
     except LawViolation as e:
-        print(f"  ✓ BLOCKED: Cannot modify submitted grade")
+        print("  ✓ BLOCKED: Cannot modify submitted grade")
         print(f"    Law: {e.law_name}")
     print()
     
@@ -790,7 +790,7 @@ if __name__ == "__main__":
     print("-" * 70)
     
     result = gradebook.update_grade("student_001", "Science Test", 82)
-    print(f"  Updated: student_001/Science Test")
+    print("  Updated: student_001/Science Test")
     print(f"  Old Grade: {result['old_grade']}")
     print(f"  New Grade: {result['new_grade']}")
     print(f"  Verified: {result['proof']['verified']}")

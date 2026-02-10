@@ -1,5 +1,5 @@
 class NSCursor:
-    def __init__(self, name: str = 'arrow'):
+    def __init__(self, name: str = "arrow"):
         self.name = name
 
     def set(self):
@@ -8,8 +8,8 @@ class NSCursor:
 
     @classmethod
     def arrow(cls):
-        return cls('arrow')
+        return cls("arrow")
 
     @classmethod
     def pointing_hand(cls):
-        return cls('pointing_hand')
+        return cls("pointing_hand")

@@ -20,16 +20,12 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pytest
-from typing import List
 
 from core.textgen import (
-    TextStyle,
     TextConstraint,
-    ProjectionResult,
     TextDocument,
     NewtonTextProjector,
     project,
-    project_cdl,
     explain_constraints,
     generate_document,
     text_fingerprint,

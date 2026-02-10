@@ -1,4 +1,5 @@
 """Drag and drop: NSDraggingInfo, NSDraggingItem, NSDraggingSession, NSDragOperation."""
+
 from __future__ import annotations
 from typing import Optional, List, Any, Tuple
 from enum import IntFlag
@@ -75,8 +76,12 @@ class NSDraggingInfo:
 class NSDraggingSession:
     """Manages a drag session."""
 
-    def __init__(self, items: Optional[List[NSDraggingItem]] = None,
-                 source: Any = None, pasteboard: Optional[NSPasteboard] = None):
+    def __init__(
+        self,
+        items: Optional[List[NSDraggingItem]] = None,
+        source: Any = None,
+        pasteboard: Optional[NSPasteboard] = None,
+    ):
         self._dragging_items = items or []
         self._source = source
         self._pasteboard = pasteboard or NSPasteboard.pasteboard_with_name("drag")
@@ -103,6 +108,7 @@ class NSDraggingSession:
 
 # ── Dragging destination protocol (mixin) ─────────────────────────
 
+
 class NSDraggingDestination:
     """Mixin protocol for views that accept drops."""
 
@@ -128,16 +134,25 @@ class NSDraggingDestination:
 class NSDraggingSource:
     """Mixin protocol for views that initiate drags."""
 
-    def dragging_session_will_begin(self, session: NSDraggingSession, at: Tuple[float, float]):
+    def dragging_session_will_begin(
+        self, session: NSDraggingSession, at: Tuple[float, float]
+    ):
         pass
 
-    def dragging_session_moved_to(self, session: NSDraggingSession, point: Tuple[float, float]):
+    def dragging_session_moved_to(
+        self, session: NSDraggingSession, point: Tuple[float, float]
+    ):
         pass
 
-    def dragging_session_ended(self, session: NSDraggingSession, point: Tuple[float, float],
-                               operation: NSDragOperation):
+    def dragging_session_ended(
+        self,
+        session: NSDraggingSession,
+        point: Tuple[float, float],
+        operation: NSDragOperation,
+    ):
         pass
 
-    def dragging_session_source_operation_mask(self, session: NSDraggingSession,
-                                                context: Any) -> NSDragOperation:
+    def dragging_session_source_operation_mask(
+        self, session: NSDraggingSession, context: Any
+    ) -> NSDragOperation:
         return NSDragOperation.NONE

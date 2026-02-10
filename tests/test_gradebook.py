@@ -18,7 +18,7 @@ import sys
 import os
 import time
 import pytest
-from hypothesis import given, settings, assume
+from hypothesis import given, settings
 from hypothesis import strategies as st
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -27,9 +27,7 @@ from tinytalk_py.gradebook import (
     Gradebook,
     get_gradebook,
     get_gradebook_constraints,
-    GradeEntry,
     GradeStatus,
-    CryptographicProof,
     MIN_GRADE,
     MAX_GRADE,
 )

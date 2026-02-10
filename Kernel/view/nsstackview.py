@@ -1,4 +1,5 @@
 """NSStackView and NSGridView — layout container views."""
+
 from __future__ import annotations
 from typing import Optional, List
 from enum import Enum
@@ -202,7 +203,8 @@ class NSGridView(NSView):
                     v.frame = NSRect(
                         c * (cell_w + self._column_spacing),
                         r * (cell_h + self._row_spacing),
-                        cell_w, cell_h,
+                        cell_w,
+                        cell_h,
                     )
 
     def layout(self):

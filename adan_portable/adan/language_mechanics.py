@@ -15,7 +15,7 @@ Thesaurus = The manifold of meaning-equivalent paths
 
 from typing import Dict, List, Set, Optional, Tuple
 import re
-from difflib import SequenceMatcher, get_close_matches
+from difflib import get_close_matches
 
 
 # ═══════════════════════════════════════════════════════════════════════════════

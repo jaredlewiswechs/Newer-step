@@ -30,28 +30,30 @@ Observation (no inverse needed):
 from __future__ import annotations
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Callable, TypeVar, Generic
+from typing import Any, Dict, List, Optional, Callable
 from enum import Enum
 import copy
 import time
 import hashlib
 
-
 # ═══════════════════════════════════════════════════════════════════════════════
 # CORE TYPES
 # ═══════════════════════════════════════════════════════════════════════════════
 
+
 class CommandResult(Enum):
     """Outcome of a command execution."""
+
     SUCCESS = "success"
-    BLOCKED = "blocked"      # Law prevented execution
-    REVERSED = "reversed"    # Command was undone
-    CONFLICT = "conflict"    # Incompatible state
+    BLOCKED = "blocked"  # Law prevented execution
+    REVERSED = "reversed"  # Command was undone
+    CONFLICT = "conflict"  # Incompatible state
 
 
 @dataclass
 class Outcome:
     """The result of executing a command."""
+
     result: CommandResult
     message: str
     data: Any = None
@@ -67,6 +69,7 @@ class Outcome:
 # ═══════════════════════════════════════════════════════════════════════════════
 # REVERSIBLE COMMAND - The Bijective Primitive
 # ═══════════════════════════════════════════════════════════════════════════════
+
 
 class ReversibleCommand(ABC):
     """
@@ -89,12 +92,12 @@ class ReversibleCommand(ABC):
         pass
 
     @abstractmethod
-    def execute(self, context: 'ShellContext') -> Outcome:
+    def execute(self, context: "ShellContext") -> Outcome:
         """Execute the forward action."""
         pass
 
     @abstractmethod
-    def reverse(self, context: 'ShellContext') -> Outcome:
+    def reverse(self, context: "ShellContext") -> Outcome:
         """Execute the inverse action (undo)."""
         pass
 
@@ -106,9 +109,11 @@ class ReversibleCommand(ABC):
 # SHELL CONTEXT - The Reversible State Container
 # ═══════════════════════════════════════════════════════════════════════════════
 
+
 @dataclass
 class Branch:
     """A speculative execution branch."""
+
     name: str
     state: Dict[str, Any]
     parent: Optional[str] = None
@@ -119,6 +124,7 @@ class Branch:
 @dataclass
 class Memory:
     """A remembered value."""
+
     key: str
     value: Any
     remembered_at: float = field(default_factory=time.time)
@@ -127,6 +133,7 @@ class Memory:
 @dataclass
 class Signal:
     """A said (emitted) message."""
+
     content: str
     said_at: float = field(default_factory=time.time)
     retracted: bool = False
@@ -175,6 +182,7 @@ class ShellContext:
 # TRY / UNTRY - Speculative Execution
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 @dataclass
 class TryCommand(ReversibleCommand):
     """
@@ -182,6 +190,7 @@ class TryCommand(ReversibleCommand):
 
     Human meaning: "Let me try this way"
     """
+
     action: Callable[[Dict[str, Any]], Dict[str, Any]]
     description: str = ""
     _saved_state: Optional[Dict[str, Any]] = field(default=None, repr=False)
@@ -207,35 +216,32 @@ class TryCommand(ReversibleCommand):
             return Outcome(
                 result=CommandResult.SUCCESS,
                 message=f"tried: {self.description or 'action'}",
-                data=new_state
+                data=new_state,
             )
         except Exception as e:
             # Rollback on failure
             context.state = self._saved_state
             return Outcome(
-                result=CommandResult.BLOCKED,
-                message=f"try blocked: {str(e)}"
+                result=CommandResult.BLOCKED, message=f"try blocked: {str(e)}"
             )
 
     def reverse(self, context: ShellContext) -> Outcome:
         if self._saved_state is None:
-            return Outcome(
-                result=CommandResult.BLOCKED,
-                message="nothing to untry"
-            )
+            return Outcome(result=CommandResult.BLOCKED, message="nothing to untry")
 
         context.state = self._saved_state
         self._saved_state = None
 
         return Outcome(
             result=CommandResult.REVERSED,
-            message=f"untried: {self.description or 'action'}"
+            message=f"untried: {self.description or 'action'}",
         )
 
 
 # ─────────────────────────────────────────────────────────────────────────────
 # SPLIT / JOIN - Branch and Merge
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 @dataclass
 class SplitCommand(ReversibleCommand):
@@ -244,6 +250,7 @@ class SplitCommand(ReversibleCommand):
 
     Human meaning: "Let me explore this path"
     """
+
     branch_name: str
     _parent_branch: Optional[str] = field(default=None, repr=False)
 
@@ -259,7 +266,7 @@ class SplitCommand(ReversibleCommand):
         if self.branch_name in context.branches:
             return Outcome(
                 result=CommandResult.CONFLICT,
-                message=f"branch '{self.branch_name}' already exists"
+                message=f"branch '{self.branch_name}' already exists",
             )
 
         self._parent_branch = context.current_branch
@@ -268,7 +275,7 @@ class SplitCommand(ReversibleCommand):
         context.branches[self.branch_name] = Branch(
             name=self.branch_name,
             state=context.snapshot(),
-            parent=context.current_branch
+            parent=context.current_branch,
         )
         context.current_branch = self.branch_name
         context.history.append(self)
@@ -276,14 +283,13 @@ class SplitCommand(ReversibleCommand):
         return Outcome(
             result=CommandResult.SUCCESS,
             message=f"split into '{self.branch_name}'",
-            data={"branch": self.branch_name, "parent": self._parent_branch}
+            data={"branch": self.branch_name, "parent": self._parent_branch},
         )
 
     def reverse(self, context: ShellContext) -> Outcome:
         if self._parent_branch is None:
             return Outcome(
-                result=CommandResult.BLOCKED,
-                message="cannot join: no parent branch"
+                result=CommandResult.BLOCKED, message="cannot join: no parent branch"
             )
 
         # Switch back to parent and remove the branch
@@ -292,7 +298,7 @@ class SplitCommand(ReversibleCommand):
 
         return Outcome(
             result=CommandResult.REVERSED,
-            message=f"joined back from '{self.branch_name}'"
+            message=f"joined back from '{self.branch_name}'",
         )
 
 
@@ -303,6 +309,7 @@ class JoinCommand(ReversibleCommand):
 
     Human meaning: "Bring these together"
     """
+
     branch_name: str
     merge_strategy: str = "theirs"  # "theirs", "ours", "combine"
     _pre_merge_state: Optional[Dict[str, Any]] = field(default=None, repr=False)
@@ -320,13 +327,12 @@ class JoinCommand(ReversibleCommand):
         if self.branch_name not in context.branches:
             return Outcome(
                 result=CommandResult.BLOCKED,
-                message=f"branch '{self.branch_name}' does not exist"
+                message=f"branch '{self.branch_name}' does not exist",
             )
 
         if self.branch_name == context.current_branch:
             return Outcome(
-                result=CommandResult.BLOCKED,
-                message="cannot join branch into itself"
+                result=CommandResult.BLOCKED, message="cannot join branch into itself"
             )
 
         self._pre_merge_state = context.snapshot()
@@ -350,14 +356,14 @@ class JoinCommand(ReversibleCommand):
         return Outcome(
             result=CommandResult.SUCCESS,
             message=f"joined '{self.branch_name}' with strategy '{self.merge_strategy}'",
-            data=context.state
+            data=context.state,
         )
 
     def reverse(self, context: ShellContext) -> Outcome:
         if self._pre_merge_state is None or self._merged_branch_state is None:
             return Outcome(
                 result=CommandResult.BLOCKED,
-                message="cannot reverse join: no saved state"
+                message="cannot reverse join: no saved state",
             )
 
         # Restore current branch state
@@ -367,18 +373,19 @@ class JoinCommand(ReversibleCommand):
         context.branches[self.branch_name] = Branch(
             name=self.branch_name,
             state=self._merged_branch_state,
-            parent=context.current_branch
+            parent=context.current_branch,
         )
 
         return Outcome(
             result=CommandResult.REVERSED,
-            message=f"split '{self.branch_name}' back out"
+            message=f"split '{self.branch_name}' back out",
         )
 
 
 # ─────────────────────────────────────────────────────────────────────────────
 # LOCK / UNLOCK - Commit and Uncommit
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 @dataclass
 class LockCommand(ReversibleCommand):
@@ -387,6 +394,7 @@ class LockCommand(ReversibleCommand):
 
     Human meaning: "I'm sure about this"
     """
+
     message: str
     _pre_lock_history_length: int = field(default=0, repr=False)
 
@@ -403,8 +411,7 @@ class LockCommand(ReversibleCommand):
 
         if branch.locked:
             return Outcome(
-                result=CommandResult.BLOCKED,
-                message="branch already locked"
+                result=CommandResult.BLOCKED, message="branch already locked"
             )
 
         self._pre_lock_history_length = len(context.history)
@@ -418,29 +425,26 @@ class LockCommand(ReversibleCommand):
         return Outcome(
             result=CommandResult.SUCCESS,
             message=f"locked: {self.message}",
-            data={"fingerprint": fingerprint, "branch": context.current_branch}
+            data={"fingerprint": fingerprint, "branch": context.current_branch},
         )
 
     def reverse(self, context: ShellContext) -> Outcome:
         branch = context.branches[context.current_branch]
 
         if not branch.locked:
-            return Outcome(
-                result=CommandResult.BLOCKED,
-                message="branch not locked"
-            )
+            return Outcome(result=CommandResult.BLOCKED, message="branch not locked")
 
         branch.locked = False
 
         return Outcome(
-            result=CommandResult.REVERSED,
-            message=f"unlocked: {self.message}"
+            result=CommandResult.REVERSED, message=f"unlocked: {self.message}"
         )
 
 
 # ─────────────────────────────────────────────────────────────────────────────
 # TAKE / GIVE - Resource Acquisition and Release
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 @dataclass
 class TakeCommand(ReversibleCommand):
@@ -449,6 +453,7 @@ class TakeCommand(ReversibleCommand):
 
     Human meaning: "I need this"
     """
+
     key: str
     value: Any
     _previous_value: Any = field(default=None, repr=False)
@@ -472,7 +477,7 @@ class TakeCommand(ReversibleCommand):
         return Outcome(
             result=CommandResult.SUCCESS,
             message=f"took {self.key}",
-            data={self.key: self.value}
+            data={self.key: self.value},
         )
 
     def reverse(self, context: ShellContext) -> Outcome:
@@ -481,10 +486,7 @@ class TakeCommand(ReversibleCommand):
         else:
             del context.state[self.key]
 
-        return Outcome(
-            result=CommandResult.REVERSED,
-            message=f"gave back {self.key}"
-        )
+        return Outcome(result=CommandResult.REVERSED, message=f"gave back {self.key}")
 
 
 @dataclass
@@ -494,6 +496,7 @@ class GiveCommand(ReversibleCommand):
 
     Human meaning: "I don't need this anymore"
     """
+
     key: str
     _previous_value: Any = field(default=None, repr=False)
     _existed: bool = field(default=False, repr=False)
@@ -512,7 +515,7 @@ class GiveCommand(ReversibleCommand):
         if not self._existed:
             return Outcome(
                 result=CommandResult.BLOCKED,
-                message=f"cannot give '{self.key}': not held"
+                message=f"cannot give '{self.key}': not held",
             )
 
         self._previous_value = context.state.pop(self.key)
@@ -521,21 +524,19 @@ class GiveCommand(ReversibleCommand):
         return Outcome(
             result=CommandResult.SUCCESS,
             message=f"gave {self.key}",
-            data={self.key: self._previous_value}
+            data={self.key: self._previous_value},
         )
 
     def reverse(self, context: ShellContext) -> Outcome:
         context.state[self.key] = self._previous_value
 
-        return Outcome(
-            result=CommandResult.REVERSED,
-            message=f"took back {self.key}"
-        )
+        return Outcome(result=CommandResult.REVERSED, message=f"took back {self.key}")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
 # OPEN / CLOSE - Scoped Execution
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 @dataclass
 class OpenCommand(ReversibleCommand):
@@ -544,6 +545,7 @@ class OpenCommand(ReversibleCommand):
 
     Human meaning: "Let's start this section"
     """
+
     scope_name: str
     _state_at_open: Optional[Dict[str, Any]] = field(default=None, repr=False)
 
@@ -563,14 +565,14 @@ class OpenCommand(ReversibleCommand):
         return Outcome(
             result=CommandResult.SUCCESS,
             message=f"opened scope '{self.scope_name}'",
-            data={"scope": self.scope_name, "depth": len(context.scopes)}
+            data={"scope": self.scope_name, "depth": len(context.scopes)},
         )
 
     def reverse(self, context: ShellContext) -> Outcome:
         if not context.scopes or context.scopes[-1] != self.scope_name:
             return Outcome(
                 result=CommandResult.BLOCKED,
-                message=f"scope '{self.scope_name}' not at top of stack"
+                message=f"scope '{self.scope_name}' not at top of stack",
             )
 
         context.scopes.pop()
@@ -579,8 +581,7 @@ class OpenCommand(ReversibleCommand):
             context.state = self._state_at_open
 
         return Outcome(
-            result=CommandResult.REVERSED,
-            message=f"closed scope '{self.scope_name}'"
+            result=CommandResult.REVERSED, message=f"closed scope '{self.scope_name}'"
         )
 
 
@@ -591,6 +592,7 @@ class CloseCommand(ReversibleCommand):
 
     Human meaning: "We're done with this section"
     """
+
     _closed_scope: Optional[str] = field(default=None, repr=False)
     _state_at_close: Optional[Dict[str, Any]] = field(default=None, repr=False)
 
@@ -604,10 +606,7 @@ class CloseCommand(ReversibleCommand):
 
     def execute(self, context: ShellContext) -> Outcome:
         if not context.scopes:
-            return Outcome(
-                result=CommandResult.BLOCKED,
-                message="no scope to close"
-            )
+            return Outcome(result=CommandResult.BLOCKED, message="no scope to close")
 
         self._closed_scope = context.scopes.pop()
         self._state_at_close = context.snapshot()
@@ -616,27 +615,25 @@ class CloseCommand(ReversibleCommand):
         return Outcome(
             result=CommandResult.SUCCESS,
             message=f"closed scope '{self._closed_scope}'",
-            data={"scope": self._closed_scope}
+            data={"scope": self._closed_scope},
         )
 
     def reverse(self, context: ShellContext) -> Outcome:
         if self._closed_scope is None:
-            return Outcome(
-                result=CommandResult.BLOCKED,
-                message="no scope to reopen"
-            )
+            return Outcome(result=CommandResult.BLOCKED, message="no scope to reopen")
 
         context.scopes.append(self._closed_scope)
 
         return Outcome(
             result=CommandResult.REVERSED,
-            message=f"reopened scope '{self._closed_scope}'"
+            message=f"reopened scope '{self._closed_scope}'",
         )
 
 
 # ─────────────────────────────────────────────────────────────────────────────
 # REMEMBER / FORGET - Persistent Memory
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 @dataclass
 class RememberCommand(ReversibleCommand):
@@ -645,6 +642,7 @@ class RememberCommand(ReversibleCommand):
 
     Human meaning: "Keep this for later"
     """
+
     key: str
     value: Any
     _previous_memory: Optional[Memory] = field(default=None, repr=False)
@@ -666,7 +664,7 @@ class RememberCommand(ReversibleCommand):
         return Outcome(
             result=CommandResult.SUCCESS,
             message=f"remembered '{self.key}'",
-            data={self.key: self.value}
+            data={self.key: self.value},
         )
 
     def reverse(self, context: ShellContext) -> Outcome:
@@ -675,10 +673,7 @@ class RememberCommand(ReversibleCommand):
         else:
             del context.memory[self.key]
 
-        return Outcome(
-            result=CommandResult.REVERSED,
-            message=f"forgot '{self.key}'"
-        )
+        return Outcome(result=CommandResult.REVERSED, message=f"forgot '{self.key}'")
 
 
 @dataclass
@@ -688,6 +683,7 @@ class ForgetCommand(ReversibleCommand):
 
     Human meaning: "I don't need to remember this"
     """
+
     key: str
     _forgotten_memory: Optional[Memory] = field(default=None, repr=False)
 
@@ -703,35 +699,31 @@ class ForgetCommand(ReversibleCommand):
         if self.key not in context.memory:
             return Outcome(
                 result=CommandResult.BLOCKED,
-                message=f"cannot forget '{self.key}': not remembered"
+                message=f"cannot forget '{self.key}': not remembered",
             )
 
         self._forgotten_memory = context.memory.pop(self.key)
         context.history.append(self)
 
-        return Outcome(
-            result=CommandResult.SUCCESS,
-            message=f"forgot '{self.key}'"
-        )
+        return Outcome(result=CommandResult.SUCCESS, message=f"forgot '{self.key}'")
 
     def reverse(self, context: ShellContext) -> Outcome:
         if self._forgotten_memory is None:
             return Outcome(
-                result=CommandResult.BLOCKED,
-                message="nothing to remember back"
+                result=CommandResult.BLOCKED, message="nothing to remember back"
             )
 
         context.memory[self.key] = self._forgotten_memory
 
         return Outcome(
-            result=CommandResult.REVERSED,
-            message=f"remembered '{self.key}' again"
+            result=CommandResult.REVERSED, message=f"remembered '{self.key}' again"
         )
 
 
 # ─────────────────────────────────────────────────────────────────────────────
 # SAY / UNSAY - Signal Emission and Retraction
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 @dataclass
 class SayCommand(ReversibleCommand):
@@ -740,6 +732,7 @@ class SayCommand(ReversibleCommand):
 
     Human meaning: "I'm saying this"
     """
+
     content: str
     _signal_index: int = field(default=-1, repr=False)
 
@@ -760,27 +753,22 @@ class SayCommand(ReversibleCommand):
         return Outcome(
             result=CommandResult.SUCCESS,
             message=f"said: {self.content}",
-            data={"signal": self.content, "index": self._signal_index}
+            data={"signal": self.content, "index": self._signal_index},
         )
 
     def reverse(self, context: ShellContext) -> Outcome:
         if self._signal_index < 0 or self._signal_index >= len(context.signals):
-            return Outcome(
-                result=CommandResult.BLOCKED,
-                message="signal not found"
-            )
+            return Outcome(result=CommandResult.BLOCKED, message="signal not found")
 
         context.signals[self._signal_index].retracted = True
 
-        return Outcome(
-            result=CommandResult.REVERSED,
-            message=f"unsaid: {self.content}"
-        )
+        return Outcome(result=CommandResult.REVERSED, message=f"unsaid: {self.content}")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
 # PEEK - Observation (No inverse needed, doesn't mutate)
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 @dataclass
 class PeekCommand:
@@ -791,6 +779,7 @@ class PeekCommand:
 
     Note: Not a ReversibleCommand because it doesn't mutate state.
     """
+
     target: Optional[str] = None  # None = entire state
 
     def execute(self, context: ShellContext) -> Outcome:
@@ -799,19 +788,20 @@ class PeekCommand:
             return Outcome(
                 result=CommandResult.SUCCESS,
                 message=f"peeked at '{self.target}'",
-                data={self.target: value}
+                data={self.target: value},
             )
         else:
             return Outcome(
                 result=CommandResult.SUCCESS,
                 message="peeked at state",
-                data=context.state
+                data=context.state,
             )
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # THE REVERSIBLE SHELL - Main Interface
 # ═══════════════════════════════════════════════════════════════════════════════
+
 
 class ReversibleShell:
     """
@@ -839,9 +829,7 @@ class ReversibleShell:
     # ─────────────────────────────────────────────────────────────────────
 
     def try_action(
-        self,
-        action: Callable[[Dict[str, Any]], Dict[str, Any]],
-        description: str = ""
+        self, action: Callable[[Dict[str, Any]], Dict[str, Any]], description: str = ""
     ) -> Outcome:
         """try: Execute speculatively."""
         cmd = TryCommand(action=action, description=description)
@@ -909,10 +897,7 @@ class ReversibleShell:
     def undo(self) -> Outcome:
         """Undo the last command (execute its inverse)."""
         if not self.context.history:
-            return Outcome(
-                result=CommandResult.BLOCKED,
-                message="nothing to undo"
-            )
+            return Outcome(result=CommandResult.BLOCKED, message="nothing to undo")
 
         last_command = self.context.history.pop()
         return last_command.reverse(self.context)
@@ -965,6 +950,7 @@ class ReversibleShell:
 # ═══════════════════════════════════════════════════════════════════════════════
 # CONVENIENCE FUNCTIONS - Functional Interface
 # ═══════════════════════════════════════════════════════════════════════════════
+
 
 def new_shell(initial_state: Optional[Dict[str, Any]] = None) -> ReversibleShell:
     """Create a new reversible shell."""

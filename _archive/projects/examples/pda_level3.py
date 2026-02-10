@@ -40,7 +40,7 @@ class Contact(Blueprint):
             self.notes += f"\n{note}"
         else:
             self.notes = note
-        return f"Note added"
+        return "Note added"
 
     @forge
     def toggle_favorite(self):
@@ -72,7 +72,7 @@ if __name__ == "__main__":
     result = contact.toggle_favorite()
     print(f"4. {result}")
 
-    print(f"\n--- Contact State ---")
+    print("\n--- Contact State ---")
     print(f"Name:     {contact.name}")
     print(f"Phone:    {contact.phone}")
     print(f"Favorite: {contact.favorite}")

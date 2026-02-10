@@ -6,11 +6,10 @@ Core data types for verified computation.
 """
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List
 from enum import Enum
 from datetime import datetime
 import hashlib
-import json
 
 
 class VerificationStatus(Enum):

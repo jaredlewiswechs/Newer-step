@@ -1,6 +1,4 @@
-import os
 import subprocess
-from pathlib import Path
 
 def test_release_script_dryrun():
     # Ensure the script handles --draft flag without token (should exit 1)

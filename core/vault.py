@@ -26,6 +26,7 @@ try:
     from cryptography.hazmat.primitives.ciphers.aead import AESGCM
     from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
     from cryptography.hazmat.primitives import hashes
+
     CRYPTO_AVAILABLE = True
 except ImportError:
     CRYPTO_AVAILABLE = False
@@ -35,9 +36,11 @@ except ImportError:
 # VAULT CONFIGURATION
 # ═══════════════════════════════════════════════════════════════════════════════
 
+
 @dataclass
 class VaultConfig:
     """Configuration for the Vault."""
+
     storage_path: str = ".newton_vault"
     key_derivation_iterations: int = 100000
     encryption_enabled: bool = True
@@ -48,9 +51,11 @@ class VaultConfig:
 # ENCRYPTED ENTRY
 # ═══════════════════════════════════════════════════════════════════════════════
 
+
 @dataclass
 class VaultEntry:
     """A single entry in the Vault."""
+
     id: str
     owner_id: str
     data: bytes  # Encrypted payload
@@ -69,11 +74,11 @@ class VaultEntry:
             "created_at": self.created_at,
             "updated_at": self.updated_at,
             "version": self.version,
-            "metadata": self.metadata
+            "metadata": self.metadata,
         }
 
     @classmethod
-    def from_dict(cls, d: Dict[str, Any]) -> 'VaultEntry':
+    def from_dict(cls, d: Dict[str, Any]) -> "VaultEntry":
         return cls(
             id=d["id"],
             owner_id=d["owner_id"],
@@ -82,13 +87,14 @@ class VaultEntry:
             created_at=d["created_at"],
             updated_at=d["updated_at"],
             version=d.get("version", 1),
-            metadata=d.get("metadata", {})
+            metadata=d.get("metadata", {}),
         )
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # KEY DERIVATION
 # ═══════════════════════════════════════════════════════════════════════════════
+
 
 class KeyDerivation:
     """
@@ -101,7 +107,9 @@ class KeyDerivation:
     def __init__(self, iterations: int = 100000):
         self.iterations = iterations
 
-    def derive_key(self, identity: str, passphrase: str, salt: Optional[bytes] = None) -> tuple:
+    def derive_key(
+        self, identity: str, passphrase: str, salt: Optional[bytes] = None
+    ) -> tuple:
         """
         Derive a 256-bit key from identity + passphrase.
         Returns (key, salt) tuple.
@@ -122,11 +130,7 @@ class KeyDerivation:
         else:
             # Fallback: simple PBKDF2-like derivation
             key = hashlib.pbkdf2_hmac(
-                'sha256',
-                material,
-                salt,
-                self.iterations,
-                dklen=32
+                "sha256", material, salt, self.iterations, dklen=32
             )
 
         return key, salt
@@ -139,6 +143,7 @@ class KeyDerivation:
 # ═══════════════════════════════════════════════════════════════════════════════
 # ENCRYPTION ENGINE
 # ═══════════════════════════════════════════════════════════════════════════════
+
 
 class EncryptionEngine:
     """
@@ -161,7 +166,9 @@ class EncryptionEngine:
             # Fallback: XOR with key-derived stream (NOT SECURE - demo only)
             # In production, require cryptography library
             stream = hashlib.sha256(key + nonce).digest()
-            ciphertext = bytes(p ^ s for p, s in zip(plaintext, stream * (len(plaintext) // 32 + 1)))
+            ciphertext = bytes(
+                p ^ s for p, s in zip(plaintext, stream * (len(plaintext) // 32 + 1))
+            )
             # Add simple MAC
             mac = hmac.new(key, ciphertext, hashlib.sha256).digest()[:16]
             ciphertext = ciphertext + mac
@@ -184,12 +191,15 @@ class EncryptionEngine:
             if not hmac.compare_digest(mac, expected_mac):
                 raise ValueError("Authentication failed - data tampered")
             stream = hashlib.sha256(key + nonce).digest()
-            return bytes(c ^ s for c, s in zip(ciphertext, stream * (len(ciphertext) // 32 + 1)))
+            return bytes(
+                c ^ s for c, s in zip(ciphertext, stream * (len(ciphertext) // 32 + 1))
+            )
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # THE VAULT
 # ═══════════════════════════════════════════════════════════════════════════════
+
 
 class Vault:
     """
@@ -261,7 +271,7 @@ class Vault:
         owner_id: str,
         data: Union[Dict, List, str, bytes],
         entry_id: Optional[str] = None,
-        metadata: Optional[Dict] = None
+        metadata: Optional[Dict] = None,
     ) -> str:
         """
         Store encrypted data in the Vault.
@@ -290,7 +300,7 @@ class Vault:
             ciphertext, nonce = self.encryption.encrypt(key, plaintext)
         else:
             ciphertext = plaintext
-            nonce = b''
+            nonce = b""
 
         # Check for existing entry (update)
         version = 1
@@ -308,7 +318,7 @@ class Vault:
             created_at=created_at,
             updated_at=now,
             version=version,
-            metadata=metadata or {}
+            metadata=metadata or {},
         )
 
         # Store
@@ -339,7 +349,7 @@ class Vault:
         entry = self._entries[entry_id]
 
         if entry.owner_id != owner_id:
-            raise PermissionError(f"Entry owned by different identity")
+            raise PermissionError("Entry owned by different identity")
 
         key, _ = self._keys[owner_id]
 
@@ -366,7 +376,7 @@ class Vault:
                 "created_at": self._entries[eid].created_at,
                 "updated_at": self._entries[eid].updated_at,
                 "version": self._entries[eid].version,
-                "metadata": self._entries[eid].metadata
+                "metadata": self._entries[eid].metadata,
             }
             for eid in self._owner_index[owner_id]
             if eid in self._entries
@@ -379,7 +389,7 @@ class Vault:
 
         entry = self._entries[entry_id]
         if entry.owner_id != owner_id:
-            raise PermissionError(f"Entry owned by different identity")
+            raise PermissionError("Entry owned by different identity")
 
         del self._entries[entry_id]
 
@@ -396,16 +406,13 @@ class Vault:
     # ─────────────────────────────────────────────────────────────────────────
 
     def store_constraints(
-        self,
-        owner_id: str,
-        constraints: List[Dict],
-        name: Optional[str] = None
+        self, owner_id: str, constraints: List[Dict], name: Optional[str] = None
     ) -> str:
         """Store a constraint set."""
         return self.store(
             owner_id=owner_id,
             data={"constraints": constraints, "name": name or "unnamed"},
-            metadata={"type": "constraint_set", "count": len(constraints)}
+            metadata={"type": "constraint_set", "count": len(constraints)},
         )
 
     def retrieve_constraints(self, owner_id: str, entry_id: str) -> List[Dict]:
@@ -427,12 +434,12 @@ class Vault:
         # Save entries
         entries_file = path / "entries.json"
         entries_data = {eid: entry.to_dict() for eid, entry in self._entries.items()}
-        with open(entries_file, 'w') as f:
+        with open(entries_file, "w") as f:
             json.dump(entries_data, f, indent=2)
 
         # Save index
         index_file = path / "index.json"
-        with open(index_file, 'w') as f:
+        with open(index_file, "w") as f:
             json.dump(self._owner_index, f, indent=2)
 
     def _load(self):
@@ -446,7 +453,7 @@ class Vault:
         entries_file = path / "entries.json"
         if entries_file.exists():
             try:
-                with open(entries_file, 'r') as f:
+                with open(entries_file, "r") as f:
                     entries_data = json.load(f)
                 self._entries = {
                     eid: VaultEntry.from_dict(data)
@@ -459,7 +466,7 @@ class Vault:
         index_file = path / "index.json"
         if index_file.exists():
             try:
-                with open(index_file, 'r') as f:
+                with open(index_file, "r") as f:
                     self._owner_index = json.load(f)
             except (json.JSONDecodeError, IOError):
                 pass
@@ -475,7 +482,7 @@ class Vault:
             "total_owners": len(self._owner_index),
             "unlocked_identities": len(self._keys),
             "encryption_enabled": self.config.encryption_enabled,
-            "crypto_library_available": CRYPTO_AVAILABLE
+            "crypto_library_available": CRYPTO_AVAILABLE,
         }
 
 
@@ -484,6 +491,7 @@ class Vault:
 # ═══════════════════════════════════════════════════════════════════════════════
 
 _default_vault: Optional[Vault] = None
+
 
 def get_vault(config: Optional[VaultConfig] = None) -> Vault:
     """Get the default Vault instance."""
@@ -501,7 +509,9 @@ if __name__ == "__main__":
     print("Newton Vault - Encrypted Constraint Storage")
     print("=" * 60)
 
-    vault = Vault(VaultConfig(storage_path=".newton_vault_test", encryption_enabled=True))
+    vault = Vault(
+        VaultConfig(storage_path=".newton_vault_test", encryption_enabled=True)
+    )
 
     # Register identity
     print("\n[Register Identity]")
@@ -512,7 +522,7 @@ if __name__ == "__main__":
     print("\n[Store Constraints]")
     constraints = [
         {"field": "amount", "operator": "lt", "value": 1000},
-        {"field": "category", "operator": "ne", "value": "blocked"}
+        {"field": "category", "operator": "ne", "value": "blocked"},
     ]
     entry_id = vault.store_constraints(owner_id, constraints, name="spending_limits")
     print(f"  Stored constraint set: {entry_id}")

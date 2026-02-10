@@ -18,7 +18,9 @@ class IntakeRequest(BaseModel):
     metadata: Dict[str, Any] = {}
 
 
-def extract_omega_from_prompt(prompt: str, metadata: Optional[Dict[str, Any]] = None) -> Omega:
+def extract_omega_from_prompt(
+    prompt: str, metadata: Optional[Dict[str, Any]] = None
+) -> Omega:
     metadata = metadata or {}
     # simple regex-based extraction for MVP
     word_min = None
@@ -52,7 +54,9 @@ def extract_omega_from_prompt(prompt: str, metadata: Optional[Dict[str, Any]] = 
             except Exception:
                 due = None
 
-    cit_required = bool(re.search(r"\b(cite|citation|references|reference)\b", prompt, flags=re.I))
+    cit_required = bool(
+        re.search(r"\b(cite|citation|references|reference)\b", prompt, flags=re.I)
+    )
     citations = CitationRequirement(required=cit_required)
 
     omega = Omega(
@@ -86,7 +90,15 @@ async def intake(req: IntakeRequest, use_llm: bool = False):
         raise HTTPException(status_code=500, detail=str(e))
     # Audit the intake
     try:
-        log_event("intake", payload={"prompt": req.prompt}, result="ok", metadata={"word_count_min": o.word_count_min, "word_count_max": o.word_count_max})
+        log_event(
+            "intake",
+            payload={"prompt": req.prompt},
+            result="ok",
+            metadata={
+                "word_count_min": o.word_count_min,
+                "word_count_max": o.word_count_max,
+            },
+        )
     except Exception:
         pass
 

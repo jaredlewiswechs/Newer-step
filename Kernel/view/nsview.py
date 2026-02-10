@@ -10,16 +10,17 @@ NSView provides:
  - hidden / alpha / needs_display flags
  - tag-based lookup
 """
+
 from __future__ import annotations
-from typing import List, Optional, Tuple, Dict, Any
-from dataclasses import dataclass, field
+from typing import List, Optional, Tuple, Any
+from dataclasses import dataclass
 import uuid
 
 from Kernel.runtime.responder import NSResponder
 from Kernel.runtime.event import NSEvent
 
-
 # ── geometry helpers ──────────────────────────────────────────────
+
 
 @dataclass
 class NSRect:
@@ -29,8 +30,9 @@ class NSRect:
     height: float = 0.0
 
     def contains(self, px: float, py: float) -> bool:
-        return (self.x <= px <= self.x + self.width and
-                self.y <= py <= self.y + self.height)
+        return (
+            self.x <= px <= self.x + self.width and self.y <= py <= self.y + self.height
+        )
 
     def __iter__(self):
         return iter((self.x, self.y, self.width, self.height))
@@ -43,6 +45,7 @@ class NSSize:
 
 
 # ── NSView ────────────────────────────────────────────────────────
+
 
 class NSView(NSResponder):
     """A rectangular area in a window that draws content and handles events."""
@@ -120,8 +123,9 @@ class NSView(NSResponder):
         self._propagate_window(view, self._window)
         self.set_needs_display()
 
-    def add_subview_positioned(self, view: NSView, relative_to: Optional[NSView],
-                               above: bool = True):
+    def add_subview_positioned(
+        self, view: NSView, relative_to: Optional[NSView], above: bool = True
+    ):
         if view._superview is not None:
             view.remove_from_superview()
         view._superview = self
@@ -170,7 +174,9 @@ class NSView(NSResponder):
 
     # ── coordinate conversion ─────────────────────────────────────
 
-    def convert_point_to(self, point: Tuple[float, float], to_view: Optional[NSView]) -> Tuple[float, float]:
+    def convert_point_to(
+        self, point: Tuple[float, float], to_view: Optional[NSView]
+    ) -> Tuple[float, float]:
         """Convert a point from this view's coordinate system to to_view's (or window if None)."""
         # convert to window coords first
         wx, wy = self._to_window_coords(point[0], point[1])
@@ -178,7 +184,9 @@ class NSView(NSResponder):
             return (wx, wy)
         return to_view._from_window_coords(wx, wy)
 
-    def convert_point_from(self, point: Tuple[float, float], from_view: Optional[NSView]) -> Tuple[float, float]:
+    def convert_point_from(
+        self, point: Tuple[float, float], from_view: Optional[NSView]
+    ) -> Tuple[float, float]:
         """Convert a point from from_view's coordinate system (or window) to this view."""
         if from_view is None:
             return self._from_window_coords(point[0], point[1])
@@ -297,7 +305,7 @@ class NSView(NSResponder):
         if self._hidden:
             return ""
         parts = []
-        opacity = f' opacity="{self._alpha}"' if self._alpha < 1.0 else ''
+        opacity = f' opacity="{self._alpha}"' if self._alpha < 1.0 else ""
         parts.append(
             f'<g transform="translate({self._frame.x},{self._frame.y})"{opacity} '
             f'data-view-id="{self._identifier}">'
@@ -305,7 +313,7 @@ class NSView(NSResponder):
         parts.append(self.draw())
         for sv in self._subviews:
             parts.append(sv.render_tree())
-        parts.append('</g>')
+        parts.append("</g>")
         return "\n".join(parts)
 
     # ── tracking areas & gesture recognizers ──────────────────────
@@ -392,11 +400,14 @@ class NSView(NSResponder):
         self._tooltip = v
 
     def __repr__(self):
-        return (f"<NSView id={self._identifier} frame=({self._frame.x},{self._frame.y},"
-                f"{self._frame.width},{self._frame.height}) subs={len(self._subviews)}>")
+        return (
+            f"<NSView id={self._identifier} frame=({self._frame.x},{self._frame.y},"
+            f"{self._frame.width},{self._frame.height}) subs={len(self._subviews)}>"
+        )
 
 
 # ── NSViewController ──────────────────────────────────────────────
+
 
 class NSViewController:
     """Manages an NSView and its lifecycle."""

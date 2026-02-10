@@ -62,7 +62,7 @@ def demo_blind_geometry_tests() -> None:
         print(f"\n--- Test Case: {word} ---")
         assembly = WordAssemblyAnalyzer.analyze(word)
 
-        print(f"\nLetter Decomposition:")
+        print("\nLetter Decomposition:")
         for role in assembly.letters:
             pos = role.position.value.upper()
             print(f"  {role.letter} ({pos}): {role.glyph_mechanics.mechanical_role}")
@@ -178,7 +178,7 @@ def demo_compiler() -> None:
     print(f"f/g Ratio: {proof.f_demand:.2f}/{proof.g_ground:.2f} = {proof.fg_ratio:.2f}")
     print(f"Admissible: {proof.is_admissible}")
     if proof.structural_failures:
-        print(f"Failures:")
+        print("Failures:")
         for failure in proof.structural_failures:
             print(f"  - {failure}")
 
@@ -189,7 +189,7 @@ def demo_compiler() -> None:
         "TRIM",
         "repeated nose-down commands at dive magnitude"
     )
-    print(f"Action Word: TRIM")
+    print("Action Word: TRIM")
     print(f"Target Description: '{proof.input_text}'")
     if warning:
         print(f"WARNING: {warning}")
@@ -239,11 +239,11 @@ def demo_v11_refinements() -> None:
 
     # TRUST/DOUBT example from refinement
     analysis = AntonymAnalyzer.analyze("TRUST", "DOUBT")
-    print(f"\n  TRUST vs DOUBT:")
+    print("\n  TRUST vs DOUBT:")
     print(f"    Dictionary Antonym: {analysis.is_dictionary_antonym}")
     print(f"    Geometric Antonym: {analysis.is_geometric_antonym}")
     print(f"    Type: {analysis.antonym_type.value}")
-    print(f"    Note: DOUBT is contained uncertainty, not inverse trust")
+    print("    Note: DOUBT is contained uncertainty, not inverse trust")
 
 
 def main():

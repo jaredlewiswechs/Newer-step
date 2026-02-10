@@ -6,16 +6,12 @@ Schedule recurring tasks with verification.
 Like ChatGPT Tasks but with reliability guarantees.
 """
 
-import hashlib
 import threading
 import time
-from dataclasses import dataclass, field as dataclass_field
 from datetime import datetime, timedelta
-from enum import Enum
 from typing import Any, Callable, Dict, List, Optional
 import json
 import os
-import re
 
 from .schema import (
     ScheduledTask,

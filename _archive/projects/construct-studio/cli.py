@@ -23,12 +23,9 @@ Commands in REPL:
 """
 
 from __future__ import annotations
-import sys
 import cmd
-import json
 import argparse
-from typing import Optional, Dict, Any, List
-from datetime import datetime
+from typing import Dict
 
 try:
     from .core import Matter, Floor, Force, attempt, ConstructError, OntologicalDeath
@@ -38,10 +35,10 @@ try:
     from .cartridges.infrastructure import DeploymentQuota, DeploymentSpec, simulate_deployments
     from .cartridges.risk import RiskBudget, RiskPosition, simulate_portfolio
 except ImportError:
-    from core import Matter, Floor, Force, attempt, ConstructError, OntologicalDeath
+    from core import Matter, attempt
     from ledger import Ledger, global_ledger
-    from engine import ConstructEngine, SimulationMode, SimulationResult
-    from cartridges.finance import CorporateCard, spend, simulate_spending
+    from engine import ConstructEngine, SimulationMode
+    from cartridges.finance import CorporateCard, simulate_spending
     from cartridges.infrastructure import DeploymentQuota, DeploymentSpec, simulate_deployments
     from cartridges.risk import RiskBudget, RiskPosition, simulate_portfolio
 
@@ -196,15 +193,15 @@ class ConstructREPL(cmd.Cmd):
 
         if preset in ("card", "corporate", "finance"):
             floor = self.engine.register_floor(CorporateCard, "CorporateCard")
-            print(colored(f"  Created CorporateCard floor (budget: 5000 USD)", Colors.GREEN))
+            print(colored("  Created CorporateCard floor (budget: 5000 USD)", Colors.GREEN))
 
         elif preset in ("quota", "deploy", "infra"):
             floor = self.engine.register_floor(DeploymentQuota, "DeploymentQuota")
-            print(colored(f"  Created DeploymentQuota floor (cpu: 64 vCPU, memory: 256 GB)", Colors.GREEN))
+            print(colored("  Created DeploymentQuota floor (cpu: 64 vCPU, memory: 256 GB)", Colors.GREEN))
 
         elif preset in ("risk", "budget"):
             floor = self.engine.register_floor(RiskBudget, "RiskBudget")
-            print(colored(f"  Created RiskBudget floor (total: 0.20 probability)", Colors.GREEN))
+            print(colored("  Created RiskBudget floor (total: 0.20 probability)", Colors.GREEN))
 
         else:
             print(colored(f"  Unknown preset: {preset}", Colors.RED))
@@ -276,7 +273,7 @@ class ConstructREPL(cmd.Cmd):
         floor = self.engine.get_floor(floor_name)
         if floor is None:
             print(colored(f"  Error: floor '{floor_name}' not found", Colors.RED))
-            print(colored(f"  Use 'floor <preset>' to create one first.", Colors.DIM))
+            print(colored("  Use 'floor <preset>' to create one first.", Colors.DIM))
             return
 
         # Find capacity
@@ -300,18 +297,18 @@ class ConstructREPL(cmd.Cmd):
 
         print()
         print(colored(f"  Applying force: {matter} >> {floor_name}.{capacity.name}", Colors.CYAN))
-        print(colored(f"  ─────────────────────────────────────────", Colors.DIM))
+        print(colored("  ─────────────────────────────────────────", Colors.DIM))
 
         with attempt():
             result = matter >> capacity
 
             if result.success:
-                print(colored(f"  ✓ FORCE ABSORBED", Colors.GREEN))
+                print(colored("  ✓ FORCE ABSORBED", Colors.GREEN))
                 print(f"    Ratio: {result.ratio.percentage:.1f}%")
                 print(f"    Remaining: {capacity.remaining}")
                 print(f"    Utilization: {capacity.utilization:.1%}")
             else:
-                print(colored(f"  ✗ ONTOLOGICAL DEATH", Colors.RED))
+                print(colored("  ✗ ONTOLOGICAL DEATH", Colors.RED))
                 print(f"    Overflow: {result.ratio.overflow} {unit}")
                 print(f"    Available: {capacity.remaining}")
                 print(f"    Requested: {value} {unit}")

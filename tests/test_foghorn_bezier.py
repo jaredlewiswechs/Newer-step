@@ -14,8 +14,7 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from foghorn.bezier import (
-    Point, BezierCurve, CurveType, RelationshipStyle,
-    CurveFactory, CurveStore, get_curve_store, render_curves_svg
+    Point, BezierCurve, CurveType, CurveFactory, CurveStore, render_curves_svg
 )
 
 

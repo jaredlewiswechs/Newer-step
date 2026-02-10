@@ -24,22 +24,17 @@ Pipeline: Natural Language → Constraint Extraction → Formal Spec → Verifie
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Tuple, Union
 from enum import Enum
-from datetime import datetime, timedelta
 import hashlib
 import json
 import re
 import time
-import uuid
 
-from .cdl import (
-    Domain, Operator, AtomicConstraint, CompositeConstraint,
-    ConditionalConstraint, RatioConstraint, parse_duration
-)
-
+from .cdl import Domain, Operator, AtomicConstraint, CompositeConstraint
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # CONSTRAINT CATEGORIES - What types of constraints exist in natural language?
 # ═══════════════════════════════════════════════════════════════════════════════
+
 
 class ConstraintCategory(Enum):
     """
@@ -48,14 +43,15 @@ class ConstraintCategory(Enum):
     Based on Jared's insight: Every natural language statement about requirements
     contains implicit or explicit constraints that can be formalized.
     """
-    NUMERIC = "numeric"           # Quantities, counts, amounts
-    TEMPORAL = "temporal"         # Time, duration, scheduling
-    RELATIONAL = "relational"     # Group dynamics, consensus
-    QUALITATIVE = "qualitative"   # Subjective → objective mapping
-    SPATIAL = "spatial"           # Location, distance, geography
-    SAFETY = "safety"             # Risk, verification, compliance
-    BUDGETARY = "budgetary"       # Cost, value, affordability
-    PREFERENCE = "preference"     # Wants vs requirements (soft vs hard)
+
+    NUMERIC = "numeric"  # Quantities, counts, amounts
+    TEMPORAL = "temporal"  # Time, duration, scheduling
+    RELATIONAL = "relational"  # Group dynamics, consensus
+    QUALITATIVE = "qualitative"  # Subjective → objective mapping
+    SPATIAL = "spatial"  # Location, distance, geography
+    SAFETY = "safety"  # Risk, verification, compliance
+    BUDGETARY = "budgetary"  # Cost, value, affordability
+    PREFERENCE = "preference"  # Wants vs requirements (soft vs hard)
 
 
 class ConstraintStrength(Enum):
@@ -66,8 +62,9 @@ class ConstraintStrength(Enum):
     SOFT constraints are preferences that can be traded off.
     IMPLICIT constraints are inferred from context.
     """
-    HARD = "hard"       # Must be satisfied (finfr if violated)
-    SOFT = "soft"       # Preference, can be traded off
+
+    HARD = "hard"  # Must be satisfied (finfr if violated)
+    SOFT = "soft"  # Preference, can be traded off
     IMPLICIT = "implicit"  # Inferred, not explicitly stated
 
 
@@ -80,15 +77,17 @@ class ConstraintPolarity(Enum):
     PREFER: Should include (soft positive)
     AVOID: Should not include (soft negative)
     """
-    REQUIRE = "require"   # and X
-    FORBID = "forbid"     # not X (finfr if X)
-    PREFER = "prefer"     # should X
-    AVOID = "avoid"       # should not X
+
+    REQUIRE = "require"  # and X
+    FORBID = "forbid"  # not X (finfr if X)
+    PREFER = "prefer"  # should X
+    AVOID = "avoid"  # should not X
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # EXTRACTED CONSTRAINT - The output of constraint extraction
 # ═══════════════════════════════════════════════════════════════════════════════
+
 
 @dataclass
 class ExtractedConstraint:
@@ -98,28 +97,29 @@ class ExtractedConstraint:
     This is the intermediate representation between fuzzy natural language
     and formal CDL/TinyTalk specifications.
     """
+
     id: str
     category: ConstraintCategory
     strength: ConstraintStrength
     polarity: ConstraintPolarity
 
     # The constraint specification
-    field: str                    # What is being constrained
-    operator: Operator            # How it's being constrained
-    value: Any                    # The constraint value
+    field: str  # What is being constrained
+    operator: Operator  # How it's being constrained
+    value: Any  # The constraint value
 
     # Context and provenance
-    source_text: str              # Original natural language
-    confidence: float             # Extraction confidence (0-1)
-    reasoning: str                # Why this constraint was extracted
+    source_text: str  # Original natural language
+    confidence: float  # Extraction confidence (0-1)
+    reasoning: str  # Why this constraint was extracted
 
     # For complex constraints
-    sub_constraints: List['ExtractedConstraint'] = field(default_factory=list)
+    sub_constraints: List["ExtractedConstraint"] = field(default_factory=list)
     conditions: List[str] = field(default_factory=list)
 
     # Metadata
     domain: Domain = Domain.CUSTOM
-    action: str = "reject"        # What to do if violated
+    action: str = "reject"  # What to do if violated
     message: Optional[str] = None
 
     def to_cdl(self) -> Union[AtomicConstraint, CompositeConstraint]:
@@ -132,14 +132,14 @@ class ExtractedConstraint:
                 value=self.value,
                 message=self.message or f"Constraint from: {self.source_text}",
                 action=self.action,
-                id=self.id
+                id=self.id,
             )
         else:
             logic = "and" if self.polarity == ConstraintPolarity.REQUIRE else "or"
             return CompositeConstraint(
                 logic=logic,
                 constraints=[sub.to_cdl() for sub in self.sub_constraints],
-                id=self.id
+                id=self.id,
             )
 
     def to_tinytalk(self) -> str:
@@ -186,6 +186,7 @@ class ExtractedConstraint:
 # EXTRACTION RESULT - Full extraction output with verification certificates
 # ═══════════════════════════════════════════════════════════════════════════════
 
+
 @dataclass
 class ExtractionResult:
     """
@@ -194,20 +195,21 @@ class ExtractionResult:
     Includes the extracted constraints, verification certificates,
     and cryptographic proofs for audit trails.
     """
+
     id: str
     source_text: str
     timestamp: float
 
     # Extracted structure
-    action: str                   # Primary action detected
-    subject: Dict[str, Any]       # Who/what is the subject
-    objects: List[Dict[str, Any]] # What is being acted upon
+    action: str  # Primary action detected
+    subject: Dict[str, Any]  # Who/what is the subject
+    objects: List[Dict[str, Any]]  # What is being acted upon
     constraints: List[ExtractedConstraint]
 
     # Verification
-    all_extractable: bool         # Were all constraints extracted?
-    ambiguities: List[str]        # What couldn't be resolved?
-    assumptions: List[str]        # What was assumed?
+    all_extractable: bool  # Were all constraints extracted?
+    ambiguities: List[str]  # What couldn't be resolved?
+    assumptions: List[str]  # What was assumed?
 
     # Cryptographic proof
     merkle_root: str
@@ -215,11 +217,14 @@ class ExtractionResult:
 
     def generate_proof(self) -> str:
         """Generate merkle proof of extraction."""
-        data = json.dumps({
-            "source": self.source_text,
-            "constraints": [c.to_dict() for c in self.constraints],
-            "timestamp": self.timestamp
-        }, sort_keys=True)
+        data = json.dumps(
+            {
+                "source": self.source_text,
+                "constraints": [c.to_dict() for c in self.constraints],
+                "timestamp": self.timestamp,
+            },
+            sort_keys=True,
+        )
         return hashlib.sha256(data.encode()).hexdigest()
 
     def to_cdl_spec(self) -> Dict[str, Any]:
@@ -229,8 +234,8 @@ class ExtractionResult:
             "constraints": [c.to_cdl() for c in self.constraints],
             "verification": {
                 "merkle_root": self.merkle_root,
-                "timestamp": self.timestamp
-            }
+                "timestamp": self.timestamp,
+            },
         }
 
     def to_tinytalk_blueprint(self, name: str = "ExtractedPlan") -> str:
@@ -253,7 +258,7 @@ class ExtractionResult:
         # Add laws for each constraint
         for i, c in enumerate(self.constraints):
             if c.strength == ConstraintStrength.HARD:
-                lines.append(f"    @law")
+                lines.append("    @law")
                 lines.append(f"    def constraint_{i}(self):")
                 lines.append(f'        """{c.source_text}"""')
                 lines.append(f"        {c.to_tinytalk()}")
@@ -276,14 +281,15 @@ class ExtractionResult:
             "assumptions": self.assumptions,
             "verification": {
                 "merkle_root": self.merkle_root,
-                "signature": self.signature
-            }
+                "signature": self.signature,
+            },
         }
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # EXTRACTION PATTERNS - Natural Language → Constraint Mapping
 # ═══════════════════════════════════════════════════════════════════════════════
+
 
 class ExtractionPatterns:
     """
@@ -303,69 +309,69 @@ class ExtractionPatterns:
     NUMERIC_PATTERNS = {
         # "at least X"
         "at_least": (
-            r'\bat\s+least\s+(\d+(?:\.\d+)?)\s*(\w+)?',
+            r"\bat\s+least\s+(\d+(?:\.\d+)?)\s*(\w+)?",
             Operator.GE,
-            ConstraintPolarity.REQUIRE
+            ConstraintPolarity.REQUIRE,
         ),
         # "at most X"
         "at_most": (
-            r'\bat\s+most\s+(\d+(?:\.\d+)?)\s*(\w+)?',
+            r"\bat\s+most\s+(\d+(?:\.\d+)?)\s*(\w+)?",
             Operator.LE,
-            ConstraintPolarity.REQUIRE
+            ConstraintPolarity.REQUIRE,
         ),
         # "no more than X"
         "no_more_than": (
-            r'\bno\s+more\s+than\s+(\d+(?:\.\d+)?)\s*(\w+)?',
+            r"\bno\s+more\s+than\s+(\d+(?:\.\d+)?)\s*(\w+)?",
             Operator.LE,
-            ConstraintPolarity.FORBID
+            ConstraintPolarity.FORBID,
         ),
         # "no less than X"
         "no_less_than": (
-            r'\bno\s+less\s+than\s+(\d+(?:\.\d+)?)\s*(\w+)?',
+            r"\bno\s+less\s+than\s+(\d+(?:\.\d+)?)\s*(\w+)?",
             Operator.GE,
-            ConstraintPolarity.FORBID
+            ConstraintPolarity.FORBID,
         ),
         # "exactly X"
         "exactly": (
-            r'\bexactly\s+(\d+(?:\.\d+)?)\s*(\w+)?',
+            r"\bexactly\s+(\d+(?:\.\d+)?)\s*(\w+)?",
             Operator.EQ,
-            ConstraintPolarity.REQUIRE
+            ConstraintPolarity.REQUIRE,
         ),
         # "X or more"
         "or_more": (
-            r'\b(\d+(?:\.\d+)?)\s+or\s+more\s*(\w+)?',
+            r"\b(\d+(?:\.\d+)?)\s+or\s+more\s*(\w+)?",
             Operator.GE,
-            ConstraintPolarity.REQUIRE
+            ConstraintPolarity.REQUIRE,
         ),
         # "X or fewer"
         "or_fewer": (
-            r'\b(\d+(?:\.\d+)?)\s+or\s+(?:fewer|less)\s*(\w+)?',
+            r"\b(\d+(?:\.\d+)?)\s+or\s+(?:fewer|less)\s*(\w+)?",
             Operator.LE,
-            ConstraintPolarity.REQUIRE
+            ConstraintPolarity.REQUIRE,
         ),
         # "between X and Y"
         "between": (
-            r'\bbetween\s+(\d+(?:\.\d+)?)\s+and\s+(\d+(?:\.\d+)?)\s*(\w+)?',
+            r"\bbetween\s+(\d+(?:\.\d+)?)\s+and\s+(\d+(?:\.\d+)?)\s*(\w+)?",
             None,  # Special handling for range
-            ConstraintPolarity.REQUIRE
+            ConstraintPolarity.REQUIRE,
         ),
         # "under X" / "below X"
         "under": (
-            r'\b(?:under|below)\s+(\d+(?:\.\d+)?)\s*(\w+)?',
+            r"\b(?:under|below)\s+(\d+(?:\.\d+)?)\s*(\w+)?",
             Operator.LT,
-            ConstraintPolarity.REQUIRE
+            ConstraintPolarity.REQUIRE,
         ),
         # "over X" / "above X"
         "over": (
-            r'\b(?:over|above)\s+(\d+(?:\.\d+)?)\s*(\w+)?',
+            r"\b(?:over|above)\s+(\d+(?:\.\d+)?)\s*(\w+)?",
             Operator.GT,
-            ConstraintPolarity.REQUIRE
+            ConstraintPolarity.REQUIRE,
         ),
         # "need/require/want X items" - basic numeric extraction
         "basic_count": (
-            r'\b(?:need|require|want|have)\s+(\d+(?:\.\d+)?)\s+(\w+)',
+            r"\b(?:need|require|want|have)\s+(\d+(?:\.\d+)?)\s+(\w+)",
             Operator.GE,
-            ConstraintPolarity.REQUIRE
+            ConstraintPolarity.REQUIRE,
         ),
     }
 
@@ -376,39 +382,39 @@ class ExtractionPatterns:
     TEMPORAL_PATTERNS = {
         # "before X"
         "before": (
-            r'\bbefore\s+(\d{1,2}(?::\d{2})?\s*(?:am|pm)?|\d{1,2}(?::\d{2})?)',
+            r"\bbefore\s+(\d{1,2}(?::\d{2})?\s*(?:am|pm)?|\d{1,2}(?::\d{2})?)",
             Operator.BEFORE,
-            ConstraintPolarity.REQUIRE
+            ConstraintPolarity.REQUIRE,
         ),
         # "after X"
         "after": (
-            r'\bafter\s+(\d{1,2}(?::\d{2})?\s*(?:am|pm)?|\d{1,2}(?::\d{2})?)',
+            r"\bafter\s+(\d{1,2}(?::\d{2})?\s*(?:am|pm)?|\d{1,2}(?::\d{2})?)",
             Operator.AFTER,
-            ConstraintPolarity.REQUIRE
+            ConstraintPolarity.REQUIRE,
         ),
         # "within X hours/days"
         "within_duration": (
-            r'\bwithin\s+(\d+)\s*(hour|day|week|month)s?',
+            r"\bwithin\s+(\d+)\s*(hour|day|week|month)s?",
             Operator.WITHIN,
-            ConstraintPolarity.REQUIRE
+            ConstraintPolarity.REQUIRE,
         ),
         # "for X weeks/days"
         "for_duration": (
-            r'\bfor\s+(\d+)\s*(week|day|month|year)s?',
+            r"\bfor\s+(\d+)\s*(week|day|month|year)s?",
             None,  # Duration extraction
-            ConstraintPolarity.REQUIRE
+            ConstraintPolarity.REQUIRE,
         ),
         # "no later than"
         "no_later_than": (
-            r'\bno\s+later\s+than\s+(.+?)(?:\.|,|$)',
+            r"\bno\s+later\s+than\s+(.+?)(?:\.|,|$)",
             Operator.LE,
-            ConstraintPolarity.FORBID
+            ConstraintPolarity.FORBID,
         ),
         # "in X" (months, like "in December")
         "in_month": (
-            r'\bin\s+(january|february|march|april|may|june|july|august|september|october|november|december)',
+            r"\bin\s+(january|february|march|april|may|june|july|august|september|october|november|december)",
             Operator.EQ,
-            ConstraintPolarity.REQUIRE
+            ConstraintPolarity.REQUIRE,
         ),
     }
 
@@ -422,28 +428,24 @@ class ExtractionPatterns:
     QUALITATIVE_INVERSIONS = {
         # Budget qualifiers - describe what the word MEANS
         # "expensive" means high cost, negated → we want cost < high
-        "expensive": ("cost", Operator.GE, "high"),      # expensive = high cost
-        "cheap": ("cost", Operator.LE, "low"),           # cheap = low cost
-        "affordable": ("cost", Operator.LE, "moderate"), # affordable = moderate cost
-        "budget": ("cost", Operator.LE, "low"),          # budget = low cost
-        "luxury": ("quality", Operator.GE, "high"),      # luxury = high quality
-
+        "expensive": ("cost", Operator.GE, "high"),  # expensive = high cost
+        "cheap": ("cost", Operator.LE, "low"),  # cheap = low cost
+        "affordable": ("cost", Operator.LE, "moderate"),  # affordable = moderate cost
+        "budget": ("cost", Operator.LE, "low"),  # budget = low cost
+        "luxury": ("quality", Operator.GE, "high"),  # luxury = high quality
         # Safety qualifiers
         "safe": ("safety_rating", Operator.GE, "high"),  # safe = high safety
         "dangerous": ("safety_rating", Operator.LE, "low"),  # dangerous = low safety
-        "risky": ("risk_level", Operator.GE, "moderate"),    # risky = high risk
-        "secure": ("security_level", Operator.GE, "high"),   # secure = high security
-
+        "risky": ("risk_level", Operator.GE, "moderate"),  # risky = high risk
+        "secure": ("security_level", Operator.GE, "high"),  # secure = high security
         # Time qualifiers
-        "early": ("time", Operator.LE, "morning"),   # early = morning time
-        "late": ("time", Operator.GE, "evening"),    # late = evening time
-        "night": ("time", Operator.GE, "night"),     # night = night time
-
+        "early": ("time", Operator.LE, "morning"),  # early = morning time
+        "late": ("time", Operator.GE, "evening"),  # late = evening time
+        "night": ("time", Operator.GE, "night"),  # night = night time
         # Quality qualifiers
-        "good": ("quality", Operator.GE, "good"),        # good = high quality
-        "bad": ("quality", Operator.LE, "acceptable"),   # bad = low quality
+        "good": ("quality", Operator.GE, "good"),  # good = high quality
+        "bad": ("quality", Operator.LE, "acceptable"),  # bad = low quality
         "excellent": ("quality", Operator.GE, "excellent"),
-
         # Size qualifiers
         "small": ("size", Operator.LE, "medium"),
         "large": ("size", Operator.GE, "medium"),
@@ -472,21 +474,21 @@ class ExtractionPatterns:
     GROUP_PATTERNS = {
         # "X friends" / "X people"
         "group_size": (
-            r'\b(\d+)\s*(?:friends?|people|persons?|members?|guests?)',
+            r"\b(\d+)\s*(?:friends?|people|persons?|members?|guests?)",
             "group_size",
-            Operator.EQ
+            Operator.EQ,
         ),
         # "all of us" / "everyone"
         "all": (
-            r'\b(?:all\s+of\s+us|everyone|everybody|the\s+whole\s+group)',
+            r"\b(?:all\s+of\s+us|everyone|everybody|the\s+whole\s+group)",
             "consensus",
-            Operator.EQ
+            Operator.EQ,
         ),
         # "at least X people agree"
         "consensus": (
-            r'\b(?:at\s+least\s+)?(\d+)\s*(?:people|of\s+us)?\s*(?:agree|approve|confirm)',
+            r"\b(?:at\s+least\s+)?(\d+)\s*(?:people|of\s+us)?\s*(?:agree|approve|confirm)",
             "min_agreement",
-            Operator.GE
+            Operator.GE,
         ),
     }
 
@@ -521,6 +523,7 @@ class ExtractionPatterns:
 # ═══════════════════════════════════════════════════════════════════════════════
 # CONSTRAINT EXTRACTOR - The main extraction engine
 # ═══════════════════════════════════════════════════════════════════════════════
+
 
 class ConstraintExtractor:
     """
@@ -568,8 +571,7 @@ class ConstraintExtractor:
         ]
 
         self._negation_re = [
-            re.compile(p, re.IGNORECASE)
-            for p in ExtractionPatterns.NEGATION_PATTERNS
+            re.compile(p, re.IGNORECASE) for p in ExtractionPatterns.NEGATION_PATTERNS
         ]
 
     def extract(self, text: str) -> ExtractionResult:
@@ -582,7 +584,9 @@ class ConstraintExtractor:
         - Ambiguities and assumptions
         """
         text = text.strip()
-        extraction_id = f"EX_{hashlib.sha256(f'{text}{time.time()}'.encode()).hexdigest()[:12]}"
+        extraction_id = (
+            f"EX_{hashlib.sha256(f'{text}{time.time()}'.encode()).hexdigest()[:12]}"
+        )
         timestamp = time.time()
 
         constraints: List[ExtractedConstraint] = []
@@ -633,7 +637,7 @@ class ConstraintExtractor:
             ambiguities=ambiguities,
             assumptions=assumptions,
             merkle_root="",  # Will be computed
-            signature=""     # Will be computed
+            signature="",  # Will be computed
         )
 
         result.merkle_root = result.generate_proof()
@@ -645,11 +649,11 @@ class ConstraintExtractor:
         """Split text into sentences for processing."""
         # Split on sentence boundaries (but not decimal points like 4.5)
         # Look for period followed by space and capital letter, or end of string
-        sentences = re.split(r'(?<!\d)\.(?!\d)|\?|!', text)
+        sentences = re.split(r"(?<!\d)\.(?!\d)|\?|!", text)
         # Also split on semicolons and significant conjunctions
         expanded = []
         for s in sentences:
-            parts = re.split(r'[;]|(?:,\s*(?:and|but|or)\s+)', s)
+            parts = re.split(r"[;]|(?:,\s*(?:and|but|or)\s+)", s)
             expanded.extend(p.strip() for p in parts if p.strip())
         return expanded
 
@@ -659,13 +663,13 @@ class ConstraintExtractor:
 
         # Common action verbs
         actions = {
-            "take": r'\b(?:take|bring|transport)\b',
-            "plan": r'\b(?:plan|organize|arrange)\b',
-            "book": r'\b(?:book|reserve|schedule)\b',
-            "buy": r'\b(?:buy|purchase|get)\b',
-            "find": r'\b(?:find|search|look for)\b',
-            "calculate": r'\b(?:calculate|compute|determine)\b',
-            "verify": r'\b(?:verify|check|validate)\b',
+            "take": r"\b(?:take|bring|transport)\b",
+            "plan": r"\b(?:plan|organize|arrange)\b",
+            "book": r"\b(?:book|reserve|schedule)\b",
+            "buy": r"\b(?:buy|purchase|get)\b",
+            "find": r"\b(?:find|search|look for)\b",
+            "calculate": r"\b(?:calculate|compute|determine)\b",
+            "verify": r"\b(?:verify|check|validate)\b",
         }
 
         detected_action = "unknown"
@@ -677,16 +681,16 @@ class ConstraintExtractor:
         # Extract subject (usually "I", "we", or a named entity)
         subject = {"type": "individual", "count": 1}
 
-        if re.search(r'\bwe\b|\bour\b|\bus\b', text_lower):
+        if re.search(r"\bwe\b|\bour\b|\bus\b", text_lower):
             subject["type"] = "group"
             # Try to find group size
-            match = re.search(r'\b(\d+)\s*(?:friends?|people|of us)', text_lower)
+            match = re.search(r"\b(\d+)\s*(?:friends?|people|of us)", text_lower)
             if match:
                 # Add 1 for the speaker
                 subject["count"] = int(match.group(1)) + 1
 
-        if re.search(r'\bmy\s+(\d+)\s*friends?', text_lower):
-            match = re.search(r'\bmy\s+(\d+)\s*friends?', text_lower)
+        if re.search(r"\bmy\s+(\d+)\s*friends?", text_lower):
+            match = re.search(r"\bmy\s+(\d+)\s*friends?", text_lower)
             if match:
                 subject["count"] = int(match.group(1)) + 1
                 subject["type"] = "group"
@@ -699,26 +703,23 @@ class ConstraintExtractor:
 
         # Location patterns
         location_match = re.search(
-            r'\bto\s+([A-Z][a-zA-Z]+(?:\s+[A-Z][a-zA-Z]+)*)',
-            text
+            r"\bto\s+([A-Z][a-zA-Z]+(?:\s+[A-Z][a-zA-Z]+)*)", text
         )
         if location_match:
-            objects.append({
-                "type": "location",
-                "value": location_match.group(1)
-            })
+            objects.append({"type": "location", "value": location_match.group(1)})
 
         # Duration patterns
         duration_match = re.search(
-            r'\bfor\s+(\d+)\s*(day|week|month|year)s?',
-            text.lower()
+            r"\bfor\s+(\d+)\s*(day|week|month|year)s?", text.lower()
         )
         if duration_match:
-            objects.append({
-                "type": "duration",
-                "value": int(duration_match.group(1)),
-                "unit": duration_match.group(2)
-            })
+            objects.append(
+                {
+                    "type": "duration",
+                    "value": int(duration_match.group(1)),
+                    "unit": duration_match.group(2),
+                }
+            )
 
         return objects
 
@@ -727,7 +728,11 @@ class ConstraintExtractor:
         constraints = []
         text_lower = text.lower()
 
-        for name, (pattern_str, op, polarity) in ExtractionPatterns.NUMERIC_PATTERNS.items():
+        for name, (
+            pattern_str,
+            op,
+            polarity,
+        ) in ExtractionPatterns.NUMERIC_PATTERNS.items():
             pattern = re.compile(pattern_str, re.IGNORECASE)
             matches = pattern.findall(text_lower)
 
@@ -744,46 +749,52 @@ class ConstraintExtractor:
                     # Create two constraints: >= X and <= Y
                     field_name = match[2] if len(match) > 2 and match[2] else "value"
 
-                    constraints.append(ExtractedConstraint(
-                        id=self._generate_id(text, "lower"),
-                        category=ConstraintCategory.NUMERIC,
-                        strength=self._detect_strength(text),
-                        polarity=ConstraintPolarity.REQUIRE,
-                        field=field_name,
-                        operator=Operator.GE,
-                        value=float(match[0]),
-                        source_text=text,
-                        confidence=0.9,
-                        reasoning=f"Extracted lower bound from 'between {match[0]} and {match[1]}'"
-                    ))
+                    constraints.append(
+                        ExtractedConstraint(
+                            id=self._generate_id(text, "lower"),
+                            category=ConstraintCategory.NUMERIC,
+                            strength=self._detect_strength(text),
+                            polarity=ConstraintPolarity.REQUIRE,
+                            field=field_name,
+                            operator=Operator.GE,
+                            value=float(match[0]),
+                            source_text=text,
+                            confidence=0.9,
+                            reasoning=f"Extracted lower bound from 'between {match[0]} and {match[1]}'",
+                        )
+                    )
 
-                    constraints.append(ExtractedConstraint(
-                        id=self._generate_id(text, "upper"),
-                        category=ConstraintCategory.NUMERIC,
-                        strength=self._detect_strength(text),
-                        polarity=ConstraintPolarity.REQUIRE,
-                        field=field_name,
-                        operator=Operator.LE,
-                        value=float(match[1]),
-                        source_text=text,
-                        confidence=0.9,
-                        reasoning=f"Extracted upper bound from 'between {match[0]} and {match[1]}'"
-                    ))
+                    constraints.append(
+                        ExtractedConstraint(
+                            id=self._generate_id(text, "upper"),
+                            category=ConstraintCategory.NUMERIC,
+                            strength=self._detect_strength(text),
+                            polarity=ConstraintPolarity.REQUIRE,
+                            field=field_name,
+                            operator=Operator.LE,
+                            value=float(match[1]),
+                            source_text=text,
+                            confidence=0.9,
+                            reasoning=f"Extracted upper bound from 'between {match[0]} and {match[1]}'",
+                        )
+                    )
                 else:
                     field_name = unit if unit else "count"
 
-                    constraints.append(ExtractedConstraint(
-                        id=self._generate_id(text, name),
-                        category=ConstraintCategory.NUMERIC,
-                        strength=self._detect_strength(text),
-                        polarity=polarity,
-                        field=field_name,
-                        operator=op,
-                        value=value,
-                        source_text=text,
-                        confidence=0.85,
-                        reasoning=f"Extracted from '{name}' pattern: {pattern_str}"
-                    ))
+                    constraints.append(
+                        ExtractedConstraint(
+                            id=self._generate_id(text, name),
+                            category=ConstraintCategory.NUMERIC,
+                            strength=self._detect_strength(text),
+                            polarity=polarity,
+                            field=field_name,
+                            operator=op,
+                            value=value,
+                            source_text=text,
+                            confidence=0.85,
+                            reasoning=f"Extracted from '{name}' pattern: {pattern_str}",
+                        )
+                    )
 
         return constraints
 
@@ -792,7 +803,11 @@ class ConstraintExtractor:
         constraints = []
         text_lower = text.lower()
 
-        for name, (pattern_str, op, polarity) in ExtractionPatterns.TEMPORAL_PATTERNS.items():
+        for name, (
+            pattern_str,
+            op,
+            polarity,
+        ) in ExtractionPatterns.TEMPORAL_PATTERNS.items():
             pattern = re.compile(pattern_str, re.IGNORECASE)
             matches = pattern.findall(text_lower)
 
@@ -806,18 +821,20 @@ class ConstraintExtractor:
 
                 field_name = "time" if not unit else f"duration_{unit}"
 
-                constraints.append(ExtractedConstraint(
-                    id=self._generate_id(text, name),
-                    category=ConstraintCategory.TEMPORAL,
-                    strength=self._detect_strength(text),
-                    polarity=polarity,
-                    field=field_name,
-                    operator=op if op else Operator.EQ,
-                    value=value,
-                    source_text=text,
-                    confidence=0.8,
-                    reasoning=f"Extracted from temporal pattern: {name}"
-                ))
+                constraints.append(
+                    ExtractedConstraint(
+                        id=self._generate_id(text, name),
+                        category=ConstraintCategory.TEMPORAL,
+                        strength=self._detect_strength(text),
+                        polarity=polarity,
+                        field=field_name,
+                        operator=op if op else Operator.EQ,
+                        value=value,
+                        source_text=text,
+                        confidence=0.8,
+                        reasoning=f"Extracted from temporal pattern: {name}",
+                    )
+                )
 
         return constraints
 
@@ -833,8 +850,12 @@ class ConstraintExtractor:
         text_lower = text.lower()
 
         # Check for each qualitative term
-        for qualifier, (field, operator, level) in ExtractionPatterns.QUALITATIVE_INVERSIONS.items():
-            if re.search(rf'\b{qualifier}\b', text_lower):
+        for qualifier, (
+            field,
+            operator,
+            level,
+        ) in ExtractionPatterns.QUALITATIVE_INVERSIONS.items():
+            if re.search(rf"\b{qualifier}\b", text_lower):
                 # Check for negation
                 is_negated = self._is_negated(text_lower, qualifier)
 
@@ -850,9 +871,9 @@ class ConstraintExtractor:
                     "high": 0.8,
                     "moderate": 0.5,
                     "low": 0.3,
-                    "morning": 9,      # 9 AM
-                    "evening": 18,     # 6 PM
-                    "night": 21,       # 9 PM
+                    "morning": 9,  # 9 AM
+                    "evening": 18,  # 6 PM
+                    "night": 21,  # 9 PM
                     "good": 0.7,
                     "excellent": 0.9,
                     "acceptable": 0.5,
@@ -862,18 +883,20 @@ class ConstraintExtractor:
 
                 value = level_thresholds.get(level, 0.5)
 
-                constraints.append(ExtractedConstraint(
-                    id=self._generate_id(text, qualifier),
-                    category=ConstraintCategory.QUALITATIVE,
-                    strength=self._detect_strength(text),
-                    polarity=polarity,
-                    field=field,
-                    operator=operator,
-                    value=value,
-                    source_text=text,
-                    confidence=0.75,
-                    reasoning=f"Inverted qualitative '{qualifier}' to quantitative constraint on {field}"
-                ))
+                constraints.append(
+                    ExtractedConstraint(
+                        id=self._generate_id(text, qualifier),
+                        category=ConstraintCategory.QUALITATIVE,
+                        strength=self._detect_strength(text),
+                        polarity=polarity,
+                        field=field,
+                        operator=operator,
+                        value=value,
+                        source_text=text,
+                        confidence=0.75,
+                        reasoning=f"Inverted qualitative '{qualifier}' to quantitative constraint on {field}",
+                    )
+                )
 
         return constraints
 
@@ -899,18 +922,20 @@ class ConstraintExtractor:
                     if value in ["all", "everyone", "everybody"]:
                         value = "unanimous"
 
-                constraints.append(ExtractedConstraint(
-                    id=self._generate_id(text, name),
-                    category=ConstraintCategory.RELATIONAL,
-                    strength=ConstraintStrength.HARD,
-                    polarity=ConstraintPolarity.REQUIRE,
-                    field=field,
-                    operator=op,
-                    value=value,
-                    source_text=text,
-                    confidence=0.85,
-                    reasoning=f"Extracted group constraint from '{name}' pattern"
-                ))
+                constraints.append(
+                    ExtractedConstraint(
+                        id=self._generate_id(text, name),
+                        category=ConstraintCategory.RELATIONAL,
+                        strength=ConstraintStrength.HARD,
+                        polarity=ConstraintPolarity.REQUIRE,
+                        field=field,
+                        operator=op,
+                        value=value,
+                        source_text=text,
+                        confidence=0.85,
+                        reasoning=f"Extracted group constraint from '{name}' pattern",
+                    )
+                )
 
         return constraints
 
@@ -919,7 +944,7 @@ class ConstraintExtractor:
         # Look for negation words before the term
         for negation_pattern in self._negation_re:
             # Check if negation appears within 5 words before the term
-            pattern = rf'{negation_pattern.pattern}\s+(?:\w+\s+){{0,5}}{term}'
+            pattern = rf"{negation_pattern.pattern}\s+(?:\w+\s+){{0,5}}{term}"
             if re.search(pattern, text):
                 return True
         return False
@@ -954,17 +979,15 @@ class ConstraintExtractor:
         return ConstraintStrength.IMPLICIT
 
     def _detect_ambiguities(
-        self,
-        text: str,
-        constraints: List[ExtractedConstraint]
+        self, text: str, constraints: List[ExtractedConstraint]
     ) -> List[str]:
         """Detect unresolved ambiguities in the extraction."""
         ambiguities = []
 
         # Check for undefined thresholds
-        if re.search(r'\btoo\s+\w+\b', text.lower()):
+        if re.search(r"\btoo\s+\w+\b", text.lower()):
             # "too expensive", "too far", etc. - need to define threshold
-            match = re.search(r'\btoo\s+(\w+)', text.lower())
+            match = re.search(r"\btoo\s+(\w+)", text.lower())
             if match:
                 qualifier = match.group(1)
                 ambiguities.append(
@@ -973,10 +996,10 @@ class ConstraintExtractor:
 
         # Check for vague quantities
         vague_quantities = [
-            (r'\bseveral\b', "several"),
-            (r'\bfew\b', "few"),
-            (r'\bmany\b', "many"),
-            (r'\bsome\b', "some"),
+            (r"\bseveral\b", "several"),
+            (r"\bfew\b", "few"),
+            (r"\bmany\b", "many"),
+            (r"\bsome\b", "some"),
         ]
 
         for pattern, word in vague_quantities:
@@ -988,8 +1011,7 @@ class ConstraintExtractor:
         return ambiguities
 
     def _document_assumptions(
-        self,
-        constraints: List[ExtractedConstraint]
+        self, constraints: List[ExtractedConstraint]
     ) -> List[str]:
         """Document assumptions made during extraction."""
         assumptions = []
@@ -1017,9 +1039,11 @@ class ConstraintExtractor:
 # VERIFIED PLAN GENERATOR - From constraints to executable plan
 # ═══════════════════════════════════════════════════════════════════════════════
 
+
 @dataclass
 class VerificationCertificate:
     """A certificate proving a constraint was satisfied."""
+
     constraint_id: str
     constraint_description: str
     verified: bool
@@ -1037,6 +1061,7 @@ class VerifiedPlan:
     This is Newton^2's output: not "I think this is good" but
     "This IS verified to satisfy all constraints."
     """
+
     id: str
     name: str
     source_extraction: ExtractionResult
@@ -1066,15 +1091,15 @@ class VerifiedPlan:
                     "constraint": c.constraint_description,
                     "verified": c.verified,
                     "actual": c.actual_value,
-                    "expected": c.expected_value
+                    "expected": c.expected_value,
                 }
                 for c in self.certificates
             ],
             "proof": {
                 "merkle_root": self.merkle_root,
                 "signature": self.signature,
-                "timestamp": self.timestamp
-            }
+                "timestamp": self.timestamp,
+            },
         }
 
 
@@ -1087,9 +1112,7 @@ class PlanVerifier:
     """
 
     def verify(
-        self,
-        plan: Dict[str, Any],
-        extraction: ExtractionResult
+        self, plan: Dict[str, Any], extraction: ExtractionResult
     ) -> VerifiedPlan:
         """
         Verify a plan against extracted constraints.
@@ -1108,14 +1131,17 @@ class PlanVerifier:
         all_verified = all(c.verified for c in certificates)
 
         # Generate merkle proof
-        proof_data = json.dumps({
-            "plan": plan,
-            "certificates": [
-                {"id": c.constraint_id, "verified": c.verified}
-                for c in certificates
-            ],
-            "timestamp": timestamp
-        }, sort_keys=True)
+        proof_data = json.dumps(
+            {
+                "plan": plan,
+                "certificates": [
+                    {"id": c.constraint_id, "verified": c.verified}
+                    for c in certificates
+                ],
+                "timestamp": timestamp,
+            },
+            sort_keys=True,
+        )
 
         merkle_root = hashlib.sha256(proof_data.encode()).hexdigest()
 
@@ -1129,13 +1155,11 @@ class PlanVerifier:
             all_verified=all_verified,
             merkle_root=merkle_root,
             signature=f"newton_verified_{merkle_root[:16]}",
-            timestamp=timestamp
+            timestamp=timestamp,
         )
 
     def _verify_constraint(
-        self,
-        constraint: ExtractedConstraint,
-        plan: Dict[str, Any]
+        self, constraint: ExtractedConstraint, plan: Dict[str, Any]
     ) -> VerificationCertificate:
         """Verify a single constraint against the plan."""
         # Extract the value from the plan
@@ -1154,7 +1178,7 @@ class PlanVerifier:
             timestamp=time.time(),
             proof_hash=hashlib.sha256(
                 f"{constraint.id}:{verified}:{time.time()}".encode()
-            ).hexdigest()[:16]
+            ).hexdigest()[:16],
         )
 
     def _extract_value(self, plan: Dict[str, Any], field: str) -> Any:
@@ -1207,6 +1231,7 @@ class PlanVerifier:
 
 # Global extractor instance
 _extractor: Optional[ConstraintExtractor] = None
+
 
 def get_extractor() -> ConstraintExtractor:
     """Get or create the global constraint extractor."""

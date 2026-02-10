@@ -1,17 +1,23 @@
 """NSSlider — a continuous or discrete slider control."""
+
 from __future__ import annotations
 from typing import Optional
 
 from .nscontrol import NSControl
 from Kernel.view.nsview import NSRect
-from Kernel.runtime.event import NSEvent, NSEventType
+from Kernel.runtime.event import NSEvent
 
 
 class NSSlider(NSControl):
     """A slider (horizontal or vertical) that selects a value in a range."""
 
-    def __init__(self, frame: Optional[NSRect] = None, value: float = 0.0,
-                 min_value: float = 0.0, max_value: float = 1.0):
+    def __init__(
+        self,
+        frame: Optional[NSRect] = None,
+        value: float = 0.0,
+        min_value: float = 0.0,
+        max_value: float = 1.0,
+    ):
         super().__init__(frame)
         self._double_value = value
         self._min_value = min_value
@@ -138,33 +144,51 @@ class NSSlider(NSControl):
         parts = []
         if self.is_vertical:
             track_x = w / 2 - 2
-            parts.append(f'<rect x="{track_x}" y="0" width="4" height="{h}" '
-                         f'fill="#ddd" rx="2" />')
-            ratio = (self._double_value - self._min_value) / max(1e-9, self._max_value - self._min_value)
+            parts.append(
+                f'<rect x="{track_x}" y="0" width="4" height="{h}" '
+                f'fill="#ddd" rx="2" />'
+            )
+            ratio = (self._double_value - self._min_value) / max(
+                1e-9, self._max_value - self._min_value
+            )
             knob_y = ratio * h
-            parts.append(f'<circle cx="{w / 2}" cy="{knob_y}" r="8" '
-                         f'fill="white" stroke="#888" stroke-width="1" />')
+            parts.append(
+                f'<circle cx="{w / 2}" cy="{knob_y}" r="8" '
+                f'fill="white" stroke="#888" stroke-width="1" />'
+            )
         else:
             track_y = h / 2 - 2
-            parts.append(f'<rect x="0" y="{track_y}" width="{w}" height="4" '
-                         f'fill="#ddd" rx="2" />')
-            ratio = (self._double_value - self._min_value) / max(1e-9, self._max_value - self._min_value)
+            parts.append(
+                f'<rect x="0" y="{track_y}" width="{w}" height="4" '
+                f'fill="#ddd" rx="2" />'
+            )
+            ratio = (self._double_value - self._min_value) / max(
+                1e-9, self._max_value - self._min_value
+            )
             knob_x = ratio * w
-            parts.append(f'<circle cx="{knob_x}" cy="{h / 2}" r="8" '
-                         f'fill="white" stroke="#888" stroke-width="1" />')
+            parts.append(
+                f'<circle cx="{knob_x}" cy="{h / 2}" r="8" '
+                f'fill="white" stroke="#888" stroke-width="1" />'
+            )
         # tick marks
         if self._number_of_tick_marks > 1:
             for i in range(self._number_of_tick_marks):
                 tv = self.tick_mark_value_at_index(i)
-                r = (tv - self._min_value) / max(1e-9, self._max_value - self._min_value)
+                r = (tv - self._min_value) / max(
+                    1e-9, self._max_value - self._min_value
+                )
                 if self.is_vertical:
                     ty = r * h
-                    parts.append(f'<line x1="{w / 2 - 4}" y1="{ty}" '
-                                 f'x2="{w / 2 + 4}" y2="{ty}" stroke="#aaa" />')
+                    parts.append(
+                        f'<line x1="{w / 2 - 4}" y1="{ty}" '
+                        f'x2="{w / 2 + 4}" y2="{ty}" stroke="#aaa" />'
+                    )
                 else:
                     tx = r * w
-                    parts.append(f'<line x1="{tx}" y1="{h / 2 - 4}" '
-                                 f'x2="{tx}" y2="{h / 2 + 4}" stroke="#aaa" />')
+                    parts.append(
+                        f'<line x1="{tx}" y1="{h / 2 - 4}" '
+                        f'x2="{tx}" y2="{h / 2 + 4}" stroke="#aaa" />'
+                    )
         return "\n".join(parts)
 
     def __repr__(self):

@@ -11,7 +11,7 @@ This is not exception handling. This is reality pruning.
 """
 
 from __future__ import annotations
-from typing import Any, Optional, Callable, TypeVar, Generic, Union
+from typing import Optional, Callable, Union
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
@@ -53,11 +53,11 @@ class OntologicalDeath(Exception):
 
     def _format_death(self) -> str:
         lines = [
-            f"",
+            "",
             f"  ONTOLOGICAL DEATH [{self.death_id}]",
-            f"  ═══════════════════════════════════════",
+            "  ═══════════════════════════════════════",
             f"  {self.message}",
-            f"  ",
+            "  ",
         ]
         if self.matter:
             lines.append(f"  Matter: {self.matter}")
@@ -66,10 +66,10 @@ class OntologicalDeath(Exception):
         if self.ratio:
             lines.append(f"  Ratio:  {self.ratio}")
         lines.extend([
-            f"  ",
-            f"  This state cannot exist.",
-            f"  ═══════════════════════════════════════",
-            f"",
+            "  ",
+            "  This state cannot exist.",
+            "  ═══════════════════════════════════════",
+            "",
         ])
         return "\n".join(lines)
 

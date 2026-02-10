@@ -8,8 +8,6 @@ Tests the boundary between UI ↔ State ↔ Network
 """
 
 import requests
-import json
-import re
 import sys
 
 G = "\033[92m"

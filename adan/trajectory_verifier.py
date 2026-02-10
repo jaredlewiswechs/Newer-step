@@ -21,16 +21,10 @@ Each keystroke carries:
 """
 
 from dataclasses import dataclass, field
-from typing import List, Dict, Optional, Tuple, Any
-import math
-import re
+from typing import List, Dict, Optional, Tuple
 
 from .kinematic_linguistics import (
-    KinematicAnalyzer,
     Trajectory,
-    TrajectoryPoint,
-    KinematicSignature,
-    SymbolType,
     get_kinematic_analyzer,
 )
 
@@ -406,7 +400,7 @@ if __name__ == "__main__":
         print(f"   Syntactic: {result.syntactically_valid} | Semantic: {result.semantically_coherent} | Committed: {result.properly_committed}")
         
         if result.violations:
-            print(f"   Violations:")
+            print("   Violations:")
             for v in result.violations:
                 print(f"      - [{v.violation_type}] {v.description}")
     

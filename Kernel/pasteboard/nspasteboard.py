@@ -1,4 +1,5 @@
 """NSPasteboard — the system pasteboard (clipboard) abstraction."""
+
 from __future__ import annotations
 from typing import Optional, List, Any, Dict
 
@@ -65,9 +66,9 @@ class NSPasteboard:
 
     @classmethod
     def general(cls) -> NSPasteboard:
-        if 'general' not in cls._pasteboards:
-            cls._pasteboards['general'] = cls('general')
-        return cls._pasteboards['general']
+        if "general" not in cls._pasteboards:
+            cls._pasteboards["general"] = cls("general")
+        return cls._pasteboards["general"]
 
     @classmethod
     def pasteboard_with_name(cls, name: str) -> NSPasteboard:
@@ -107,8 +108,10 @@ class NSPasteboard:
                 item.set_string(obj)
             elif isinstance(obj, NSPasteboardItem):
                 item = obj
-            elif hasattr(obj, 'pasteboard_property_list'):
-                item.set_property_list(obj.pasteboard_property_list(), NSPasteboardType.STRING)
+            elif hasattr(obj, "pasteboard_property_list"):
+                item.set_property_list(
+                    obj.pasteboard_property_list(), NSPasteboardType.STRING
+                )
             self._items.append(item)
         return True
 

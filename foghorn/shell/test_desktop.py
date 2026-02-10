@@ -15,9 +15,7 @@ Tests the claimed user interactions:
 """
 
 import sys
-import json
 import requests
-from time import sleep
 
 BASE_URL = "http://localhost:8000"
 API_URL = f"{BASE_URL}/foghorn"

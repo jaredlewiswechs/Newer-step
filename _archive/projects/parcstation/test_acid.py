@@ -11,9 +11,8 @@ Tests the full verification pipeline through Newton and Newton Agent.
 import asyncio
 import aiohttp
 import time
-import json
 from dataclasses import dataclass
-from typing import Optional, Dict, Any, List
+from typing import Optional, List
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # Configuration
@@ -51,7 +50,7 @@ class ACIDTestSuite:
                 self.newton_online = resp.status == 200
                 print(f"   Newton Supercomputer: {'✓ Online' if self.newton_online else '✗ Offline'}")
         except:
-            print(f"   Newton Supercomputer: ✗ Offline")
+            print("   Newton Supercomputer: ✗ Offline")
 
         # Check Agent
         try:
@@ -59,7 +58,7 @@ class ACIDTestSuite:
                 self.agent_online = resp.status == 200
                 print(f"   Newton Agent: {'✓ Online' if self.agent_online else '✗ Offline'}")
         except:
-            print(f"   Newton Agent: ✗ Offline")
+            print("   Newton Agent: ✗ Offline")
 
     def record(self, result: TestResult):
         """Record a test result."""
@@ -506,7 +505,7 @@ class ACIDTestSuite:
         # Failed tests
         failed = [r for r in self.results if not r.passed]
         if failed:
-            print(f"\n❌ Failed tests:")
+            print("\n❌ Failed tests:")
             for r in failed:
                 print(f"   - {r.name}: {r.error or 'Unknown error'}")
 

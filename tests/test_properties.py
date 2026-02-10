@@ -19,8 +19,6 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pytest
 import math
-import hashlib
-from typing import Any, Dict, List
 
 # Try to import hypothesis, provide fallback
 try:
@@ -64,12 +62,12 @@ except ImportError:
 
 from core.cdl import (
     CDLEvaluator, CDLParser, HaltChecker, AtomicConstraint,
-    CompositeConstraint, ConditionalConstraint, Domain, Operator,
+    Domain, Operator,
     verify, verify_and, verify_or, EvaluationResult
 )
-from core.forge import Forge, ForgeConfig
-from core.robust import RobustVerifier, RobustConfig, LockedBaseline, mad
-from core.ledger import Ledger, LedgerConfig, LedgerEntry
+from core.forge import Forge
+from core.robust import LockedBaseline, mad
+from core.ledger import Ledger, LedgerConfig
 
 
 # ═══════════════════════════════════════════════════════════════════════════════

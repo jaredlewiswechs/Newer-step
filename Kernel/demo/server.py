@@ -6,9 +6,9 @@ Includes:
   /kernel/demo/views     – interactive view-tree demo (click a view → event routed)
   /kernel/demo/event     – POST endpoint for events from the interactive demo
 """
+
 from fastapi import FastAPI, Response, Query, Request
 import uvicorn
-import json
 import time
 
 from ..gui.nsbezier import NSBezierPath, sample_star, NSColor, NSPoint
@@ -19,12 +19,19 @@ app = FastAPI()
 
 # ── original shape demo ───────────────────────────────────────────
 
+
 @app.get("/kernel/demo/svg")
-def svg_demo(shape: str = Query('star'), width: int = Query(400), height: int = Query(400),
-             stroke: str = Query('0,0,0'), fill: str = Query('255,215,0')):
+def svg_demo(
+    shape: str = Query("star"),
+    width: int = Query(400),
+    height: int = Query(400),
+    stroke: str = Query("0,0,0"),
+    fill: str = Query("255,215,0"),
+):
     """Return an SVG generated from kernel primitives."""
+
     def parse_color(s: str):
-        parts = [int(p) for p in s.split(',')]
+        parts = [int(p) for p in s.split(",")]
         r, g, b = parts[:3]
         return NSColor(r, g, b, 1.0)
 
@@ -33,33 +40,42 @@ def svg_demo(shape: str = Query('star'), width: int = Query(400), height: int = 
     if fill:
         fill_color = parse_color(fill)
 
-    if shape == 'star':
-        p = sample_star(cx=width / 2, cy=height / 2,
-                        r1=min(width, height) / 4, r2=min(width, height) / 10)
-    elif shape == 'rect':
+    if shape == "star":
+        p = sample_star(
+            cx=width / 2,
+            cy=height / 2,
+            r1=min(width, height) / 4,
+            r2=min(width, height) / 10,
+        )
+    elif shape == "rect":
         p = NSBezierPath()
         p.append_rect(50, 50, width - 100, height - 100)
-    elif shape == 'oval':
+    elif shape == "oval":
         p = NSBezierPath()
         p.append_oval_in_rect(50, 50, width - 100, height - 100)
-    elif shape == 'arc':
+    elif shape == "arc":
         p = NSBezierPath()
         p.append_arc(NSPoint(width / 2, height / 2), min(width, height) / 4, 0, 3.14)
     else:
-        p = sample_star(cx=width / 2, cy=height / 2,
-                        r1=min(width, height) / 4, r2=min(width, height) / 10)
+        p = sample_star(
+            cx=width / 2,
+            cy=height / 2,
+            r1=min(width, height) / 4,
+            r2=min(width, height) / 10,
+        )
 
     p.stroke(color=stroke_color)
     if fill_color:
         p.fill(fill_color)
 
     svg = p.to_svg(width=width, height=height)
-    return Response(content=svg, media_type='image/svg+xml')
+    return Response(content=svg, media_type="image/svg+xml")
 
 
 # ── interactive view-tree demo ────────────────────────────────────
 
 _event_log = []  # last N events processed
+
 
 def _build_demo_window():
     """Build a small demo view tree and return it as SVG + the window object."""
@@ -107,7 +123,7 @@ def views_demo():
     log_html = ""
     for entry in _event_log[-10:]:
         log_html += f"<li>{entry}</li>"
-    html = f'''<!doctype html>
+    html = f"""<!doctype html>
 <html>
 <head>
   <meta charset="utf-8">
@@ -151,17 +167,17 @@ def views_demo():
     }});
   </script>
 </body>
-</html>'''
-    return Response(content=html, media_type='text/html')
+</html>"""
+    return Response(content=html, media_type="text/html")
 
 
 @app.post("/kernel/demo/event")
 async def post_event(request: Request):
     """Receive a click event from the demo page, route through the view tree."""
     body = await request.json()
-    x = float(body.get('x', 0))
-    y = float(body.get('y', 0))
-    event_type = body.get('type', 'MOUSE_DOWN')
+    x = float(body.get("x", 0))
+    y = float(body.get("y", 0))
+    event_type = body.get("type", "MOUSE_DOWN")
     chrome_offset = 22  # title bar height
 
     win = _build_demo_window()
@@ -191,6 +207,7 @@ async def post_event(request: Request):
 # shared shell instance for demo interactions
 _shell = None
 
+
 def _ensure_shell():
     global _shell, _process_manager
     if _shell is None:
@@ -198,6 +215,7 @@ def _ensure_shell():
         from ..window.nswindow import NSWindow
         from ..view.nsview import NSRect
         from ..gui.nsbezier import NSColor
+
         _shell = DesktopShell(width=900, height=600)
         w1 = NSWindow(content_rect=NSRect(60, 80, 360, 260), title="Notes")
         w1.content_view._background_color = NSColor(255, 255, 240)
@@ -207,23 +225,24 @@ def _ensure_shell():
         _shell.open_window(w2)
 
     # register simple demo apps on first creation
-    if not hasattr(_ensure_shell, '_apps'):
+    if not hasattr(_ensure_shell, "_apps"):
         from ..window.nswindow import NSWindow
         from ..view.nsview import NSRect
 
-        def notes_app(title='Notes'):
+        def notes_app(title="Notes"):
             nw = NSWindow(content_rect=NSRect(80, 80, 380, 260), title=title)
             return nw
 
-        def inspector_app(title='Inspector'):
+        def inspector_app(title="Inspector"):
             nw = NSWindow(content_rect=NSRect(120, 100, 360, 240), title=title)
             return nw
 
-        _ensure_shell._apps = {'notes': notes_app, 'inspector': inspector_app}
+        _ensure_shell._apps = {"notes": notes_app, "inspector": inspector_app}
 
     # process manager
-    if '_process_manager' not in globals():
+    if "_process_manager" not in globals():
         from nina.process import ProcessManager, init_process_registry
+
         _process_manager = ProcessManager(_shell)
         init_process_registry(_process_manager)
 
@@ -235,13 +254,13 @@ def shell_svg():
     """Return the current DesktopShell as SVG."""
     shell = _ensure_shell()
     svg = shell.render_to_svg(width=900, height=600)
-    return Response(content=svg, media_type='image/svg+xml')
+    return Response(content=svg, media_type="image/svg+xml")
 
 
-@app.get('/kernel/demo/shell_page')
+@app.get("/kernel/demo/shell_page")
 def shell_page():
     """Interactive shell page that allows clicking to focus windows."""
-    html = '''<!doctype html>
+    html = """<!doctype html>
 <html>
 <head>
   <meta charset="utf-8">
@@ -436,85 +455,95 @@ def shell_page():
     refreshSVG();
   </script>
 </body>
-</html>'''
-    return Response(content=html, media_type='text/html')
+</html>"""
+    return Response(content=html, media_type="text/html")
 
 
-@app.post('/kernel/demo/shell/event')
+@app.post("/kernel/demo/shell/event")
 async def shell_event(request: Request):
     body = await request.json()
-    x = float(body.get('x', 0))
-    y = float(body.get('y', 0))
+    x = float(body.get("x", 0))
+    y = float(body.get("y", 0))
     shell = _ensure_shell()
 
     hit = shell.hit_test((x, y))
     if hit:
         shell.focus_window(hit)
-        msg = f'Clicked window: {hit.title} (id={id(hit)}) at ({x:.0f},{y:.0f})'
+        msg = f"Clicked window: {hit.title} (id={id(hit)}) at ({x:.0f},{y:.0f})"
     else:
-        msg = f'Clicked empty space at ({x:.0f},{y:.0f})'
+        msg = f"Clicked empty space at ({x:.0f},{y:.0f})"
 
     _event_log.append(msg)
     if len(_event_log) > 200:
         _event_log.pop(0)
 
-    return {"message": msg, "window_id": id(hit) if hit else None, "title": hit.title if hit else None}
+    return {
+        "message": msg,
+        "window_id": id(hit) if hit else None,
+        "title": hit.title if hit else None,
+    }
 
 
-@app.get('/kernel/demo/shell/apps')
+@app.get("/kernel/demo/shell/apps")
 def shell_apps():
     _ensure_shell()
     from nina.app_store import list_installed_apps
+
     installed = list_installed_apps()
     available = list(_ensure_shell._apps.keys())
-    return {"available": available, "installed": installed} 
+    return {"available": available, "installed": installed}
 
 
-@app.post('/kernel/demo/shell/apps/install')
+@app.post("/kernel/demo/shell/apps/install")
 async def shell_apps_install(request: Request):
     body = await request.json()
-    name = body.get('name')
-    manifest = body.get('manifest')
-    script = body.get('script')
+    name = body.get("name")
+    manifest = body.get("manifest")
+    script = body.get("script")
     if not name or not manifest or not script:
         return {"error": "name, manifest, and script required"}
     from nina.app_store import install_app_from_payload
+
     res = install_app_from_payload(name, manifest, script)
     # register in _ensure_shell (allow launching by name)
-    if hasattr(_ensure_shell, '_apps'):
+    if hasattr(_ensure_shell, "_apps"):
+
         def factory(title=name):
             from ..window.nswindow import NSWindow
             from ..view.nsview import NSRect
+
             w = NSWindow(content_rect=NSRect(80, 80, 380, 260), title=title)
             return w
+
         _ensure_shell._apps[name] = factory
     return res
 
 
-@app.post('/kernel/demo/shell/apps/uninstall')
+@app.post("/kernel/demo/shell/apps/uninstall")
 async def shell_apps_uninstall(request: Request):
     body = await request.json()
-    name = body.get('name')
+    name = body.get("name")
     if not name:
         return {"error": "name required"}
     from nina.app_store import uninstall_app
+
     ok = uninstall_app(name)
-    if ok and hasattr(_ensure_shell, '_apps') and name in _ensure_shell._apps:
+    if ok and hasattr(_ensure_shell, "_apps") and name in _ensure_shell._apps:
         del _ensure_shell._apps[name]
     return {"uninstalled": ok}
 
 
-@app.post('/kernel/demo/shell/launch')
+@app.post("/kernel/demo/shell/launch")
 async def shell_launch(request: Request):
     body = await request.json()
-    title = body.get('title', 'App')
-    app_name = body.get('app')
-    script = body.get('script')
+    title = body.get("title", "App")
+    app_name = body.get("app")
+    script = body.get("script")
 
     shell = _ensure_shell()
 
     # launch by registered app factory
-    if app_name and hasattr(_ensure_shell, '_apps') and app_name in _ensure_shell._apps:
+    if app_name and hasattr(_ensure_shell, "_apps") and app_name in _ensure_shell._apps:
         factory = _ensure_shell._apps[app_name]
         w = factory(title)
         shell.open_window(w)
@@ -523,76 +552,103 @@ async def shell_launch(request: Request):
     # launch a TinyTalk script as a process
     if script:
         # accept permission flags in request
-        allow_vault = bool(body.get('allow_vault', True))
-        allow_filesystem = bool(body.get('allow_filesystem', False))
-        allow_system = bool(body.get('allow_system', False))
-        allow_network = bool(body.get('allow_network', False))
-        p = _process_manager.launch_script(script, title=title, allow_vault=allow_vault, allow_filesystem=allow_filesystem, allow_system=allow_system, allow_network=allow_network)
-        return {"title": p.title, "pid": p.pid, "permissions": {"vault": allow_vault, "fs": allow_filesystem, "system": allow_system, "network": allow_network}}
+        allow_vault = bool(body.get("allow_vault", True))
+        allow_filesystem = bool(body.get("allow_filesystem", False))
+        allow_system = bool(body.get("allow_system", False))
+        allow_network = bool(body.get("allow_network", False))
+        p = _process_manager.launch_script(
+            script,
+            title=title,
+            allow_vault=allow_vault,
+            allow_filesystem=allow_filesystem,
+            allow_system=allow_system,
+            allow_network=allow_network,
+        )
+        return {
+            "title": p.title,
+            "pid": p.pid,
+            "permissions": {
+                "vault": allow_vault,
+                "fs": allow_filesystem,
+                "system": allow_system,
+                "network": allow_network,
+            },
+        }
 
     # fallback: open an empty window
     from ..view.nsview import NSRect
+
     w = NSWindow(content_rect=NSRect(80, 80, 360, 260), title=title)
     shell.open_window(w)
     return {"title": title, "window_id": id(w)}
 
 
-@app.get('/kernel/demo/shell/snapshot')
+@app.get("/kernel/demo/shell/snapshot")
 def shell_snapshot():
     shell = _ensure_shell()
     return shell.snapshot()
 
 
-@app.post('/kernel/demo/shell/restore')
+@app.post("/kernel/demo/shell/restore")
 async def shell_restore(request: Request):
     data = await request.json()
     from nina.desktop_shell import DesktopShell
+
     global _shell
     _shell = DesktopShell.restore(data)
     return {"restored": True}
 
 
-@app.get('/kernel/demo/shell/list')
+@app.get("/kernel/demo/shell/list")
 def shell_list():
     shell = _ensure_shell()
-    return {"windows": [{"id": id(w), "title": w.title, "frame": (w.frame.x, w.frame.y, w.frame.width, w.frame.height)} for w in shell.windows]}
+    return {
+        "windows": [
+            {
+                "id": id(w),
+                "title": w.title,
+                "frame": (w.frame.x, w.frame.y, w.frame.width, w.frame.height),
+            }
+            for w in shell.windows
+        ]
+    }
 
 
-@app.get('/kernel/demo/shell/processes')
+@app.get("/kernel/demo/shell/processes")
 def shell_processes():
     _ensure_shell()
     procs = _process_manager.list_processes()
     return {"processes": procs}
 
 
-@app.post('/kernel/demo/shell/kill')
+@app.post("/kernel/demo/shell/kill")
 async def shell_kill(request: Request):
     body = await request.json()
-    pid = int(body.get('pid'))
+    pid = int(body.get("pid"))
     ok = _process_manager.kill(pid)
     return {"killed": ok, "pid": pid}
 
 
 # IPC endpoints
-@app.post('/kernel/demo/shell/publish')
+@app.post("/kernel/demo/shell/publish")
 async def shell_publish(request: Request):
     body = await request.json()
-    channel = body.get('channel')
-    message = body.get('message')
-    _process_manager.publish(channel, {'message': message})
-    return {'published': True}
+    channel = body.get("channel")
+    message = body.get("message")
+    _process_manager.publish(channel, {"message": message})
+    return {"published": True}
 
 
-@app.get('/kernel/demo/shell/fetch')
+@app.get("/kernel/demo/shell/fetch")
 def shell_fetch(channel: str = Query(...)):
     data = _process_manager.fetch_channel(channel)
-    return {'messages': data}
+    return {"messages": data}
 
 
-@app.post('/kernel/demo/shell/close')
+@app.post("/kernel/demo/shell/close")
 async def shell_close(request: Request):
     body = await request.json()
-    win_id = body.get('id')
+    win_id = body.get("id")
     shell = _ensure_shell()
     for w in list(shell.windows):
         if id(w) == win_id:
@@ -603,58 +659,64 @@ async def shell_close(request: Request):
 
 # ── Notes endpoints ─────────────────────────────────────────────────
 
-@app.get('/kernel/demo/shell/notes/script')
+
+@app.get("/kernel/demo/shell/notes/script")
 def notes_script():
     """Return the TinyTalk Notes app script."""
     try:
-        with open('realTinyTalk/examples/notes_app.tt', 'r', encoding='utf-8') as f:
+        with open("realTinyTalk/examples/notes_app.tt", "r", encoding="utf-8") as f:
             return {"script": f.read()}
-    except Exception as e:
+    except Exception:
         return {"script": "shell.open_window('Notes')\nshow('Notes app')"}
 
 
-@app.get('/kernel/demo/shell/notes/list')
+@app.get("/kernel/demo/shell/notes/list")
 def shell_notes_list(pid: int):
     proc = _process_manager._processes.get(pid)
     if not proc or not proc._owner_id:
         return {"error": "process not found or no owner", "notes": []}
     from newton_supercomputer import vault
+
     entries = vault._owner_index.get(proc._owner_id, [])
     notes = []
     for eid in entries:
         try:
             data = vault.retrieve(proc._owner_id, eid)
-            title = data.get('title') if isinstance(data, dict) else str(data)[:32]
+            title = data.get("title") if isinstance(data, dict) else str(data)[:32]
             notes.append({"id": eid, "title": title})
         except Exception:
             notes.append({"id": eid, "title": "<encrypted>"})
     return {"notes": notes}
 
 
-@app.post('/kernel/demo/shell/notes/save')
+@app.post("/kernel/demo/shell/notes/save")
 async def shell_save_note(request: Request):
     body = await request.json()
-    pid = int(body.get('pid'))
-    title = body.get('title')
-    content = body.get('content')
+    pid = int(body.get("pid"))
+    title = body.get("title")
+    content = body.get("content")
     proc = _process_manager._processes.get(pid)
     if not proc:
         return {"error": "process not found"}
     from newton_supercomputer import vault
+
     owner = proc._owner_id or proc._ensure_owner()
-    entry_id = vault.store(owner, {"title": title, "content": content}, metadata={"app": proc.title})
+    entry_id = vault.store(
+        owner, {"title": title, "content": content}, metadata={"app": proc.title}
+    )
     return {"entry_id": entry_id}
 
 
-@app.post('/kernel/demo/shell/notes/load')
+@app.post("/kernel/demo/shell/notes/load")
 async def shell_load_note(request: Request):
     body = await request.json()
-    pid = int(body.get('pid'))
-    entry_id = body.get('entry_id')
+    pid = int(body.get("pid"))
+    entry_id = body.get("entry_id")
     proc = _process_manager._processes.get(pid)
     if not proc or not proc._owner_id:
         return {"error": "process not found or no owner"}
     from newton_supercomputer import vault
+
     try:
         data = vault.retrieve(proc._owner_id, entry_id)
         return {"entry": data}
@@ -662,30 +724,34 @@ async def shell_load_note(request: Request):
         return {"error": str(e)}
 
 
-@app.post('/kernel/demo/shell/notes/window/save')
+@app.post("/kernel/demo/shell/notes/window/save")
 async def shell_notes_window_save(request: Request):
     body = await request.json()
-    pid = int(body.get('pid'))
-    window_id = int(body.get('window_id'))
-    title = body.get('title')
-    content = body.get('content')
+    pid = int(body.get("pid"))
+    window_id = int(body.get("window_id"))
+    title = body.get("title")
+    content = body.get("content")
     proc = _process_manager._processes.get(pid)
     if not proc:
         return {"error": "process not found"}
     ok = False
     # Try process-level helper first
     for w in proc._windows:
-        if id(w) == window_id and hasattr(w.content_view, 'set_content'):
+        if id(w) == window_id and hasattr(w.content_view, "set_content"):
             w.content_view.set_content(title, content)
             ok = True
             break
 
     # If not found, try to call into the runtime shell API (if set)
-    if not ok and proc.runtime and proc.runtime.global_scope.get('shell'):
+    if not ok and proc.runtime and proc.runtime.global_scope.get("shell"):
         try:
-            shell_map = proc.runtime.global_scope.get('shell').data
-            val = shell_map.get('set_window_note')
-            if val and getattr(val, 'data', None) and getattr(val.data, 'native_fn', None):
+            shell_map = proc.runtime.global_scope.get("shell").data
+            val = shell_map.get("set_window_note")
+            if (
+                val
+                and getattr(val, "data", None)
+                and getattr(val.data, "native_fn", None)
+            ):
                 # call the underlying native wrapper
                 val.data.native_fn([window_id, title, content])
                 ok = True
@@ -695,24 +761,29 @@ async def shell_notes_window_save(request: Request):
     return {"ok": bool(ok)}
 
 
-@app.post('/kernel/demo/shell/notes/window/get')
+@app.post("/kernel/demo/shell/notes/window/get")
 async def shell_notes_window_get(request: Request):
     body = await request.json()
-    pid = int(body.get('pid'))
-    window_id = int(body.get('window_id'))
+    pid = int(body.get("pid"))
+    window_id = int(body.get("window_id"))
     proc = _process_manager._processes.get(pid)
     if not proc:
         return {"error": "process not found"}
     for w in proc._windows:
-        if id(w)==window_id and hasattr(w.content_view, 'content'):
-            return {"title": getattr(w.content_view, 'title', ''), "content": getattr(w.content_view, 'content', '')}
+        if id(w) == window_id and hasattr(w.content_view, "content"):
+            return {
+                "title": getattr(w.content_view, "title", ""),
+                "content": getattr(w.content_view, "content", ""),
+            }
     return {"error": "window not found or not a notes view"}
+
 
 # ── landing page ──────────────────────────────────────────────────
 
-@app.get('/kernel/demo/html')
+
+@app.get("/kernel/demo/html")
 def html_demo():
-    html = '''<!doctype html>
+    html = """<!doctype html>
 <html>
   <head><meta charset="utf-8"><title>Kernel SVG Demo</title></head>
   <body>
@@ -725,9 +796,9 @@ def html_demo():
     <p><strong><a href="/kernel/demo/shell">Desktop Shell Demo &rarr;</a></strong></p>
     <img src="/kernel/demo/svg" alt="demo svg" />
   </body>
-</html>'''
-    return Response(content=html, media_type='text/html')
+</html>"""
+    return Response(content=html, media_type="text/html")
 
 
-if __name__ == '__main__':
-    uvicorn.run('Kernel.demo.server:app', host='127.0.0.1', port=9009, log_level='info')
+if __name__ == "__main__":
+    uvicorn.run("Kernel.demo.server:app", host="127.0.0.1", port=9009, log_level="info")

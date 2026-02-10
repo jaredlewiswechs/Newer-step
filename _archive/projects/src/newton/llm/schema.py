@@ -14,7 +14,7 @@ The key insight: meaning lives in validators, not tokens.
 """
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Literal, Optional
+from typing import Any, Dict, List, Literal
 from enum import Enum
 import hashlib
 import time

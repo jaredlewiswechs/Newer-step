@@ -1,6 +1,7 @@
 """NSFont, NSFontDescriptor, NSFontManager — font selection and metrics."""
+
 from __future__ import annotations
-from typing import Optional, Dict, Any, List
+from typing import Optional, List
 from dataclasses import dataclass
 
 
@@ -15,20 +16,27 @@ class NSFontTraitMask:
 @dataclass
 class NSFontDescriptor:
     """Describes a font by its attributes."""
+
     family: str = "Helvetica"
     size: float = 12.0
     traits: int = 0
     weight: float = 0.0  # -1.0 to 1.0, 0 = regular
 
     def font_descriptor_with_face(self, face: str) -> NSFontDescriptor:
-        d = NSFontDescriptor(family=self.family, size=self.size, traits=self.traits, weight=self.weight)
+        d = NSFontDescriptor(
+            family=self.family, size=self.size, traits=self.traits, weight=self.weight
+        )
         return d
 
     def font_descriptor_with_size(self, size: float) -> NSFontDescriptor:
-        return NSFontDescriptor(family=self.family, size=size, traits=self.traits, weight=self.weight)
+        return NSFontDescriptor(
+            family=self.family, size=size, traits=self.traits, weight=self.weight
+        )
 
     def font_descriptor_with_symbolic_traits(self, traits: int) -> NSFontDescriptor:
-        return NSFontDescriptor(family=self.family, size=self.size, traits=traits, weight=self.weight)
+        return NSFontDescriptor(
+            family=self.family, size=self.size, traits=traits, weight=self.weight
+        )
 
 
 class NSFont:
@@ -106,7 +114,9 @@ class NSFont:
     @classmethod
     def bold_system_font(cls, size: float = 13.0) -> NSFont:
         f = cls("System Bold", size)
-        f._descriptor = NSFontDescriptor(family="System", size=size, traits=NSFontTraitMask.BOLD, weight=0.4)
+        f._descriptor = NSFontDescriptor(
+            family="System", size=size, traits=NSFontTraitMask.BOLD, weight=0.4
+        )
         return f
 
     @classmethod
@@ -116,7 +126,9 @@ class NSFont:
     @classmethod
     def user_fixed_pitch_font(cls, size: float = 13.0) -> NSFont:
         f = cls("Menlo", size)
-        f._descriptor = NSFontDescriptor(family="Menlo", size=size, traits=NSFontTraitMask.MONOSPACE)
+        f._descriptor = NSFontDescriptor(
+            family="Menlo", size=size, traits=NSFontTraitMask.MONOSPACE
+        )
         return f
 
     @classmethod
@@ -153,8 +165,13 @@ class NSFontManager:
 
     def __init__(self):
         self._available_fonts = [
-            "Helvetica", "Helvetica-Bold", "Times-Roman", "Courier",
-            "Menlo", "System", "System Bold",
+            "Helvetica",
+            "Helvetica-Bold",
+            "Times-Roman",
+            "Courier",
+            "Menlo",
+            "System",
+            "System Bold",
         ]
 
     @classmethod
@@ -167,8 +184,9 @@ class NSFontManager:
     def available_fonts(self) -> List[str]:
         return list(self._available_fonts)
 
-    def font_with_family(self, family: str, traits: int = 0, weight: int = 5,
-                         size: float = 12.0) -> NSFont:
+    def font_with_family(
+        self, family: str, traits: int = 0, weight: int = 5, size: float = 12.0
+    ) -> NSFont:
         return NSFont(family, size)
 
     def convert_font(self, font: NSFont, to_have_trait: int) -> NSFont:

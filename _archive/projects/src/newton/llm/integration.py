@@ -15,7 +15,6 @@ This module provides factory functions and adapters for seamless integration.
 """
 
 from typing import Any, Dict, List, Optional
-import re
 
 from .schema import Claim, Domain, ValidationResult
 from .validators import DomainValidator, PhysicsValidator

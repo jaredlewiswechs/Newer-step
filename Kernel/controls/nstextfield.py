@@ -1,10 +1,11 @@
 """NSTextField — a single-line text input or label control."""
+
 from __future__ import annotations
 from typing import Optional
 
 from .nscontrol import NSControl
 from Kernel.view.nsview import NSRect
-from Kernel.runtime.event import NSEvent, NSEventType
+from Kernel.runtime.event import NSEvent
 
 
 class NSTextField(NSControl):
@@ -106,16 +107,21 @@ class NSTextField(NSControl):
         if not self._is_editable or not self._is_enabled:
             return False
         if event.user_info:
-            key = event.user_info.get('key', '')
-            if key == 'backspace' and self._cursor_position > 0:
-                self._string_value = (self._string_value[:self._cursor_position - 1]
-                                      + self._string_value[self._cursor_position:])
+            key = event.user_info.get("key", "")
+            if key == "backspace" and self._cursor_position > 0:
+                self._string_value = (
+                    self._string_value[: self._cursor_position - 1]
+                    + self._string_value[self._cursor_position :]
+                )
                 self._cursor_position -= 1
-            elif key == 'enter' or key == 'return':
+            elif key == "enter" or key == "return":
                 self.send_action()
             elif len(key) == 1:
-                self._string_value = (self._string_value[:self._cursor_position]
-                                      + key + self._string_value[self._cursor_position:])
+                self._string_value = (
+                    self._string_value[: self._cursor_position]
+                    + key
+                    + self._string_value[self._cursor_position :]
+                )
                 self._cursor_position += 1
             self.set_needs_display()
             return True
@@ -136,8 +142,10 @@ class NSTextField(NSControl):
         w, h = self._bounds.width, self._bounds.height
         parts = []
         if self._draws_background and self._is_bezeled:
-            parts.append(f'<rect x="0" y="0" width="{w}" height="{h}" '
-                         f'fill="white" stroke="#aaa" stroke-width="1" rx="3" />')
+            parts.append(
+                f'<rect x="0" y="0" width="{w}" height="{h}" '
+                f'fill="white" stroke="#aaa" stroke-width="1" rx="3" />'
+            )
         display_text = self._string_value or self._placeholder_string or ""
         color = "#000"
         if not self._string_value and self._placeholder_string:
@@ -150,10 +158,14 @@ class NSTextField(NSControl):
         elif self._alignment == 2:
             anchor = "end"
             tx = w - 4
-        parts.append(f'<text x="{tx}" y="{h / 2 + 4}" text-anchor="{anchor}" '
-                     f'font-size="13" font-family="sans-serif" fill="{color}">'
-                     f'{display_text}</text>')
+        parts.append(
+            f'<text x="{tx}" y="{h / 2 + 4}" text-anchor="{anchor}" '
+            f'font-size="13" font-family="sans-serif" fill="{color}">'
+            f"{display_text}</text>"
+        )
         return "\n".join(parts)
 
     def __repr__(self):
-        return f"<NSTextField value={self._string_value!r} editable={self._is_editable}>"
+        return (
+            f"<NSTextField value={self._string_value!r} editable={self._is_editable}>"
+        )

@@ -19,9 +19,8 @@ This is constraint geometry made visible.
 
 from __future__ import annotations
 from dataclasses import dataclass, field
-from typing import List, Dict, Optional, Tuple
+from typing import List, Optional, Tuple
 from enum import Enum
-import math
 
 # Import Newton core primitives
 import sys

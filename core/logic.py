@@ -17,7 +17,7 @@ El Capitan is just fast guessing.
 """
 
 from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, List, Optional, Union, Tuple
+from typing import Any, Callable, Dict, List, Optional, Union
 from enum import Enum
 import math
 import hashlib
@@ -32,17 +32,19 @@ getcontext().prec = 50
 # BOUNDS - The difference between Newton and infinite loops
 # ═══════════════════════════════════════════════════════════════════════════════
 
+
 @dataclass
 class ExecutionBounds:
     """
     Every computation has bounds.
     This is what makes Newton verified.
     """
-    max_iterations: int = 10000        # Max loop iterations
-    max_recursion_depth: int = 100     # Max function call depth
-    max_operations: int = 1000000      # Max total operations
+
+    max_iterations: int = 10000  # Max loop iterations
+    max_recursion_depth: int = 100  # Max function call depth
+    max_operations: int = 1000000  # Max total operations
     max_memory_bytes: int = 100000000  # 100MB max memory
-    timeout_seconds: float = 30.0      # Max execution time
+    timeout_seconds: float = 30.0  # Max execution time
 
     def __post_init__(self):
         # Hard caps - cannot be exceeded even if requested
@@ -54,6 +56,7 @@ class ExecutionBounds:
 # ═══════════════════════════════════════════════════════════════════════════════
 # VALUE TYPES
 # ═══════════════════════════════════════════════════════════════════════════════
+
 
 class ValueType(Enum):
     NUMBER = "number"
@@ -67,32 +70,33 @@ class ValueType(Enum):
 @dataclass
 class Value:
     """A typed value in Newton."""
+
     type: ValueType
     data: Any
     verified: bool = True
 
     @classmethod
-    def number(cls, n: Union[int, float, Decimal]) -> 'Value':
+    def number(cls, n: Union[int, float, Decimal]) -> "Value":
         return cls(ValueType.NUMBER, Decimal(str(n)))
 
     @classmethod
-    def boolean(cls, b: bool) -> 'Value':
+    def boolean(cls, b: bool) -> "Value":
         return cls(ValueType.BOOLEAN, b)
 
     @classmethod
-    def string(cls, s: str) -> 'Value':
+    def string(cls, s: str) -> "Value":
         return cls(ValueType.STRING, s)
 
     @classmethod
-    def list(cls, items: List['Value']) -> 'Value':
+    def list(cls, items: List["Value"]) -> "Value":
         return cls(ValueType.LIST, items)
 
     @classmethod
-    def null(cls) -> 'Value':
+    def null(cls) -> "Value":
         return cls(ValueType.NULL, None)
 
     @classmethod
-    def error(cls, msg: str) -> 'Value':
+    def error(cls, msg: str) -> "Value":
         return cls(ValueType.ERROR, msg, verified=False)
 
     def is_truthy(self) -> bool:
@@ -119,6 +123,7 @@ class Value:
 # ═══════════════════════════════════════════════════════════════════════════════
 # EXPRESSION AST
 # ═══════════════════════════════════════════════════════════════════════════════
+
 
 class ExprType(Enum):
     # Literals
@@ -194,6 +199,7 @@ class ExprType(Enum):
 @dataclass
 class Expr:
     """An expression in Newton logic."""
+
     type: ExprType
     args: List[Any] = field(default_factory=list)
     metadata: Dict[str, Any] = field(default_factory=dict)
@@ -210,9 +216,11 @@ class Expr:
 # EXECUTION CONTEXT
 # ═══════════════════════════════════════════════════════════════════════════════
 
+
 @dataclass
 class ExecutionContext:
     """Context for expression evaluation."""
+
     variables: Dict[str, Value] = field(default_factory=dict)
     functions: Dict[str, Expr] = field(default_factory=dict)
     bounds: ExecutionBounds = field(default_factory=ExecutionBounds)
@@ -237,7 +245,7 @@ class ExecutionContext:
                 return f"Timeout exceeded ({self.bounds.timeout_seconds}s)"
         return None
 
-    def push_scope(self) -> 'ExecutionContext':
+    def push_scope(self) -> "ExecutionContext":
         """Create a child scope."""
         return ExecutionContext(
             variables=dict(self.variables),  # Copy
@@ -246,7 +254,7 @@ class ExecutionContext:
             operation_count=self.operation_count,
             current_depth=self.current_depth + 1,
             start_time=self.start_time,
-            trace=self.trace
+            trace=self.trace,
         )
 
 
@@ -254,9 +262,11 @@ class ExecutionContext:
 # EXECUTION RESULT
 # ═══════════════════════════════════════════════════════════════════════════════
 
+
 @dataclass
 class ExecutionResult:
     """Result of Newton computation."""
+
     value: Value
     operations: int
     elapsed_us: int
@@ -276,13 +286,14 @@ class ExecutionResult:
             "operations": self.operations,
             "elapsed_us": self.elapsed_us,
             "verified": self.verified,
-            "fingerprint": self.fingerprint
+            "fingerprint": self.fingerprint,
         }
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # THE NEWTON LOGIC ENGINE
 # ═══════════════════════════════════════════════════════════════════════════════
+
 
 class LogicEngine:
     """
@@ -303,9 +314,7 @@ class LogicEngine:
     # ─────────────────────────────────────────────────────────────────────────
 
     def evaluate(
-        self,
-        expr: Union[Expr, Dict, Any],
-        context: Optional[ExecutionContext] = None
+        self, expr: Union[Expr, Dict, Any], context: Optional[ExecutionContext] = None
     ) -> ExecutionResult:
         """
         Evaluate an expression with full verification.
@@ -335,7 +344,7 @@ class LogicEngine:
             operations=context.operation_count,
             elapsed_us=elapsed_us,
             verified=value.verified and value.type != ValueType.ERROR,
-            trace=context.trace
+            trace=context.trace,
         )
 
     def _eval(self, expr: Expr, ctx: ExecutionContext) -> Value:
@@ -354,8 +363,14 @@ class LogicEngine:
             return self._eval_variable(expr, ctx)
 
         # Arithmetic
-        elif expr.type in (ExprType.ADD, ExprType.SUB, ExprType.MUL,
-                           ExprType.DIV, ExprType.MOD, ExprType.POW):
+        elif expr.type in (
+            ExprType.ADD,
+            ExprType.SUB,
+            ExprType.MUL,
+            ExprType.DIV,
+            ExprType.MOD,
+            ExprType.POW,
+        ):
             return self._eval_arithmetic(expr, ctx)
         elif expr.type == ExprType.NEG:
             return self._eval_unary(expr, ctx, lambda x: -x)
@@ -363,13 +378,24 @@ class LogicEngine:
             return self._eval_unary(expr, ctx, abs)
 
         # Comparison
-        elif expr.type in (ExprType.EQ, ExprType.NE, ExprType.LT,
-                           ExprType.GT, ExprType.LE, ExprType.GE):
+        elif expr.type in (
+            ExprType.EQ,
+            ExprType.NE,
+            ExprType.LT,
+            ExprType.GT,
+            ExprType.LE,
+            ExprType.GE,
+        ):
             return self._eval_comparison(expr, ctx)
 
         # Boolean
-        elif expr.type in (ExprType.AND, ExprType.OR, ExprType.XOR,
-                           ExprType.NAND, ExprType.NOR):
+        elif expr.type in (
+            ExprType.AND,
+            ExprType.OR,
+            ExprType.XOR,
+            ExprType.NAND,
+            ExprType.NOR,
+        ):
             return self._eval_boolean(expr, ctx)
         elif expr.type == ExprType.NOT:
             return self._eval_not(expr, ctx)
@@ -417,9 +443,16 @@ class LogicEngine:
             return self._eval_len(expr, ctx)
 
         # Math functions
-        elif expr.type in (ExprType.SQRT, ExprType.LOG, ExprType.SIN,
-                           ExprType.COS, ExprType.TAN, ExprType.FLOOR,
-                           ExprType.CEIL, ExprType.ROUND):
+        elif expr.type in (
+            ExprType.SQRT,
+            ExprType.LOG,
+            ExprType.SIN,
+            ExprType.COS,
+            ExprType.TAN,
+            ExprType.FLOOR,
+            ExprType.CEIL,
+            ExprType.ROUND,
+        ):
             return self._eval_math(expr, ctx)
         elif expr.type in (ExprType.MIN, ExprType.MAX, ExprType.SUM):
             return self._eval_aggregate(expr, ctx)
@@ -429,7 +462,7 @@ class LogicEngine:
     # ─────────────────────────────────────────────────────────────────────────
     # HELPER: Extract name from possibly nested Expr
     # ─────────────────────────────────────────────────────────────────────────
-    
+
     def _extract_name(self, arg: Any) -> Optional[str]:
         """Extract a string name from possibly nested Expr literals."""
         if isinstance(arg, str):
@@ -459,7 +492,9 @@ class LogicEngine:
         if isinstance(val, str):
             return Value.string(val)
         if isinstance(val, list):
-            return Value.list([self._eval_literal(Expr(ExprType.LITERAL, [v]), ctx) for v in val])
+            return Value.list(
+                [self._eval_literal(Expr(ExprType.LITERAL, [v]), ctx) for v in val]
+            )
         if val is None:
             return Value.null()
         return Value.error(f"Unknown literal type: {type(val)}")
@@ -511,7 +546,7 @@ class LogicEngine:
                 # Bound exponent to prevent explosion
                 if abs(float(b)) > 1000:
                     return Value.error("Exponent too large (max 1000)")
-                result = a ** b
+                result = a**b
             else:
                 return Value.error(f"Unknown arithmetic op: {expr.type}")
 
@@ -643,7 +678,11 @@ class LogicEngine:
             test, body = clause[0], clause[1]
 
             # Check for else clause
-            if isinstance(test, Expr) and test.type == ExprType.LITERAL and test.args[0] == "else":
+            if (
+                isinstance(test, Expr)
+                and test.type == ExprType.LITERAL
+                and test.args[0] == "else"
+            ):
                 return self._eval(body, ctx)
 
             condition = self._eval(test, ctx)
@@ -673,11 +712,13 @@ class LogicEngine:
         var_name = self._extract_name(var_name_arg)
         if var_name is None:
             return Value.error(f"FOR variable must be a name, got {type(var_name_arg)}")
-        
+
         start_val = self._eval(expr.args[1], ctx)
         end_val = self._eval(expr.args[2], ctx)
         body = expr.args[3]
-        step_val = self._eval(expr.args[4], ctx) if len(expr.args) > 4 else Value.number(1)
+        step_val = (
+            self._eval(expr.args[4], ctx) if len(expr.args) > 4 else Value.number(1)
+        )
 
         if start_val.type != ValueType.NUMBER or end_val.type != ValueType.NUMBER:
             return Value.error("FOR range must be numbers")
@@ -695,7 +736,9 @@ class LogicEngine:
             iterations = max(0, (start - end - step - 1) // (-step))
 
         if iterations > ctx.bounds.max_iterations:
-            return Value.error(f"FOR would exceed max iterations ({ctx.bounds.max_iterations})")
+            return Value.error(
+                f"FOR would exceed max iterations ({ctx.bounds.max_iterations})"
+            )
 
         # Execute loop
         results = []
@@ -730,7 +773,11 @@ class LogicEngine:
 
         condition_expr = expr.args[0]
         body = expr.args[1]
-        max_iter = int(expr.args[2].args[0]) if len(expr.args) > 2 else ctx.bounds.max_iterations
+        max_iter = (
+            int(expr.args[2].args[0])
+            if len(expr.args) > 2
+            else ctx.bounds.max_iterations
+        )
 
         if max_iter > ctx.bounds.max_iterations:
             max_iter = ctx.bounds.max_iterations
@@ -775,7 +822,9 @@ class LogicEngine:
             return Value.error("MAP requires list")
 
         if len(lst.data) > ctx.bounds.max_iterations:
-            return Value.error(f"MAP list exceeds max iterations ({ctx.bounds.max_iterations})")
+            return Value.error(
+                f"MAP list exceeds max iterations ({ctx.bounds.max_iterations})"
+            )
 
         results = []
         for item in lst.data:
@@ -858,10 +907,7 @@ class LogicEngine:
         params = expr.args[1]
         body = expr.args[2]
 
-        ctx.functions[name] = Expr(
-            ExprType.LAMBDA,
-            [params, body]
-        )
+        ctx.functions[name] = Expr(ExprType.LAMBDA, [params, body])
 
         return Value.null()
 
@@ -889,7 +935,7 @@ class LogicEngine:
 
         params = fn.args[0]
         body = fn.args[1]
-        
+
         # Extract param names from Expr literals if needed
         param_names = []
         for p in params:
@@ -899,7 +945,9 @@ class LogicEngine:
             param_names.append(name)
 
         if len(args) != len(param_names):
-            return Value.error(f"Function expects {len(param_names)} args, got {len(args)}")
+            return Value.error(
+                f"Function expects {len(param_names)} args, got {len(args)}"
+            )
 
         # Create new scope with bound parameters
         scope = ctx.push_scope()
@@ -920,7 +968,7 @@ class LogicEngine:
         name = self._extract_name(expr.args[0])
         if name is None:
             return Value.error(f"LET variable must be a name, got {type(expr.args[0])}")
-        
+
         value = self._eval(expr.args[1], ctx)
 
         if value.type == ValueType.ERROR:
@@ -937,7 +985,7 @@ class LogicEngine:
         name = self._extract_name(expr.args[0])
         if name is None:
             return Value.error(f"SET variable must be a name, got {type(expr.args[0])}")
-        
+
         if name not in ctx.variables:
             return Value.error(f"Cannot SET undefined variable: {name}")
 
@@ -1047,7 +1095,9 @@ class LogicEngine:
             elif expr.type == ExprType.CEIL:
                 result = math.ceil(x)
             elif expr.type == ExprType.ROUND:
-                digits = int(self._eval(expr.args[1], ctx).data) if len(expr.args) > 1 else 0
+                digits = (
+                    int(self._eval(expr.args[1], ctx).data) if len(expr.args) > 1 else 0
+                )
                 result = round(x, digits)
             else:
                 return Value.error(f"Unknown math function: {expr.type}")
@@ -1107,61 +1157,75 @@ class LogicEngine:
             "literal": ExprType.LITERAL,
             "var": ExprType.VARIABLE,
             "variable": ExprType.VARIABLE,
-
             # Arithmetic
-            "add": ExprType.ADD, "+": ExprType.ADD,
-            "sub": ExprType.SUB, "-": ExprType.SUB,
-            "mul": ExprType.MUL, "*": ExprType.MUL, "×": ExprType.MUL,
-            "div": ExprType.DIV, "/": ExprType.DIV, "÷": ExprType.DIV,
-            "mod": ExprType.MOD, "%": ExprType.MOD,
-            "pow": ExprType.POW, "**": ExprType.POW, "^": ExprType.POW,
+            "add": ExprType.ADD,
+            "+": ExprType.ADD,
+            "sub": ExprType.SUB,
+            "-": ExprType.SUB,
+            "mul": ExprType.MUL,
+            "*": ExprType.MUL,
+            "×": ExprType.MUL,
+            "div": ExprType.DIV,
+            "/": ExprType.DIV,
+            "÷": ExprType.DIV,
+            "mod": ExprType.MOD,
+            "%": ExprType.MOD,
+            "pow": ExprType.POW,
+            "**": ExprType.POW,
+            "^": ExprType.POW,
             "neg": ExprType.NEG,
             "abs": ExprType.ABS,
-
             # Comparison
-            "eq": ExprType.EQ, "=": ExprType.EQ, "==": ExprType.EQ,
-            "ne": ExprType.NE, "!=": ExprType.NE, "≠": ExprType.NE,
-            "lt": ExprType.LT, "<": ExprType.LT,
-            "gt": ExprType.GT, ">": ExprType.GT,
-            "le": ExprType.LE, "<=": ExprType.LE, "≤": ExprType.LE,
-            "ge": ExprType.GE, ">=": ExprType.GE, "≥": ExprType.GE,
-
+            "eq": ExprType.EQ,
+            "=": ExprType.EQ,
+            "==": ExprType.EQ,
+            "ne": ExprType.NE,
+            "!=": ExprType.NE,
+            "≠": ExprType.NE,
+            "lt": ExprType.LT,
+            "<": ExprType.LT,
+            "gt": ExprType.GT,
+            ">": ExprType.GT,
+            "le": ExprType.LE,
+            "<=": ExprType.LE,
+            "≤": ExprType.LE,
+            "ge": ExprType.GE,
+            ">=": ExprType.GE,
+            "≥": ExprType.GE,
             # Boolean
-            "and": ExprType.AND, "&&": ExprType.AND,
-            "or": ExprType.OR, "||": ExprType.OR,
-            "not": ExprType.NOT, "!": ExprType.NOT,
+            "and": ExprType.AND,
+            "&&": ExprType.AND,
+            "or": ExprType.OR,
+            "||": ExprType.OR,
+            "not": ExprType.NOT,
+            "!": ExprType.NOT,
             "xor": ExprType.XOR,
             "nand": ExprType.NAND,
             "nor": ExprType.NOR,
-
             # Conditionals
             "if": ExprType.IF,
             "cond": ExprType.COND,
-
             # Loops
             "for": ExprType.FOR,
             "while": ExprType.WHILE,
             "map": ExprType.MAP,
             "filter": ExprType.FILTER,
             "reduce": ExprType.REDUCE,
-
             # Functions
             "def": ExprType.DEF,
             "call": ExprType.CALL,
             "lambda": ExprType.LAMBDA,
-
             # Assignment
             "let": ExprType.LET,
             "set": ExprType.SET,
-
             # Sequences
             "block": ExprType.BLOCK,
             "list": ExprType.LIST,
             "index": ExprType.INDEX,
             "len": ExprType.LEN,
-
             # Math
-            "sqrt": ExprType.SQRT, "√": ExprType.SQRT,
+            "sqrt": ExprType.SQRT,
+            "√": ExprType.SQRT,
             "log": ExprType.LOG,
             "sin": ExprType.SIN,
             "cos": ExprType.COS,
@@ -1174,7 +1238,9 @@ class LogicEngine:
             "sum": ExprType.SUM,
         }
 
-        expr_type = op_map.get(op.lower() if isinstance(op, str) else op, ExprType.LITERAL)
+        expr_type = op_map.get(
+            op.lower() if isinstance(op, str) else op, ExprType.LITERAL
+        )
 
         # Parse arguments
         args = data.get("args", data.get("a", []))
@@ -1186,7 +1252,16 @@ class LogicEngine:
             if isinstance(arg, dict):
                 parsed_args.append(self.parse(arg))
             elif isinstance(arg, list):
-                parsed_args.append([self.parse(a) if isinstance(a, dict) else Expr(ExprType.LITERAL, [a]) for a in arg])
+                parsed_args.append(
+                    [
+                        (
+                            self.parse(a)
+                            if isinstance(a, dict)
+                            else Expr(ExprType.LITERAL, [a])
+                        )
+                        for a in arg
+                    ]
+                )
             else:
                 parsed_args.append(Expr(ExprType.LITERAL, [arg]))
 
@@ -1199,9 +1274,11 @@ class LogicEngine:
 
 _engine = LogicEngine()
 
+
 def calculate(expr: Union[Dict, Expr]) -> ExecutionResult:
     """Calculate an expression with verification."""
     return _engine.evaluate(expr)
+
 
 def calc(expr: Union[Dict, Expr]) -> Any:
     """Calculate and return just the value (or raise on error)."""
@@ -1224,7 +1301,9 @@ if __name__ == "__main__":
     # Test arithmetic
     print("\n[Arithmetic]")
     result = engine.evaluate({"op": "+", "args": [2, 3]})
-    print(f"  2 + 3 = {result.value} ({result.operations} ops, verified={result.verified})")
+    print(
+        f"  2 + 3 = {result.value} ({result.operations} ops, verified={result.verified})"
+    )
 
     result = engine.evaluate({"op": "*", "args": [{"op": "+", "args": [2, 3]}, 4]})
     print(f"  (2 + 3) × 4 = {result.value}")
@@ -1236,40 +1315,58 @@ if __name__ == "__main__":
 
     # Test conditionals
     print("\n[Conditionals]")
-    result = engine.evaluate({
-        "op": "if",
-        "args": [
-            {"op": ">", "args": [10, 5]},
-            {"op": "literal", "args": ["yes"]},
-            {"op": "literal", "args": ["no"]}
-        ]
-    })
+    result = engine.evaluate(
+        {
+            "op": "if",
+            "args": [
+                {"op": ">", "args": [10, 5]},
+                {"op": "literal", "args": ["yes"]},
+                {"op": "literal", "args": ["no"]},
+            ],
+        }
+    )
     print(f"  IF 10 > 5 THEN 'yes' ELSE 'no' = {result.value}")
 
     # Test bounded loop
     print("\n[Bounded Loop]")
-    result = engine.evaluate({
-        "op": "for",
-        "args": [
-            "i",
-            {"op": "literal", "args": [0]},
-            {"op": "literal", "args": [5]},
-            {"op": "*", "args": [{"op": "var", "args": ["i"]}, 2]}
-        ]
-    })
+    result = engine.evaluate(
+        {
+            "op": "for",
+            "args": [
+                "i",
+                {"op": "literal", "args": [0]},
+                {"op": "literal", "args": [5]},
+                {"op": "*", "args": [{"op": "var", "args": ["i"]}, 2]},
+            ],
+        }
+    )
     print(f"  FOR i FROM 0 TO 5 DO i*2 = {[str(v) for v in result.value.data]}")
     print(f"  ({result.operations} ops, verified={result.verified})")
 
     # Test reduce (sum)
     print("\n[Reduce]")
-    result = engine.evaluate({
-        "op": "reduce",
-        "args": [
-            {"op": "lambda", "args": [["acc", "x"], {"op": "+", "args": [{"op": "var", "args": ["acc"]}, {"op": "var", "args": ["x"]}]}]},
-            {"op": "literal", "args": [0]},
-            {"op": "list", "args": [1, 2, 3, 4, 5]}
-        ]
-    })
+    result = engine.evaluate(
+        {
+            "op": "reduce",
+            "args": [
+                {
+                    "op": "lambda",
+                    "args": [
+                        ["acc", "x"],
+                        {
+                            "op": "+",
+                            "args": [
+                                {"op": "var", "args": ["acc"]},
+                                {"op": "var", "args": ["x"]},
+                            ],
+                        },
+                    ],
+                },
+                {"op": "literal", "args": [0]},
+                {"op": "list", "args": [1, 2, 3, 4, 5]},
+            ],
+        }
+    )
     print(f"  REDUCE + 0 [1,2,3,4,5] = {result.value}")
 
     # Test math
@@ -1287,10 +1384,9 @@ if __name__ == "__main__":
 
     # Test bound enforcement
     print("\n[Bound Enforcement]")
-    result = engine.evaluate({
-        "op": "for",
-        "args": ["i", 0, 1000000000, {"op": "var", "args": ["i"]}]
-    })
+    result = engine.evaluate(
+        {"op": "for", "args": ["i", 0, 1000000000, {"op": "var", "args": ["i"]}]}
+    )
     print(f"  FOR i FROM 0 TO 1B = {result.value} (bounded)")
 
     print("\n" + "=" * 60)

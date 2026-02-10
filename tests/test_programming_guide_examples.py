@@ -33,12 +33,7 @@ except ImportError:
     pytest = MockPytest()
 
 from tinytalk_py import (
-    Blueprint, field, law, forge, when, finfr, fin,
-    LawViolation, FinClosure,
-    KineticEngine, Presence, Delta, motion,
-    Money, Mass, Distance, Temperature, Pressure,
-    Celsius, Fahrenheit, PSI, Meters,
-    ratio, finfr_if_undefined, RatioResult
+    Blueprint, field, law, forge, when, finfr, LawViolation, KineticEngine, Presence, Money, Mass, Celsius, ratio, RatioResult
 )
 
 

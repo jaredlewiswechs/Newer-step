@@ -35,26 +35,21 @@ The verification IS the computation.
 """
 
 from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple
 from enum import Enum
 import hashlib
-import json
 import re
 import time
 import uuid
 
-from .cdl import (
-    Domain, Operator, AtomicConstraint, CompositeConstraint,
-    verify, verify_and
-)
-from .forge import get_forge, ForgeConfig, SAFETY_PATTERNS
-
+from .forge import get_forge, ForgeConfig
 
 # =============================================================================
 # SECTION 1: REQUEST TYPE SYSTEM
 # Natural language is untyped. That's chaos.
 # Newton move: type the conversation.
 # =============================================================================
+
 
 class RequestType(Enum):
     """
@@ -63,19 +58,20 @@ class RequestType(Enum):
     Every user input is classified into exactly one type.
     Each type has specific rules about what the chatbot is allowed to do.
     """
-    QUESTION = "question"           # Factual queries, lookups
-    OPINION = "opinion"             # Subjective matters, preferences
-    INSTRUCTION = "instruction"     # Commands, tasks, actions
-    SPECULATION = "speculation"     # What-if scenarios, hypotheticals
-    CALCULATION = "calculation"     # Math, computation, data analysis
-    MEDICAL_ADVICE = "medical_advice"     # Health-related guidance
-    LEGAL_ADVICE = "legal_advice"         # Law-related guidance
-    FINANCIAL_ADVICE = "financial_advice" # Money/investment guidance
-    PERSONAL_DATA = "personal_data"       # PII, sensitive information
-    CODE_GENERATION = "code_generation"   # Programming requests
-    CREATIVE = "creative"           # Stories, art, brainstorming
-    HARMFUL = "harmful"             # Violence, illegal, dangerous
-    UNKNOWN = "unknown"             # Cannot be classified
+
+    QUESTION = "question"  # Factual queries, lookups
+    OPINION = "opinion"  # Subjective matters, preferences
+    INSTRUCTION = "instruction"  # Commands, tasks, actions
+    SPECULATION = "speculation"  # What-if scenarios, hypotheticals
+    CALCULATION = "calculation"  # Math, computation, data analysis
+    MEDICAL_ADVICE = "medical_advice"  # Health-related guidance
+    LEGAL_ADVICE = "legal_advice"  # Law-related guidance
+    FINANCIAL_ADVICE = "financial_advice"  # Money/investment guidance
+    PERSONAL_DATA = "personal_data"  # PII, sensitive information
+    CODE_GENERATION = "code_generation"  # Programming requests
+    CREATIVE = "creative"  # Stories, art, brainstorming
+    HARMFUL = "harmful"  # Violence, illegal, dangerous
+    UNKNOWN = "unknown"  # Cannot be classified
 
 
 class RiskLevel(Enum):
@@ -84,10 +80,11 @@ class RiskLevel(Enum):
 
     Determines how carefully the response must be verified.
     """
-    LOW = "low"           # Safe to answer directly
-    MEDIUM = "medium"     # Requires disclaimers or caveats
-    HIGH = "high"         # Requires deferral or refusal
-    CRITICAL = "critical" # Must refuse - potential for harm
+
+    LOW = "low"  # Safe to answer directly
+    MEDIUM = "medium"  # Requires disclaimers or caveats
+    HIGH = "high"  # Requires deferral or refusal
+    CRITICAL = "critical"  # Must refuse - potential for harm
 
 
 class CompilerDecision(Enum):
@@ -96,16 +93,18 @@ class CompilerDecision(Enum):
 
     This is the output of the constraint checking phase.
     """
-    ANSWER = "answer"     # Generate response within constraints
-    ASK = "ask"           # Request clarification from user
-    DEFER = "defer"       # Recommend external resource
-    REFUSE = "refuse"     # Decline to respond
+
+    ANSWER = "answer"  # Generate response within constraints
+    ASK = "ask"  # Request clarification from user
+    DEFER = "defer"  # Recommend external resource
+    REFUSE = "refuse"  # Decline to respond
 
 
 # =============================================================================
 # SECTION 2: REQUEST CLASSIFICATION
 # The first compiler pass: parsing intent.
 # =============================================================================
+
 
 @dataclass
 class RequestClassification:
@@ -115,25 +114,26 @@ class RequestClassification:
     This is the intermediate representation between raw input
     and constrained response generation.
     """
+
     id: str
     request_type: RequestType
     risk_level: RiskLevel
     decision: CompilerDecision
 
     # Context extracted from input
-    intent: str                       # What the user wants
-    subject: str                      # Topic/domain
-    entities: List[str]               # Named entities extracted
+    intent: str  # What the user wants
+    subject: str  # Topic/domain
+    entities: List[str]  # Named entities extracted
 
     # Constraint information
-    constraints: List[str]            # Active constraints for this type
-    violations: List[str]             # Any detected violations
+    constraints: List[str]  # Active constraints for this type
+    violations: List[str]  # Any detected violations
 
     # Decision rationale
-    reasoning: str                    # Why this decision was made
+    reasoning: str  # Why this decision was made
 
     # Metadata
-    confidence: float                 # Classification confidence (0-1)
+    confidence: float  # Classification confidence (0-1)
     timestamp: float = field(default_factory=time.time)
     fingerprint: Optional[str] = None
 
@@ -156,7 +156,7 @@ class RequestClassification:
             "reasoning": self.reasoning,
             "confidence": self.confidence,
             "timestamp": self.timestamp,
-            "fingerprint": self.fingerprint
+            "fingerprint": self.fingerprint,
         }
 
 
@@ -165,6 +165,7 @@ class RequestClassification:
 # Rules that define what is allowed for each request type.
 # =============================================================================
 
+
 @dataclass
 class ResponseConstraint:
     """
@@ -172,16 +173,17 @@ class ResponseConstraint:
 
     This is the type system in action: each type has specific rules.
     """
+
     request_type: RequestType
-    allowed: bool                     # Is response allowed at all?
-    requires_disclaimer: bool         # Must include caveats?
-    requires_deferral: bool           # Must recommend professional?
-    requires_citation: bool           # Must cite sources?
-    requires_verification: bool       # Must verify claims?
-    max_specificity: str              # How specific can response be?
-    forbidden_patterns: List[str]     # Patterns that trigger refusal
-    required_elements: List[str]      # Must include these elements
-    recovery_action: CompilerDecision # What to do if constraint violated
+    allowed: bool  # Is response allowed at all?
+    requires_disclaimer: bool  # Must include caveats?
+    requires_deferral: bool  # Must recommend professional?
+    requires_citation: bool  # Must cite sources?
+    requires_verification: bool  # Must verify claims?
+    max_specificity: str  # How specific can response be?
+    forbidden_patterns: List[str]  # Patterns that trigger refusal
+    required_elements: List[str]  # Must include these elements
+    recovery_action: CompilerDecision  # What to do if constraint violated
 
 
 # Define the constraint rules for each request type
@@ -196,9 +198,8 @@ RESPONSE_CONSTRAINTS: Dict[RequestType, ResponseConstraint] = {
         max_specificity="high",
         forbidden_patterns=[],
         required_elements=["factual_basis"],
-        recovery_action=CompilerDecision.ASK
+        recovery_action=CompilerDecision.ASK,
     ),
-
     RequestType.OPINION: ResponseConstraint(
         request_type=RequestType.OPINION,
         allowed=True,
@@ -209,9 +210,8 @@ RESPONSE_CONSTRAINTS: Dict[RequestType, ResponseConstraint] = {
         max_specificity="medium",
         forbidden_patterns=[],
         required_elements=["opinion_label"],
-        recovery_action=CompilerDecision.ANSWER
+        recovery_action=CompilerDecision.ANSWER,
     ),
-
     RequestType.INSTRUCTION: ResponseConstraint(
         request_type=RequestType.INSTRUCTION,
         allowed=True,
@@ -225,9 +225,8 @@ RESPONSE_CONSTRAINTS: Dict[RequestType, ResponseConstraint] = {
             r"(how to )?(make|build).*\b(bomb|weapon)\b",
         ],
         required_elements=["steps", "verification"],
-        recovery_action=CompilerDecision.REFUSE
+        recovery_action=CompilerDecision.REFUSE,
     ),
-
     RequestType.SPECULATION: ResponseConstraint(
         request_type=RequestType.SPECULATION,
         allowed=True,
@@ -238,9 +237,8 @@ RESPONSE_CONSTRAINTS: Dict[RequestType, ResponseConstraint] = {
         max_specificity="low",
         forbidden_patterns=[],
         required_elements=["uncertainty_acknowledgment"],
-        recovery_action=CompilerDecision.ASK
+        recovery_action=CompilerDecision.ASK,
     ),
-
     RequestType.CALCULATION: ResponseConstraint(
         request_type=RequestType.CALCULATION,
         allowed=True,
@@ -251,9 +249,8 @@ RESPONSE_CONSTRAINTS: Dict[RequestType, ResponseConstraint] = {
         max_specificity="exact",
         forbidden_patterns=[],
         required_elements=["computation", "result", "verification"],
-        recovery_action=CompilerDecision.REFUSE
+        recovery_action=CompilerDecision.REFUSE,
     ),
-
     RequestType.MEDICAL_ADVICE: ResponseConstraint(
         request_type=RequestType.MEDICAL_ADVICE,
         allowed=False,  # Cannot provide medical advice
@@ -268,9 +265,8 @@ RESPONSE_CONSTRAINTS: Dict[RequestType, ResponseConstraint] = {
             r"(stop taking|start taking|change).*medication",
         ],
         required_elements=["general_info", "professional_referral"],
-        recovery_action=CompilerDecision.DEFER
+        recovery_action=CompilerDecision.DEFER,
     ),
-
     RequestType.LEGAL_ADVICE: ResponseConstraint(
         request_type=RequestType.LEGAL_ADVICE,
         allowed=False,  # Cannot provide legal advice
@@ -285,9 +281,8 @@ RESPONSE_CONSTRAINTS: Dict[RequestType, ResponseConstraint] = {
             r"(guilty|innocent|liable|not liable)",
         ],
         required_elements=["general_info", "legal_referral"],
-        recovery_action=CompilerDecision.DEFER
+        recovery_action=CompilerDecision.DEFER,
     ),
-
     RequestType.FINANCIAL_ADVICE: ResponseConstraint(
         request_type=RequestType.FINANCIAL_ADVICE,
         allowed=True,  # Can provide educational info
@@ -302,9 +297,8 @@ RESPONSE_CONSTRAINTS: Dict[RequestType, ResponseConstraint] = {
             r"can't lose|sure thing|100%",
         ],
         required_elements=["educational_context", "advisor_referral", "risk_warning"],
-        recovery_action=CompilerDecision.DEFER
+        recovery_action=CompilerDecision.DEFER,
     ),
-
     RequestType.PERSONAL_DATA: ResponseConstraint(
         request_type=RequestType.PERSONAL_DATA,
         allowed=False,  # Cannot handle PII
@@ -319,9 +313,8 @@ RESPONSE_CONSTRAINTS: Dict[RequestType, ResponseConstraint] = {
             r"password|secret|credential",
         ],
         required_elements=[],
-        recovery_action=CompilerDecision.REFUSE
+        recovery_action=CompilerDecision.REFUSE,
     ),
-
     RequestType.CODE_GENERATION: ResponseConstraint(
         request_type=RequestType.CODE_GENERATION,
         allowed=True,
@@ -336,9 +329,8 @@ RESPONSE_CONSTRAINTS: Dict[RequestType, ResponseConstraint] = {
             r"(ransomware|phishing|steal.*password)",
         ],
         required_elements=["code", "explanation"],
-        recovery_action=CompilerDecision.REFUSE
+        recovery_action=CompilerDecision.REFUSE,
     ),
-
     RequestType.CREATIVE: ResponseConstraint(
         request_type=RequestType.CREATIVE,
         allowed=True,
@@ -353,9 +345,8 @@ RESPONSE_CONSTRAINTS: Dict[RequestType, ResponseConstraint] = {
             r"(violence|gore|torture).*detail",
         ],
         required_elements=["creative_content"],
-        recovery_action=CompilerDecision.ASK
+        recovery_action=CompilerDecision.ASK,
     ),
-
     RequestType.HARMFUL: ResponseConstraint(
         request_type=RequestType.HARMFUL,
         allowed=False,  # Never allowed
@@ -366,9 +357,8 @@ RESPONSE_CONSTRAINTS: Dict[RequestType, ResponseConstraint] = {
         max_specificity="none",
         forbidden_patterns=[".*"],  # All patterns blocked
         required_elements=[],
-        recovery_action=CompilerDecision.REFUSE
+        recovery_action=CompilerDecision.REFUSE,
     ),
-
     RequestType.UNKNOWN: ResponseConstraint(
         request_type=RequestType.UNKNOWN,
         allowed=True,  # But must ask for clarification
@@ -379,7 +369,7 @@ RESPONSE_CONSTRAINTS: Dict[RequestType, ResponseConstraint] = {
         max_specificity="none",
         forbidden_patterns=[],
         required_elements=["clarifying_question"],
-        recovery_action=CompilerDecision.ASK
+        recovery_action=CompilerDecision.ASK,
     ),
 }
 
@@ -398,27 +388,23 @@ CLASSIFICATION_PATTERNS: Dict[RequestType, List[str]] = {
         r"describe\s",
         r"define\s",
     ],
-
     RequestType.OPINION: [
         r"(what do you think|your opinion|your view|your thoughts)",
         r"(better|worse|best|worst|prefer|favorite)",
         r"(should i|would you recommend)",
         r"(do you like|do you believe|do you feel)",
     ],
-
     RequestType.INSTRUCTION: [
         r"^(create|make|build|write|generate|design|develop|implement)",
         r"^(show me how|teach me|help me)",
         r"^(can you|could you|would you|please)\s*(create|make|build|write)",
         r"^(i need|i want)\s*(you to|a|an)",
     ],
-
     RequestType.SPECULATION: [
         r"(what if|what would happen|hypothetically|imagine if)",
         r"(could.*possibly|might.*happen|in theory)",
         r"(suppose|assuming|let's say)",
     ],
-
     RequestType.CALCULATION: [
         r"(calculate|compute|solve|evaluate|find the)",
         r"\d+\s*[\+\-\*\/\^]\s*\d+",
@@ -426,7 +412,6 @@ CLASSIFICATION_PATTERNS: Dict[RequestType, List[str]] = {
         r"\b(percent|percentage|ratio|average|mean|median)\b",
         r"\b(sum|total|difference|product|quotient)\b",
     ],
-
     RequestType.MEDICAL_ADVICE: [
         r"(symptom|diagnose|diagnosis|treatment|cure|medication|medicine)",
         r"(doctor|physician|medical|health|illness|disease|condition)",
@@ -437,7 +422,6 @@ CLASSIFICATION_PATTERNS: Dict[RequestType, List[str]] = {
         r"\b(serious|dangerous|emergency|urgent)\b.*(rash|symptom|condition|pain)",
         r"(is this|is my|are these).*(serious|normal|dangerous)",
     ],
-
     RequestType.LEGAL_ADVICE: [
         r"(legal|lawyer|attorney|sue|lawsuit|court|judge)",
         r"(my rights|legally|unlawful|illegal|liable|liability)",
@@ -447,7 +431,6 @@ CLASSIFICATION_PATTERNS: Dict[RequestType, List[str]] = {
         r"(enforceable|non-?compete|clause|jurisdiction)",
         r"(can i be|am i|is this).*(sued|legal|liable)",
     ],
-
     RequestType.FINANCIAL_ADVICE: [
         r"(invest|investment|stock|bond|portfolio|retirement)",
         r"(should i buy|should i sell|is.*good investment)",
@@ -455,28 +438,24 @@ CLASSIFICATION_PATTERNS: Dict[RequestType, List[str]] = {
         r"(mortgage|loan|debt|credit|interest rate)",
         r"(tax|taxes|deduction|401k|ira)",
     ],
-
     RequestType.PERSONAL_DATA: [
         r"(my ssn|my social security|my credit card)",
         r"(my password|my pin|my account number)",
         r"(my address|my phone number|my email)",
         r"here is my\s*(personal|private|sensitive)",
     ],
-
     RequestType.CODE_GENERATION: [
         r"(write|create|generate|implement)\s*(a|an|the)?\s*(function|class|script|program|code|app)",
         r"\b(python|javascript|java|c\+\+|rust|go|ruby|php|sql|html|css)\b",
         r"\b(code|programming|developer|software|api|database)\b",
         r"(debug|fix|refactor|optimize)\s*(this|the|my)\s*code",
     ],
-
     RequestType.CREATIVE: [
         r"(write|create|generate)\s*(a|an)?\s*(story|poem|song|script|novel)",
         r"(brainstorm|ideate|imagine)\b",
         r"\b(creative|artistic|fiction|fantasy)\b",
         r"^(write|create)\s+(me\s+)?(a|an)\s+",
     ],
-
     RequestType.HARMFUL: [
         r"\b(kill|murder|harm|hurt|injure|assassinate)\b",
         r"\b(bombs?|weapons?|explosives?|poisons?)\b",
@@ -499,6 +478,7 @@ CLASSIFICATION_PATTERNS: Dict[RequestType, List[str]] = {
 # The output of the chatbot compiler.
 # =============================================================================
 
+
 @dataclass
 class CompiledResponse:
     """
@@ -507,27 +487,28 @@ class CompiledResponse:
     This is what gets returned to the user - a verified,
     constraint-satisfying response.
     """
+
     id: str
     classification: RequestClassification
     decision: CompilerDecision
 
     # Response content
-    content: Optional[str]            # The actual response (if allowed)
-    disclaimer: Optional[str]         # Any required disclaimers
-    referral: Optional[str]           # Deferral recommendation
+    content: Optional[str]  # The actual response (if allowed)
+    disclaimer: Optional[str]  # Any required disclaimers
+    referral: Optional[str]  # Deferral recommendation
     clarification_question: Optional[str]  # Question for user
 
     # Verification
-    verified: bool                    # Did response pass verification?
+    verified: bool  # Did response pass verification?
     constraints_satisfied: List[str]  # Which constraints were met
-    constraints_violated: List[str]   # Which constraints were violated
+    constraints_violated: List[str]  # Which constraints were violated
 
     # Recovery
-    recovery_action: Optional[str]    # What to do next
+    recovery_action: Optional[str]  # What to do next
     alternative_suggestion: Optional[str]  # Safe alternative
 
     # Metadata
-    elapsed_us: int = 0               # Processing time in microseconds
+    elapsed_us: int = 0  # Processing time in microseconds
     timestamp: float = field(default_factory=time.time)
     fingerprint: Optional[str] = None
     engine: str = "Newton Chatbot Compiler 1.0"
@@ -554,7 +535,7 @@ class CompiledResponse:
             "elapsed_us": self.elapsed_us,
             "timestamp": self.timestamp,
             "fingerprint": self.fingerprint,
-            "engine": self.engine
+            "engine": self.engine,
         }
 
 
@@ -562,6 +543,7 @@ class CompiledResponse:
 # SECTION 6: THE CHATBOT COMPILER
 # The core engine that compiles human intent into verified responses.
 # =============================================================================
+
 
 class ChatbotCompiler:
     """
@@ -587,7 +569,7 @@ class ChatbotCompiler:
         self,
         forge=None,
         custom_constraints: Optional[Dict[RequestType, ResponseConstraint]] = None,
-        enable_metrics: bool = True
+        enable_metrics: bool = True,
     ):
         """
         Initialize the Chatbot Compiler.
@@ -628,25 +610,29 @@ class ChatbotCompiler:
         normalized_input = user_input.lower().strip()
 
         # Check for harmful content first (highest priority)
-        if self._matches_patterns(normalized_input, CLASSIFICATION_PATTERNS[RequestType.HARMFUL]):
+        if self._matches_patterns(
+            normalized_input, CLASSIFICATION_PATTERNS[RequestType.HARMFUL]
+        ):
             return self._create_classification(
                 user_input,
                 RequestType.HARMFUL,
                 RiskLevel.CRITICAL,
                 CompilerDecision.REFUSE,
                 "Harmful content detected",
-                confidence=0.99
+                confidence=0.99,
             )
 
         # Check for personal data
-        if self._matches_patterns(normalized_input, CLASSIFICATION_PATTERNS[RequestType.PERSONAL_DATA]):
+        if self._matches_patterns(
+            normalized_input, CLASSIFICATION_PATTERNS[RequestType.PERSONAL_DATA]
+        ):
             return self._create_classification(
                 user_input,
                 RequestType.PERSONAL_DATA,
                 RiskLevel.HIGH,
                 CompilerDecision.REFUSE,
                 "Personal/sensitive data detected",
-                confidence=0.95
+                confidence=0.95,
             )
 
         # Check high-risk types first
@@ -655,16 +641,22 @@ class ChatbotCompiler:
             RequestType.LEGAL_ADVICE,
             RequestType.FINANCIAL_ADVICE,
         ]:
-            if self._matches_patterns(normalized_input, CLASSIFICATION_PATTERNS[request_type]):
+            if self._matches_patterns(
+                normalized_input, CLASSIFICATION_PATTERNS[request_type]
+            ):
                 constraint = self.constraints[request_type]
-                decision = CompilerDecision.DEFER if constraint.requires_deferral else CompilerDecision.ANSWER
+                decision = (
+                    CompilerDecision.DEFER
+                    if constraint.requires_deferral
+                    else CompilerDecision.ANSWER
+                )
                 return self._create_classification(
                     user_input,
                     request_type,
                     RiskLevel.HIGH,
                     decision,
                     f"Classified as {request_type.value} - professional guidance recommended",
-                    confidence=0.85
+                    confidence=0.85,
                 )
 
         # Check other types
@@ -677,19 +669,23 @@ class ChatbotCompiler:
             RequestType.OPINION,
             RequestType.QUESTION,
         ]:
-            if self._matches_patterns(normalized_input, CLASSIFICATION_PATTERNS[request_type]):
+            if self._matches_patterns(
+                normalized_input, CLASSIFICATION_PATTERNS[request_type]
+            ):
                 risk = RiskLevel.LOW
                 if request_type == RequestType.INSTRUCTION:
                     # Check for harmful instructions
                     constraint = self.constraints[request_type]
-                    if self._matches_patterns(normalized_input, constraint.forbidden_patterns):
+                    if self._matches_patterns(
+                        normalized_input, constraint.forbidden_patterns
+                    ):
                         return self._create_classification(
                             user_input,
                             RequestType.HARMFUL,
                             RiskLevel.CRITICAL,
                             CompilerDecision.REFUSE,
                             "Harmful instruction detected",
-                            confidence=0.95
+                            confidence=0.95,
                         )
                     risk = RiskLevel.MEDIUM
 
@@ -699,7 +695,7 @@ class ChatbotCompiler:
                     risk,
                     CompilerDecision.ANSWER,
                     f"Classified as {request_type.value}",
-                    confidence=0.80
+                    confidence=0.80,
                 )
 
         # Unknown type - ask for clarification
@@ -709,7 +705,7 @@ class ChatbotCompiler:
             RiskLevel.LOW,
             CompilerDecision.ASK,
             "Could not determine intent - clarification needed",
-            confidence=0.30
+            confidence=0.30,
         )
 
     def _matches_patterns(self, text: str, patterns: List[str]) -> bool:
@@ -726,13 +722,13 @@ class ChatbotCompiler:
         risk_level: RiskLevel,
         decision: CompilerDecision,
         reasoning: str,
-        confidence: float
+        confidence: float,
     ) -> RequestClassification:
         """Create a RequestClassification with full metadata."""
         constraint = self.constraints.get(request_type)
 
         # Extract entities (simplified - would use NLP in production)
-        entities = re.findall(r'\b[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*\b', user_input)
+        entities = re.findall(r"\b[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*\b", user_input)
 
         # Get applicable constraints
         constraints = []
@@ -757,13 +753,23 @@ class ChatbotCompiler:
             constraints=constraints,
             violations=[],
             reasoning=reasoning,
-            confidence=confidence
+            confidence=confidence,
         )
 
     def _extract_intent(self, text: str) -> str:
         """Extract the core intent from user input."""
         # Simplified extraction - would use NLP in production
-        verbs = ["want", "need", "help", "tell", "explain", "show", "create", "make", "calculate"]
+        verbs = [
+            "want",
+            "need",
+            "help",
+            "tell",
+            "explain",
+            "show",
+            "create",
+            "make",
+            "calculate",
+        ]
         for verb in verbs:
             if verb in text.lower():
                 return verb
@@ -782,8 +788,7 @@ class ChatbotCompiler:
     # -------------------------------------------------------------------------
 
     def check_constraints(
-        self,
-        classification: RequestClassification
+        self, classification: RequestClassification
     ) -> Tuple[bool, List[str], List[str]]:
         """
         Second compiler pass: Check constraints for the classified request.
@@ -805,14 +810,19 @@ class ChatbotCompiler:
 
         # Check if response is allowed at all
         if not constraint.allowed:
-            violated.append(f"Response not allowed for type: {classification.request_type.value}")
+            violated.append(
+                f"Response not allowed for type: {classification.request_type.value}"
+            )
         else:
             satisfied.append("Response type allowed")
 
         # Check risk level compatibility
         if classification.risk_level == RiskLevel.CRITICAL:
             violated.append("Critical risk level requires refusal")
-        elif classification.risk_level == RiskLevel.HIGH and not constraint.requires_deferral:
+        elif (
+            classification.risk_level == RiskLevel.HIGH
+            and not constraint.requires_deferral
+        ):
             violated.append("High risk without deferral protocol")
         else:
             satisfied.append("Risk level acceptable")
@@ -833,7 +843,7 @@ class ChatbotCompiler:
     def generate_constrained_response(
         self,
         classification: RequestClassification,
-        generator: Optional[Callable[[str, RequestClassification], str]] = None
+        generator: Optional[Callable[[str, RequestClassification], str]] = None,
     ) -> CompiledResponse:
         """
         Third compiler pass: Generate response within constraints.
@@ -855,11 +865,15 @@ class ChatbotCompiler:
         constraint = self.constraints.get(classification.request_type)
 
         # Check constraints
-        satisfied, satisfied_list, violated_list = self.check_constraints(classification)
+        satisfied, satisfied_list, violated_list = self.check_constraints(
+            classification
+        )
 
         # Determine final decision
         if not satisfied:
-            decision = constraint.recovery_action if constraint else CompilerDecision.REFUSE
+            decision = (
+                constraint.recovery_action if constraint else CompilerDecision.REFUSE
+            )
         else:
             decision = classification.decision
 
@@ -903,7 +917,9 @@ class ChatbotCompiler:
         if self.enable_metrics:
             self._total_compilations += 1
             self._decisions[decision] = self._decisions.get(decision, 0) + 1
-            self._types[classification.request_type] = self._types.get(classification.request_type, 0) + 1
+            self._types[classification.request_type] = (
+                self._types.get(classification.request_type, 0) + 1
+            )
 
         return CompiledResponse(
             id=f"rsp_{uuid.uuid4().hex[:12]}",
@@ -918,7 +934,7 @@ class ChatbotCompiler:
             constraints_violated=violated_list,
             recovery_action=constraint.recovery_action.value if constraint else None,
             alternative_suggestion=alternative,
-            elapsed_us=elapsed_us
+            elapsed_us=elapsed_us,
         )
 
     # -------------------------------------------------------------------------
@@ -926,9 +942,7 @@ class ChatbotCompiler:
     # -------------------------------------------------------------------------
 
     def validate_response(
-        self,
-        response: CompiledResponse,
-        generated_content: Optional[str] = None
+        self, response: CompiledResponse, generated_content: Optional[str] = None
     ) -> Tuple[bool, List[str]]:
         """
         Fourth compiler pass: Validate the generated response.
@@ -963,9 +977,16 @@ class ChatbotCompiler:
         # Check required elements
         for element in constraint.required_elements:
             # Simplified check - would be more sophisticated in production
-            if element == "factual_basis" and not any(word in content_to_check.lower() for word in ["because", "since", "therefore", "according"]):
+            if element == "factual_basis" and not any(
+                word in content_to_check.lower()
+                for word in ["because", "since", "therefore", "according"]
+            ):
                 pass  # Soft check
-            elif element == "opinion_label" and "opinion" not in content_to_check.lower() and "think" not in content_to_check.lower():
+            elif (
+                element == "opinion_label"
+                and "opinion" not in content_to_check.lower()
+                and "think" not in content_to_check.lower()
+            ):
                 pass  # Soft check
 
         # Check for hallucination patterns (simplified)
@@ -976,8 +997,13 @@ class ChatbotCompiler:
         ]
         for pattern in hallucination_patterns:
             if re.search(pattern, content_to_check, re.IGNORECASE):
-                if response.classification.request_type in [RequestType.MEDICAL_ADVICE, RequestType.LEGAL_ADVICE]:
-                    violations.append(f"Overconfident language in high-risk response: {pattern}")
+                if response.classification.request_type in [
+                    RequestType.MEDICAL_ADVICE,
+                    RequestType.LEGAL_ADVICE,
+                ]:
+                    violations.append(
+                        f"Overconfident language in high-risk response: {pattern}"
+                    )
 
         return len(violations) == 0, violations
 
@@ -989,7 +1015,7 @@ class ChatbotCompiler:
         self,
         user_input: str,
         generator: Optional[Callable[[str, RequestClassification], str]] = None,
-        context: Optional[Dict[str, Any]] = None
+        context: Optional[Dict[str, Any]] = None,
     ) -> CompiledResponse:
         """
         Compile user input into a verified response.
@@ -1035,7 +1061,7 @@ class ChatbotCompiler:
                 constraints_violated=violations,
                 recovery_action="refuse",
                 alternative_suggestion=self._generate_alternative(classification),
-                elapsed_us=int((time.time() - start_time) * 1_000_000)
+                elapsed_us=int((time.time() - start_time) * 1_000_000),
             )
 
         return response
@@ -1055,7 +1081,10 @@ class ChatbotCompiler:
             RequestType.CREATIVE: f"Here's a creative response for {classification.subject}: [creative content would be generated here]",
             RequestType.SPECULATION: f"Considering the hypothetical about {classification.subject}: [speculative analysis would be provided here]",
         }
-        return templates.get(classification.request_type, f"Processing request about {classification.subject}...")
+        return templates.get(
+            classification.request_type,
+            f"Processing request about {classification.subject}...",
+        )
 
     def _generate_disclaimer(self, classification: RequestClassification) -> str:
         """Generate appropriate disclaimer based on request type."""
@@ -1066,7 +1095,9 @@ class ChatbotCompiler:
             RequestType.OPINION: "This represents one perspective. Other valid viewpoints exist.",
             RequestType.SPECULATION: "This is speculative analysis based on stated assumptions. Actual outcomes may differ.",
         }
-        return disclaimers.get(classification.request_type, "Please verify this information independently.")
+        return disclaimers.get(
+            classification.request_type, "Please verify this information independently."
+        )
 
     def _generate_referral(self, classification: RequestClassification) -> str:
         """Generate professional referral based on request type."""
@@ -1075,13 +1106,17 @@ class ChatbotCompiler:
             RequestType.LEGAL_ADVICE: "For legal matters, please consult: a licensed attorney, legal aid services, or your state bar association.",
             RequestType.FINANCIAL_ADVICE: "For financial guidance, please consult: a certified financial planner (CFP), registered investment advisor (RIA), or licensed financial advisor.",
         }
-        return referrals.get(classification.request_type, "Please consult an appropriate professional.")
+        return referrals.get(
+            classification.request_type, "Please consult an appropriate professional."
+        )
 
     def _generate_deferral_content(self, classification: RequestClassification) -> str:
         """Generate content that defers to professionals."""
         return f"I can provide general information about {classification.subject}, but for specific guidance, professional consultation is recommended."
 
-    def _generate_clarification_question(self, classification: RequestClassification) -> str:
+    def _generate_clarification_question(
+        self, classification: RequestClassification
+    ) -> str:
         """Generate a clarifying question for ambiguous requests."""
         if classification.request_type == RequestType.UNKNOWN:
             return "I want to help you accurately. Could you please clarify: Are you asking for information, requesting an action, or seeking guidance on a decision?"
@@ -1103,7 +1138,9 @@ class ChatbotCompiler:
             RequestType.MEDICAL_ADVICE: "For health concerns, please consult healthcare.gov or call your doctor.",
             RequestType.LEGAL_ADVICE: "For legal questions, consider consulting findlaw.com or your local bar association.",
         }
-        return alternatives.get(classification.request_type, "Please consider rephrasing your request.")
+        return alternatives.get(
+            classification.request_type, "Please consider rephrasing your request."
+        )
 
     # -------------------------------------------------------------------------
     # METRICS
@@ -1116,9 +1153,13 @@ class ChatbotCompiler:
             "decisions": {k.value: v for k, v in self._decisions.items()},
             "request_types": {k.value: v for k, v in self._types.items()},
             "decision_rates": {
-                k.value: (v / self._total_compilations * 100 if self._total_compilations > 0 else 0)
+                k.value: (
+                    v / self._total_compilations * 100
+                    if self._total_compilations > 0
+                    else 0
+                )
                 for k, v in self._decisions.items()
-            }
+            },
         }
 
 
@@ -1126,6 +1167,7 @@ class ChatbotCompiler:
 # SECTION 7: TINYTALK CHATBOT GOVERNOR
 # Governance laws for the chatbot compiler.
 # =============================================================================
+
 
 class ChatbotGovernor:
     """
@@ -1146,6 +1188,7 @@ class ChatbotGovernor:
         def law_no_harm(classification: RequestClassification) -> bool:
             """when(request_type == HARMFUL, finfr)"""
             return classification.request_type != RequestType.HARMFUL
+
         self.laws.append(("no_harm", law_no_harm))
 
         # Law 2: Professional Deferral
@@ -1154,6 +1197,7 @@ class ChatbotGovernor:
             if classification.risk_level == RiskLevel.CRITICAL:
                 return classification.decision == CompilerDecision.REFUSE
             return True
+
         self.laws.append(("professional_deferral", law_professional_deferral))
 
         # Law 3: Clarity Required
@@ -1162,25 +1206,36 @@ class ChatbotGovernor:
             if classification.confidence < 0.5:
                 return classification.decision != CompilerDecision.ANSWER
             return True
+
         self.laws.append(("clarity_required", law_clarity_required))
 
         # Law 4: Medical Safety
         def law_medical_safety(classification: RequestClassification) -> bool:
             """when(request_type == MEDICAL_ADVICE and decision == ANSWER, finfr)"""
             if classification.request_type == RequestType.MEDICAL_ADVICE:
-                return classification.decision in [CompilerDecision.DEFER, CompilerDecision.REFUSE]
+                return classification.decision in [
+                    CompilerDecision.DEFER,
+                    CompilerDecision.REFUSE,
+                ]
             return True
+
         self.laws.append(("medical_safety", law_medical_safety))
 
         # Law 5: Legal Safety
         def law_legal_safety(classification: RequestClassification) -> bool:
             """when(request_type == LEGAL_ADVICE and decision == ANSWER, finfr)"""
             if classification.request_type == RequestType.LEGAL_ADVICE:
-                return classification.decision in [CompilerDecision.DEFER, CompilerDecision.REFUSE]
+                return classification.decision in [
+                    CompilerDecision.DEFER,
+                    CompilerDecision.REFUSE,
+                ]
             return True
+
         self.laws.append(("legal_safety", law_legal_safety))
 
-    def evaluate_all(self, classification: RequestClassification) -> Tuple[bool, List[str]]:
+    def evaluate_all(
+        self, classification: RequestClassification
+    ) -> Tuple[bool, List[str]]:
         """
         Evaluate all governance laws.
 
@@ -1207,8 +1262,7 @@ _governor_instance: Optional[ChatbotGovernor] = None
 
 
 def get_chatbot_compiler(
-    config: Optional[Dict[str, Any]] = None,
-    force_new: bool = False
+    config: Optional[Dict[str, Any]] = None, force_new: bool = False
 ) -> ChatbotCompiler:
     """
     Get the singleton ChatbotCompiler instance.
@@ -1246,10 +1300,11 @@ def get_chatbot_governor(force_new: bool = False) -> ChatbotGovernor:
 # SECTION 9: CONVENIENCE FUNCTIONS
 # =============================================================================
 
+
 def compile_request(
     user_input: str,
     generator: Optional[Callable[[str, RequestClassification], str]] = None,
-    context: Optional[Dict[str, Any]] = None
+    context: Optional[Dict[str, Any]] = None,
 ) -> CompiledResponse:
     """
     Compile a user request into a verified response.
@@ -1293,7 +1348,7 @@ def compile_request(
             constraints_violated=violated_laws,
             recovery_action="refuse",
             alternative_suggestion=compiler._generate_alternative(classification),
-            elapsed_us=0
+            elapsed_us=0,
         )
 
     # Proceed with normal compilation

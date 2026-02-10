@@ -5,7 +5,7 @@
 """
 
 import requests
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, List, Optional
 from dataclasses import dataclass
 
 

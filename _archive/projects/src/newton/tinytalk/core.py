@@ -6,7 +6,7 @@
 
 from enum import Enum
 from typing import Any, Callable, Optional, TypeVar, Generic, List, Dict
-from dataclasses import dataclass, field as dataclass_field
+from dataclasses import dataclass
 from functools import wraps
 import copy
 
@@ -194,7 +194,7 @@ def finfr_if_undefined(f: float, g: float, epsilon: float = 1e-9) -> None:
         epsilon: Tolerance for zero comparison
     """
     if abs(float(g)) < epsilon:
-        raise LawViolation("ratio_undefined", f"finfr: ratio is undefined (denominator ≈ 0)")
+        raise LawViolation("ratio_undefined", "finfr: ratio is undefined (denominator ≈ 0)")
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -272,7 +272,7 @@ class Law:
             if triggered:
                 return True, self.result
             return False, LawResult.ALLOWED
-        except Exception as e:
+        except Exception:
             # Law evaluation errors are treated as not triggered
             return False, LawResult.ALLOWED
 
@@ -332,7 +332,7 @@ def forge(func: Callable) -> Callable:
         except (LawViolation, FinClosure):
             # Re-raise law violations
             raise
-        except Exception as e:
+        except Exception:
             # Rollback on any error
             self._restore_state(saved_state)
             raise

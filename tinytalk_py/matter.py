@@ -8,7 +8,6 @@ This prevents bugs like the Mars Climate Orbiter disaster.
 """
 
 from dataclasses import dataclass
-from typing import TypeVar, Generic, Union
 from abc import ABC, abstractmethod
 
 

@@ -5,12 +5,11 @@ System menu bar with Newton logo and menus.
 ═══════════════════════════════════════════════════════════════
 """
 
-from typing import Optional, List, Dict, Callable
+from typing import Optional, Dict
 from PyQt6.QtWidgets import (
-    QWidget, QHBoxLayout, QLabel, QPushButton, QMenu, QFrame
+    QWidget, QHBoxLayout, QLabel, QPushButton, QMenu
 )
-from PyQt6.QtCore import Qt, pyqtSignal
-from PyQt6.QtGui import QFont, QColor, QAction
+from PyQt6.QtCore import pyqtSignal
 
 from core.nobject import NObject
 

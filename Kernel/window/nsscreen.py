@@ -1,4 +1,5 @@
 """NSScreen — describes a display attached to the system."""
+
 from __future__ import annotations
 from typing import List, Optional
 
@@ -10,8 +11,12 @@ class NSScreen:
 
     _screens: List[NSScreen] = []
 
-    def __init__(self, frame: Optional[NSRect] = None, visible_frame: Optional[NSRect] = None,
-                 backing_scale_factor: float = 2.0):
+    def __init__(
+        self,
+        frame: Optional[NSRect] = None,
+        visible_frame: Optional[NSRect] = None,
+        backing_scale_factor: float = 2.0,
+    ):
         self._frame = frame or NSRect(0, 0, 1920, 1080)
         self._visible_frame = visible_frame or NSRect(0, 25, 1920, 1055)
         self._backing_scale_factor = backing_scale_factor
@@ -51,5 +56,7 @@ class NSScreen:
         return list(cls._screens)
 
     def __repr__(self):
-        return (f"<NSScreen {self._localized_name!r} "
-                f"{self._frame.width}x{self._frame.height} @{self._backing_scale_factor}x>")
+        return (
+            f"<NSScreen {self._localized_name!r} "
+            f"{self._frame.width}x{self._frame.height} @{self._backing_scale_factor}x>"
+        )

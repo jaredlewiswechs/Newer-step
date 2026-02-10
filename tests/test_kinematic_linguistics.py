@@ -19,25 +19,19 @@ from newton.kinematic_linguistics import (
     # Matter Types
     GlyphMechanics,
     GlyphRegistry,
-    PhonosemanticsCluster,
     PhonosemanticsRegistry,
     StabilityClass,
     LetterPosition,
-    WordAssemblyRole,
     WORD_GEOMETRY_EXAMPLES,
     # Core Engines
-    WordVector,
     WordAssembly,
     WordAssemblyAnalyzer,
-    DistortionReport,
     DistortionIndexCalculator,
     AntonymType,
-    AntonymAnalysis,
     AntonymAnalyzer,
     CompilerRegime,
     CompilationProof,
     KinematicCompiler,
-    HallucinationCheck,
     HallucinationDetector,
 )
 

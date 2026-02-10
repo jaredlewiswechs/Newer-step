@@ -6,7 +6,7 @@ Each stroke is an NObject. Each pixel is accountable.
 """
 
 from typing import Optional, Dict, Any, List, Tuple
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import Enum
 from PyQt6.QtCore import QObject, pyqtSignal, QPointF, QRectF, Qt
 from PyQt6.QtGui import (
@@ -15,7 +15,6 @@ from PyQt6.QtGui import (
 )
 import math
 import uuid
-import time
 
 
 class ToolType(Enum):

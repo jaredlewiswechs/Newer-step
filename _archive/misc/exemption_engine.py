@@ -14,8 +14,8 @@ Shows: Ask → Answer → Verify (with receipt)
 """
 
 from flask import Flask, render_template_string, request, jsonify
-from dataclasses import dataclass, field
-from typing import Dict, List, Any, Optional, Tuple
+from dataclasses import dataclass
+from typing import Dict, List, Any
 from datetime import datetime
 from enum import Enum
 import hashlib

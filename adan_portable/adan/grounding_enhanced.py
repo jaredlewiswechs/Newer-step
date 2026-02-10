@@ -20,12 +20,10 @@ Scoring:
 import time
 import hashlib
 import re
-import json
-from dataclasses import dataclass, field
-from typing import List, Dict, Optional, Any
+from dataclasses import dataclass
+from typing import List, Dict, Optional
 from enum import Enum
 from urllib.parse import urlparse, quote_plus
-import os
 
 # Try multiple search backends
 try:

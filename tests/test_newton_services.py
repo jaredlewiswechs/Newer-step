@@ -18,14 +18,13 @@ import os
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from hypothesis import given, settings, assume, HealthCheck
+from hypothesis import given, settings, HealthCheck
 from hypothesis import strategies as st
 
-from foghorn import Card, Query, ResultSet, get_service_registry
+from foghorn import Card, Query, get_service_registry
 from foghorn.newton_services import (
     compute_service,
     verify_claim_service,
-    ground_facts_service,
     analyze_service,
     transpile_js_service,
     transpile_python_service,
@@ -241,7 +240,7 @@ class TestBezierLinkService:
     
     def test_creates_link(self):
         """Link service creates LinkCurve."""
-        from foghorn import add_object, get_object_store, LinkCurve
+        from foghorn import add_object, LinkCurve
         
         card1 = Card(title="Source", content="Source card")
         card2 = Card(title="Target", content="Target card")
@@ -261,7 +260,7 @@ class TestBezierLinkService:
     @settings(max_examples=20)
     def test_curvature_affects_handles(self, curvature: float):
         """Curvature parameter affects control points."""
-        from foghorn import add_object, get_object_store
+        from foghorn import add_object
         
         card1 = Card(title="A", content=f"Card A {curvature}")
         card2 = Card(title="B", content=f"Card B {curvature}")

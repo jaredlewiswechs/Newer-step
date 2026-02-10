@@ -25,12 +25,7 @@ from newton_geometry import (
     # Simplex
     DecisionSimplex,
     Decision,
-    RiskLevel,
-    # Lattice
     GovernanceLattice,
-    SafetyLevel,
-    LatticeNode,
-    # Manifold
     ExpandReduceManifold,
     FiberBundle,
     TextPoint,
@@ -38,13 +33,8 @@ from newton_geometry import (
     # Graph
     ComputationGraph,
     RequestType,
-    GraphNode,
-    PathResult,
-    # Hypergraph
     ModuleHypergraph,
     NewtonModule,
-    Channel,
-    # Topology
     NewtonTopology,
     TopologyRegion,
 )

@@ -25,15 +25,13 @@ if _PROJECT_ROOT not in sys.path:
 
 import pytest
 import time
-import statistics
-from typing import List, Dict, Tuple, Optional, Any, Callable
+from typing import List, Dict, Tuple, Optional
 from dataclasses import dataclass
 from enum import Enum
 
 # Import tinyTalk components
 from tinytalk_py import (
-    Blueprint, field, law, forge, when, finfr, fin,
-    LawViolation, FinClosure, LawResult
+    Blueprint, field, law, forge, when, finfr, LawViolation
 )
 
 # Note: We use a standalone chess solver rather than the LogicEngine
@@ -903,7 +901,7 @@ class TestNewtonVsHuman:
         avg_time = total_time / len(results)
         print("-"*60)
         print(f"{'AVERAGE':<30} {'':<10} {avg_time:<12.2f}")
-        print(f"\nHuman average: 2000-5000ms")
+        print("\nHuman average: 2000-5000ms")
         print(f"Newton average: {avg_time:.2f}ms")
         print(f"Newton is {2000/avg_time:.1f}x faster than average human!")
 
@@ -1048,7 +1046,7 @@ class TestNewtonVsHuman:
         print(f"Total nodes searched: {total_nodes:,}")
         print(f"Total time: {total_time:.2f}ms")
         print(f"Nodes per second: {nps:,.0f}")
-        print(f"")
+        print("")
         print("For comparison:")
         print("  - Stockfish: ~100,000,000 nodes/sec")
         print("  - Human: ~1-3 nodes/sec (conscious evaluation)")

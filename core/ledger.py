@@ -45,10 +45,10 @@ import os
 from pathlib import Path
 from threading import Lock
 
-
 # ═══════════════════════════════════════════════════════════════════════════════
 # SERVERLESS STORAGE PATH
 # ═══════════════════════════════════════════════════════════════════════════════
+
 
 def _get_default_ledger_storage_path() -> str:
     """Return ledger storage path, using /tmp for serverless environments."""
@@ -57,9 +57,9 @@ def _get_default_ledger_storage_path() -> str:
         return env_path
 
     is_serverless = (
-        "VERCEL" in os.environ or
-        "AWS_LAMBDA_FUNCTION_NAME" in os.environ or
-        "SERVERLESS" in os.environ
+        "VERCEL" in os.environ
+        or "AWS_LAMBDA_FUNCTION_NAME" in os.environ
+        or "SERVERLESS" in os.environ
     )
     return "/tmp/.newton_ledger" if is_serverless else ".newton_ledger"
 
@@ -68,30 +68,34 @@ def _get_default_ledger_storage_path() -> str:
 # LEDGER CONFIGURATION
 # ═══════════════════════════════════════════════════════════════════════════════
 
+
 @dataclass
 class LedgerConfig:
     """Configuration for the Ledger."""
+
     storage_path: str = field(default_factory=_get_default_ledger_storage_path)
-    max_entries_memory: int = 10000      # Max entries in RAM
-    sync_interval_seconds: int = 60       # Auto-sync to disk
-    enable_merkle_tree: bool = True       # Build Merkle tree for integrity
-    chain_verification: bool = True       # Verify prev_hash chain
+    max_entries_memory: int = 10000  # Max entries in RAM
+    sync_interval_seconds: int = 60  # Auto-sync to disk
+    enable_merkle_tree: bool = True  # Build Merkle tree for integrity
+    chain_verification: bool = True  # Verify prev_hash chain
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # LEDGER ENTRY - An immutable record
 # ═══════════════════════════════════════════════════════════════════════════════
 
+
 @dataclass
 class LedgerEntry:
     """A single, immutable entry in the Ledger."""
+
     index: int
-    timestamp: int                        # Unix timestamp ms
-    operation: str                        # "verify", "store", "sign", etc.
-    payload_hash: str                     # SHA-256 of payload
-    result: str                           # "pass", "fail", "error"
-    prev_hash: str                        # Hash of previous entry (chain)
-    entry_hash: str = ""                  # This entry's hash
+    timestamp: int  # Unix timestamp ms
+    operation: str  # "verify", "store", "sign", etc.
+    payload_hash: str  # SHA-256 of payload
+    result: str  # "pass", "fail", "error"
+    prev_hash: str  # Hash of previous entry (chain)
+    entry_hash: str = ""  # This entry's hash
     metadata: Dict[str, Any] = field(default_factory=dict)
 
     def __post_init__(self):
@@ -116,11 +120,11 @@ class LedgerEntry:
             "result": self.result,
             "prev_hash": self.prev_hash,
             "entry_hash": self.entry_hash,
-            "metadata": self.metadata
+            "metadata": self.metadata,
         }
 
     @classmethod
-    def from_dict(cls, d: Dict[str, Any]) -> 'LedgerEntry':
+    def from_dict(cls, d: Dict[str, Any]) -> "LedgerEntry":
         return cls(
             index=d["index"],
             timestamp=d["timestamp"],
@@ -129,13 +133,14 @@ class LedgerEntry:
             result=d["result"],
             prev_hash=d["prev_hash"],
             entry_hash=d.get("entry_hash", ""),
-            metadata=d.get("metadata", {})
+            metadata=d.get("metadata", {}),
         )
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # MERKLE TREE - For bulk integrity verification
 # ═══════════════════════════════════════════════════════════════════════════════
+
 
 class MerkleTree:
     """
@@ -189,7 +194,7 @@ class MerkleTree:
             # Ensure we have pairs
             if len(hashes) % 2 == 1:
                 hashes.append(hashes[-1])
-            
+
             next_level = []
             for i in range(0, len(hashes), 2):
                 if i + 1 < len(hashes):  # Safety check
@@ -221,6 +226,7 @@ class MerkleTree:
 # THE LEDGER
 # ═══════════════════════════════════════════════════════════════════════════════
 
+
 class Ledger:
     """
     The Newton Ledger - Immutable Verification History.
@@ -249,11 +255,7 @@ class Ledger:
     # ─────────────────────────────────────────────────────────────────────────
 
     def append(
-        self,
-        operation: str,
-        payload: Any,
-        result: str,
-        metadata: Optional[Dict] = None
+        self, operation: str, payload: Any, result: str, metadata: Optional[Dict] = None
     ) -> LedgerEntry:
         """
         Append a new entry to the ledger.
@@ -283,7 +285,7 @@ class Ledger:
                 payload_hash=payload_hash,
                 result=result,
                 prev_hash=prev_hash,
-                metadata=metadata or {}
+                metadata=metadata or {},
             )
 
             # Append
@@ -298,18 +300,14 @@ class Ledger:
             return entry
 
     def record_verification(
-        self,
-        constraint_id: str,
-        obj_hash: str,
-        passed: bool,
-        elapsed_us: int
+        self, constraint_id: str, obj_hash: str, passed: bool, elapsed_us: int
     ) -> LedgerEntry:
         """Record a verification result."""
         return self.append(
             operation="verify",
             payload={"constraint_id": constraint_id, "obj_hash": obj_hash},
             result="pass" if passed else "fail",
-            metadata={"elapsed_us": elapsed_us}
+            metadata={"elapsed_us": elapsed_us},
         )
 
     def record_signature(self, payload_hash: str, signer_id: str) -> LedgerEntry:
@@ -317,7 +315,7 @@ class Ledger:
         return self.append(
             operation="sign",
             payload={"payload_hash": payload_hash, "signer_id": signer_id},
-            result="signed"
+            result="signed",
         )
 
     # ─────────────────────────────────────────────────────────────────────────
@@ -344,7 +342,7 @@ class Ledger:
         result: Optional[str] = None,
         start_time: Optional[int] = None,
         end_time: Optional[int] = None,
-        limit: int = 100
+        limit: int = 100,
     ) -> List[LedgerEntry]:
         """Search entries with filters."""
         matches = []
@@ -442,13 +440,13 @@ class Ledger:
             "exported_at": int(time.time() * 1000),
             "merkle_root": self.get_merkle_root(),
             "entry_count": len(self._entries),
-            "entries": [e.to_dict() for e in self._entries]
+            "entries": [e.to_dict() for e in self._entries],
         }
 
         json_str = json.dumps(data, indent=2)
 
         if path:
-            with open(path, 'w') as f:
+            with open(path, "w") as f:
                 f.write(json_str)
 
         return json_str
@@ -469,7 +467,7 @@ class Ledger:
             "merkle_proof": self.get_merkle_proof(index),
             "total_entries": len(self._entries),
             "certificate_generated": int(time.time() * 1000),
-            "signature": self._sign_certificate(entry)
+            "signature": self._sign_certificate(entry),
         }
 
     def _sign_certificate(self, entry: LedgerEntry) -> str:
@@ -487,8 +485,8 @@ class Ledger:
         path.mkdir(parents=True, exist_ok=True)
 
         ledger_file = path / "ledger.jsonl"
-        with open(ledger_file, 'a') as f:
-            f.write(json.dumps(entry.to_dict()) + '\n')
+        with open(ledger_file, "a") as f:
+            f.write(json.dumps(entry.to_dict()) + "\n")
 
     def _load(self):
         """Load ledger from disk."""
@@ -499,7 +497,7 @@ class Ledger:
             return
 
         try:
-            with open(ledger_file, 'r') as f:
+            with open(ledger_file, "r") as f:
                 for line in f:
                     line = line.strip()
                     if line:
@@ -515,9 +513,9 @@ class Ledger:
         path.mkdir(parents=True, exist_ok=True)
 
         ledger_file = path / "ledger.jsonl"
-        with open(ledger_file, 'w') as f:
+        with open(ledger_file, "w") as f:
             for entry in self._entries:
-                f.write(json.dumps(entry.to_dict()) + '\n')
+                f.write(json.dumps(entry.to_dict()) + "\n")
 
     # ─────────────────────────────────────────────────────────────────────────
     # STATS
@@ -530,7 +528,7 @@ class Ledger:
                 "total_entries": 0,
                 "operations": {},
                 "results": {},
-                "chain_valid": True
+                "chain_valid": True,
             }
 
         operations: Dict[str, int] = {}
@@ -549,7 +547,7 @@ class Ledger:
             "operations": operations,
             "results": results,
             "merkle_root": self.get_merkle_root(),
-            "chain_valid": chain_valid
+            "chain_valid": chain_valid,
         }
 
 
@@ -558,6 +556,7 @@ class Ledger:
 # ═══════════════════════════════════════════════════════════════════════════════
 
 _default_ledger: Optional[Ledger] = None
+
 
 def get_ledger(config: Optional[LedgerConfig] = None) -> Ledger:
     """Get the default Ledger instance."""
@@ -584,7 +583,7 @@ if __name__ == "__main__":
             constraint_id=f"C_{i:08X}",
             obj_hash=hashlib.sha256(f"obj_{i}".encode()).hexdigest()[:16],
             passed=i % 2 == 0,
-            elapsed_us=42 + i
+            elapsed_us=42 + i,
         )
         print(f"  Entry {entry.index}: {entry.operation} -> {entry.result}")
 

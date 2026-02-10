@@ -8,10 +8,9 @@ Tests EVERYTHING - API, Agent, Data, UI simulation
 
 import asyncio
 import aiohttp
-import json
 import time
 from dataclasses import dataclass, field
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Optional
 from enum import Enum
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -702,7 +701,7 @@ class ParcStationTestBot:
                 category=TestCategory.INTEGRATION,
                 passed=passed,
                 duration_ms=(time.time() - start) * 1000,
-                details=f"verify→ground→ledger complete"
+                details="verify→ground→ledger complete"
             ))
         except Exception as e:
             self.report.add(TestResult(
@@ -723,7 +722,7 @@ class ParcStationTestBot:
                     category=TestCategory.INTEGRATION,
                     passed=passed,
                     duration_ms=(time.time() - start) * 1000,
-                    details=f"agent uses newton grounding"
+                    details="agent uses newton grounding"
                 ))
         except Exception as e:
             self.report.add(TestResult(
@@ -868,7 +867,7 @@ class ParcStationTestBot:
             print(f"   {icon} {cat.value:20} [{bar}] {passed}/{total} ({pct:.0f}%)")
         
         # Summary
-        print(f"\n📈 Summary:")
+        print("\n📈 Summary:")
         print(f"   Total Tests:  {self.report.total}")
         print(f"   Passed:       {self.report.passed} ✓")
         print(f"   Failed:       {self.report.failed} ✗")
@@ -878,7 +877,7 @@ class ParcStationTestBot:
         # Failed tests
         failed = [r for r in self.report.results if not r.passed]
         if failed:
-            print(f"\n❌ Failed Tests:")
+            print("\n❌ Failed Tests:")
             for r in failed:
                 print(f"   • {r.name}")
                 if r.error:

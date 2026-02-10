@@ -19,7 +19,6 @@ Or with the server running:
 
 import sys
 import json
-from typing import List, Dict, Optional
 
 # Add parent directory to path for imports
 sys.path.insert(0, str(__file__).rsplit('/', 2)[0])
@@ -294,7 +293,7 @@ def demo_student_differentiation():
     median = sorted(scores)[len(scores)//2]
     mad = sorted([abs(s - median) for s in scores])[len(scores)//2]
 
-    print(f"\n--- MAD Statistics ---")
+    print("\n--- MAD Statistics ---")
     print(f"  Median: {median}%")
     print(f"  MAD: {mad}")
     print(f"  Interpretation: Most students within ±{mad}% of {median}%")

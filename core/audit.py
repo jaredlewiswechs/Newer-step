@@ -5,6 +5,7 @@ available at runtime (via `newton_supercomputer.ledger`). Regardless, it
 also writes JSON-lines to `logs/audit.log` so tests and local runs have
 an immutable record.
 """
+
 from __future__ import annotations
 
 import json
@@ -25,7 +26,12 @@ def _append_local_log(entry: Dict[str, Any]) -> None:
         pass
 
 
-def log_event(operation: str, payload: Optional[Dict[str, Any]] = None, result: str = "ok", metadata: Optional[Dict[str, Any]] = None) -> None:
+def log_event(
+    operation: str,
+    payload: Optional[Dict[str, Any]] = None,
+    result: str = "ok",
+    metadata: Optional[Dict[str, Any]] = None,
+) -> None:
     payload = payload or {}
     metadata = metadata or {}
     entry = {
@@ -39,10 +45,16 @@ def log_event(operation: str, payload: Optional[Dict[str, Any]] = None, result: 
     # Try to append to Newton ledger if available at runtime
     try:
         import newton_supercomputer as ns
+
         ledger = getattr(ns, "ledger", None)
         if ledger is not None:
             try:
-                ledger.append(operation=operation, payload=payload, result=result, metadata=metadata)
+                ledger.append(
+                    operation=operation,
+                    payload=payload,
+                    result=result,
+                    metadata=metadata,
+                )
             except Exception:
                 # fall through to local log
                 _append_local_log(entry)

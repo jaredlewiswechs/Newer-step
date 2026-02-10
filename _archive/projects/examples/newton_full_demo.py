@@ -20,10 +20,8 @@
 """
 
 import sys
-import json
 import time
 import requests
-from typing import Optional
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # NEWTON CLIENT (inline for demo - normally: from newton_sdk import Newton)
@@ -140,9 +138,9 @@ def demo_verified_computation(n: Newton):
         ]
     }
     result = n.calculate(expr)
-    print(f"  (100 + 200) × (2¹⁰ - 24)")
-    print(f"  = 300 × (1024 - 24)")
-    print(f"  = 300 × 1000")
+    print("  (100 + 200) × (2¹⁰ - 24)")
+    print("  = 300 × (1024 - 24)")
+    print("  = 300 × 1000")
     print(f"  = {result['result']}")
     print(f"  Verified: {result['verified']} | Fingerprint: {result['fingerprint'][:24]}...\n")
 
@@ -223,7 +221,7 @@ def demo_vault(n: Newton):
     # Store
     result = n.vault_store(secret_data, identity="demo_user_001", passphrase="my_secret_pass")
     entry_id = result.get("entry_id", "demo-entry")
-    print(f"  Stored secret data")
+    print("  Stored secret data")
     print(f"  Entry ID: {entry_id}")
     print(f"  Owner ID: {result.get('owner_id', 'hashed')[:16]}...")
     success("Data encrypted and stored")
@@ -273,7 +271,7 @@ def demo_cartridges(n: Newton):
         width=800,
         height=600
     )
-    print(f"    Intent: Pie chart")
+    print("    Intent: Pie chart")
     print(f"    Verified: {result.get('verified', False)}")
     print(f"    Dimensions: {result.get('width', 800)}x{result.get('height', 600)}")
     print(f"    Elements: {result.get('element_count', 'N/A')}")
@@ -284,10 +282,10 @@ def demo_cartridges(n: Newton):
         "A gentle notification chime, 440Hz base, pleasant harmonics",
         duration_ms=500
     )
-    print(f"    Intent: Notification chime")
+    print("    Intent: Notification chime")
     print(f"    Verified: {result.get('verified', False)}")
     print(f"    Duration: {result.get('duration_ms', 500)}ms")
-    print(f"    Frequency bounds checked: ✓")
+    print("    Frequency bounds checked: ✓")
 
     # Sequence (video/animation)
     print("\n  🎬 SEQUENCE CARTRIDGE")
@@ -296,10 +294,10 @@ def demo_cartridges(n: Newton):
         duration_seconds=2,
         fps=30
     )
-    print(f"    Intent: Loading spinner")
+    print("    Intent: Loading spinner")
     print(f"    Verified: {result.get('verified', False)}")
     print(f"    Duration: {result.get('duration_seconds', 2)}s @ {result.get('fps', 30)}fps")
-    print(f"    Seizure-safe: ✓")
+    print("    Seizure-safe: ✓")
 
     # Rosetta (code)
     print("\n  💻 ROSETTA CARTRIDGE (Code Generation)")
@@ -307,8 +305,8 @@ def demo_cartridges(n: Newton):
         "Function to validate email addresses with RFC 5322 compliance",
         language="python"
     )
-    print(f"    Intent: Email validator")
-    print(f"    Language: Python")
+    print("    Intent: Email validator")
+    print("    Language: Python")
     print(f"    Verified: {result.get('verified', False)}")
 
     success("All cartridges generate SPECIFICATIONS, not hallucinations.")
@@ -332,7 +330,7 @@ def demo_statistics(n: Newton):
 
     if 'test' in result:
         test = result['test']
-        print(f"\n  Testing 500 as potential outlier:")
+        print("\n  Testing 500 as potential outlier:")
         print(f"    Modified Z-score: {test['modified_zscore']}")
         print(f"    Is anomaly: {test['is_anomaly']}")
         if test['is_anomaly']:
@@ -374,9 +372,9 @@ def demo_education(n: Newton):
             subject="math"
         )
 
-        print(f"  Topic: Introduction to Fractions")
-        print(f"  Grade: 4")
-        print(f"  Subject: Math")
+        print("  Topic: Introduction to Fractions")
+        print("  Grade: 4")
+        print("  Subject: Math")
         print(f"  Verified: {result.get('verified', True)}")
 
         if 'standards' in result:
@@ -431,7 +429,7 @@ def demo_ask(n: Newton):
 
     result = n.ask("What is 2 + 2 and is it safe to say the answer?")
 
-    print(f"  Query: \"What is 2 + 2 and is it safe to say the answer?\"")
+    print("  Query: \"What is 2 + 2 and is it safe to say the answer?\"")
     print(f"  Response: {result.get('response', result)}")
 
     if 'verified' in result:
