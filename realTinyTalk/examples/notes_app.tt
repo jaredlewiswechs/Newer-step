@@ -1,0 +1,8 @@
+# Notes App (TinyTalk)
+# Opens a small Notes window and exposes save/load via shell API
+
+shell.open_window("Notes")
+# This script runs once to create a window and register shell APIs.
+# The app uses `shell.save_note(title, content)` and `shell.load_note(entry_id)`
+# via the shell/client UI to persist and retrieve notes.
+show("Notes app started")

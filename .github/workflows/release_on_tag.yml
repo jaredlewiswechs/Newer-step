@@ -1,0 +1,43 @@
+name: Release on Tag
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.11
+
+      - name: Install build deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt || true
+          python -m pip install --upgrade build requests
+
+      - name: Build artifacts
+        run: python -m build
+
+      - name: Publish to PyPI (optional)
+        if: secrets.PYPI_API_TOKEN != ''
+        env:
+          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+        run: |
+          python -m pip install --upgrade twine
+          python -m twine upload dist/* -u __token__ -p $TWINE_PASSWORD
+
+      - name: Run release script
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: |
+          TAG=${{ github.ref_name }}
+          python scripts/release.py "$TAG"

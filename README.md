@@ -26,12 +26,19 @@
 # Install
 pip install -e .
 
-# Run the API locally
-newton serve
+# Run the API locally (demo server)
+python -m uvicorn Kernel.demo.server:app --reload --port 9009
 
-# Run tinyTalk
-newton demo
+# Run tinyTalk REPL
+python -m realTinyTalk
 ```
+
+## Release
+
+- Update `VERSION` file and `RELEASE_NOTES.md`.
+- Create a git tag: `git tag -a vX.Y.Z -m "Release vX.Y.Z"`
+- Push the tag: `git push origin vX.Y.Z`
+- CI will build artifacts; or run locally: `python scripts/release.py vX.Y.Z` (requires `GITHUB_TOKEN` and `GITHUB_REPOSITORY` env vars).
 
 ## Deploy to Vercel
 

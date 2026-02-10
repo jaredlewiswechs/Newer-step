@@ -188,6 +188,516 @@ async def post_event(request: Request):
     return {"message": msg, "view_id": view_id, "hit": view_repr}
 
 
+# shared shell instance for demo interactions
+_shell = None
+
+def _ensure_shell():
+    global _shell, _process_manager
+    if _shell is None:
+        from nina.desktop_shell import DesktopShell
+        from ..window.nswindow import NSWindow
+        from ..view.nsview import NSRect
+        from ..gui.nsbezier import NSColor
+        _shell = DesktopShell(width=900, height=600)
+        w1 = NSWindow(content_rect=NSRect(60, 80, 360, 260), title="Notes")
+        w1.content_view._background_color = NSColor(255, 255, 240)
+        w2 = NSWindow(content_rect=NSRect(440, 120, 360, 260), title="Inspector")
+        w2.content_view._background_color = NSColor(240, 255, 255)
+        _shell.open_window(w1)
+        _shell.open_window(w2)
+
+    # register simple demo apps on first creation
+    if not hasattr(_ensure_shell, '_apps'):
+        from ..window.nswindow import NSWindow
+        from ..view.nsview import NSRect
+
+        def notes_app(title='Notes'):
+            nw = NSWindow(content_rect=NSRect(80, 80, 380, 260), title=title)
+            return nw
+
+        def inspector_app(title='Inspector'):
+            nw = NSWindow(content_rect=NSRect(120, 100, 360, 240), title=title)
+            return nw
+
+        _ensure_shell._apps = {'notes': notes_app, 'inspector': inspector_app}
+
+    # process manager
+    if '_process_manager' not in globals():
+        from nina.process import ProcessManager, init_process_registry
+        _process_manager = ProcessManager(_shell)
+        init_process_registry(_process_manager)
+
+    return _shell
+
+
+@app.get("/kernel/demo/shell")
+def shell_svg():
+    """Return the current DesktopShell as SVG."""
+    shell = _ensure_shell()
+    svg = shell.render_to_svg(width=900, height=600)
+    return Response(content=svg, media_type='image/svg+xml')
+
+
+@app.get('/kernel/demo/shell_page')
+def shell_page():
+    """Interactive shell page that allows clicking to focus windows."""
+    html = '''<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Kernel Shell Demo</title>
+  <style>
+    body { font-family: sans-serif; margin: 20px; }
+    svg { cursor: pointer; border: 1px solid #ccc; width: 900px; height: 600px; }
+    #log { max-height: 160px; overflow-y: auto; font-size: 13px; }
+    .info { color: #666; font-size: 13px; }
+  </style>
+</head>
+<body>
+  <h3>Kernel 120: Desktop Shell (Interactive)</h3>
+  <p class="info">Click any window icon to focus/raise it. You can also launch a new sample app.</p>
+
+  <div style="display:flex; gap:16px; align-items:flex-start; margin-top:8px;">
+    <div id="svg-container"><img src="/kernel/demo/shell" /></div>
+
+    <div style="width:320px;">
+      <div style="margin-bottom:6px;"><button id="launch">Launch App</button>
+      <button id="launch-notes">Open Notes App</button>
+      <button id="app-install">Install App</button></div>
+
+      <h4>Notes</h4>
+      <div>
+        <div><strong>Active PID:</strong> <span id="notes-pid">none</span></div>
+        <div style="margin-top:6px;"><button id="notes-refresh">Refresh Notes</button></div>
+        <ul id="notes-list" style="max-height:140px; overflow:auto; border:1px solid #ddd; padding:6px;"></ul>
+        <div style="margin-top:8px;"><input id="notes-title" placeholder="Title" style="width:100%" /></div>
+        <div style="margin-top:6px;"><textarea id="notes-body" rows="6" style="width:100%"></textarea></div>
+        <div style="margin-top:6px;"><button id="notes-save">Save Note</button>
+        <button id="edit-window" style="margin-left:6px;">Edit Window</button></div>
+      </div>
+
+      <h4>Event Log (server-side)</h4>
+      <ul id="log"></ul>
+    </div>
+  </div>
+
+  <!-- Overlay editor for in-window editing -->
+  <div id="notes-editor-overlay" style="display:none; position:fixed; left:50%; top:50%; transform:translate(-50%,-50%); width:560px; height:420px; background:#fff; box-shadow:0 8px 24px rgba(0,0,0,0.4); padding:12px; z-index:1000;">
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+      <h4 style="margin:0">Edit Window</h4>
+      <div><button id="notes-editor-cancel">Close</button></div>
+    </div>
+    <div style="margin-top:8px;"><input id="notes-editor-title" placeholder="Title" style="width:100%" /></div>
+    <div style="margin-top:8px;"><textarea id="notes-editor-body" rows="12" style="width:100%"></textarea></div>
+    <div style="margin-top:8px; text-align:right;"><button id="notes-editor-save">Save</button></div>
+  </div>
+
+  <script>
+    async function refreshSVG() {
+      const resp = await fetch('/kernel/demo/shell');
+      const svgText = await resp.text();
+      document.getElementById('svg-container').innerHTML = svgText;
+      document.querySelector('#svg-container svg').addEventListener('click', async (e) => {
+        const rect = e.currentTarget.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        const resp = await fetch('/kernel/demo/shell/event', {
+          method: 'POST', headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({x: x, y: y})
+        });
+        const data = await resp.json();
+        const li = document.createElement('li');
+        li.textContent = data.message;
+        document.getElementById('log').prepend(li);
+        // refresh SVG to update z-order
+        await refreshSVG();
+      });
+    }
+
+    async function refreshNotes(pid) {
+      if (!pid) return;
+      const resp = await fetch(`/kernel/demo/shell/notes/list?pid=${pid}`);
+      const data = await resp.json();
+      const list = document.getElementById('notes-list');
+      list.innerHTML = '';
+      for (const n of data.notes || []) {
+        const li = document.createElement('li');
+        li.textContent = n.title;
+        li.dataset.id = n.id;
+        li.style.cursor = 'pointer';
+        li.addEventListener('click', async () => {
+          const r = await fetch('/kernel/demo/shell/notes/load', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({pid: pid, entry_id: n.id})});
+          const d = await r.json();
+          if (d.entry && d.entry.content) {
+            document.getElementById('notes-title').value = d.entry.title || '';
+            document.getElementById('notes-body').value = d.entry.content || '';
+          }
+        });
+        list.appendChild(li);
+      }
+    }
+
+    document.getElementById('launch').addEventListener('click', async () => {
+      const title = 'App-' + Math.floor(Math.random() * 999);
+      await fetch('/kernel/demo/shell/launch', {method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({title: title})});
+      await refreshSVG();
+    });
+
+    document.getElementById('launch-notes').addEventListener('click', async () => {
+      // fetch the notes script and launch as process
+      const s = await fetch('/kernel/demo/shell/notes/script');
+      const js = await s.json();
+      const r = await fetch('/kernel/demo/shell/launch', {method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({script: js.script, title: 'NotesApp'})});
+      const res = await r.json();
+      const pid = res.pid;
+      document.getElementById('notes-pid').textContent = pid;
+      await refreshNotes(pid);
+      await refreshSVG();
+    });
+
+    document.getElementById('app-install').addEventListener('click', async () => {
+      const name = prompt('App name (id):');
+      if (!name) return;
+      const manifest = {name: name, version: '0.1.0', entry: 'main.tt', description: ''};
+      const script = prompt('Paste TinyTalk script for the app (simple):');
+      if (!script) return;
+      const r = await fetch('/kernel/demo/shell/apps/install', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({name: name, manifest: manifest, script: script})});
+      const data = await r.json();
+      alert('Installed: ' + JSON.stringify(data));
+      await refreshSVG();
+    });
+
+    // Edit-in-window support
+    let selectedWindowId = null;
+    document.addEventListener('click', (e) => {
+      // If the SVG event returned a window selection, it will set the dataset on svg-container
+      const sel = document.getElementById('svg-container').dataset.selectedWindow;
+      if (sel) selectedWindowId = sel;
+    });
+
+    document.getElementById('edit-window').addEventListener('click', async () => {
+      const pid = parseInt(document.getElementById('notes-pid').textContent);
+      if (!pid || !selectedWindowId) return alert('Select a window first (click on it).');
+      const r = await fetch('/kernel/demo/shell/notes/window/get', {method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({pid: pid, window_id: selectedWindowId})});
+      const d = await r.json();
+      if (d.error) return alert('Window not editable: ' + d.error);
+      // show overlay
+      document.getElementById('notes-editor-title').value = d.title || '';
+      document.getElementById('notes-editor-body').value = d.content || '';
+      const overlay = document.getElementById('notes-editor-overlay');
+      overlay.style.display = 'block';
+      overlay.dataset.pid = pid;
+      overlay.dataset.windowId = selectedWindowId;
+    });
+
+    document.getElementById('notes-editor-save').addEventListener('click', async () => {
+      const overlay = document.getElementById('notes-editor-overlay');
+      const pid = parseInt(overlay.dataset.pid);
+      const window_id = parseInt(overlay.dataset.windowId);
+      const title = document.getElementById('notes-editor-title').value;
+      const content = document.getElementById('notes-editor-body').value;
+      await fetch('/kernel/demo/shell/notes/window/save', {method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({pid: pid, window_id: window_id, title: title, content: content})});
+      overlay.style.display = 'none';
+      await refreshNotes(pid);
+      await refreshSVG();
+    });
+
+    document.getElementById('notes-editor-cancel').addEventListener('click', () => {
+      document.getElementById('notes-editor-overlay').style.display = 'none';
+    });
+
+    // initial load
+    refreshSVG();
+      // save to Vault
+      const s = await fetch('/kernel/demo/shell/notes/save', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({pid: pid, title: title, content: content})});
+      const r = await s.json();
+      // update first notes window of the process (if exists)
+      const procs = await fetch('/kernel/demo/shell/processes');
+      const pr = await procs.json();
+      const pinfo = pr.processes.find(p=>p.pid==parseInt(pid));
+      if (pinfo && pinfo.windows && pinfo.windows.length>0) {
+        const win = pinfo.windows[0];
+        await fetch('/kernel/demo/shell/notes/window/save', {method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({pid: pid, window_id: win.id, title: title, content: content})});
+      }
+      await refreshNotes(pid);
+      await refreshSVG();
+    });
+
+    // initial load
+    refreshSVG();
+  </script>
+</body>
+</html>'''
+    return Response(content=html, media_type='text/html')
+
+
+@app.post('/kernel/demo/shell/event')
+async def shell_event(request: Request):
+    body = await request.json()
+    x = float(body.get('x', 0))
+    y = float(body.get('y', 0))
+    shell = _ensure_shell()
+
+    hit = shell.hit_test((x, y))
+    if hit:
+        shell.focus_window(hit)
+        msg = f'Clicked window: {hit.title} (id={id(hit)}) at ({x:.0f},{y:.0f})'
+    else:
+        msg = f'Clicked empty space at ({x:.0f},{y:.0f})'
+
+    _event_log.append(msg)
+    if len(_event_log) > 200:
+        _event_log.pop(0)
+
+    return {"message": msg, "window_id": id(hit) if hit else None, "title": hit.title if hit else None}
+
+
+@app.get('/kernel/demo/shell/apps')
+def shell_apps():
+    _ensure_shell()
+    from nina.app_store import list_installed_apps
+    installed = list_installed_apps()
+    available = list(_ensure_shell._apps.keys())
+    return {"available": available, "installed": installed} 
+
+
+@app.post('/kernel/demo/shell/apps/install')
+async def shell_apps_install(request: Request):
+    body = await request.json()
+    name = body.get('name')
+    manifest = body.get('manifest')
+    script = body.get('script')
+    if not name or not manifest or not script:
+        return {"error": "name, manifest, and script required"}
+    from nina.app_store import install_app_from_payload
+    res = install_app_from_payload(name, manifest, script)
+    # register in _ensure_shell (allow launching by name)
+    if hasattr(_ensure_shell, '_apps'):
+        def factory(title=name):
+            from ..window.nswindow import NSWindow
+            from ..view.nsview import NSRect
+            w = NSWindow(content_rect=NSRect(80, 80, 380, 260), title=title)
+            return w
+        _ensure_shell._apps[name] = factory
+    return res
+
+
+@app.post('/kernel/demo/shell/apps/uninstall')
+async def shell_apps_uninstall(request: Request):
+    body = await request.json()
+    name = body.get('name')
+    if not name:
+        return {"error": "name required"}
+    from nina.app_store import uninstall_app
+    ok = uninstall_app(name)
+    if ok and hasattr(_ensure_shell, '_apps') and name in _ensure_shell._apps:
+        del _ensure_shell._apps[name]
+    return {"uninstalled": ok}
+
+
+@app.post('/kernel/demo/shell/launch')
+async def shell_launch(request: Request):
+    body = await request.json()
+    title = body.get('title', 'App')
+    app_name = body.get('app')
+    script = body.get('script')
+
+    shell = _ensure_shell()
+
+    # launch by registered app factory
+    if app_name and hasattr(_ensure_shell, '_apps') and app_name in _ensure_shell._apps:
+        factory = _ensure_shell._apps[app_name]
+        w = factory(title)
+        shell.open_window(w)
+        return {"title": title, "window_id": id(w)}
+
+    # launch a TinyTalk script as a process
+    if script:
+        # accept permission flags in request
+        allow_vault = bool(body.get('allow_vault', True))
+        allow_filesystem = bool(body.get('allow_filesystem', False))
+        allow_system = bool(body.get('allow_system', False))
+        allow_network = bool(body.get('allow_network', False))
+        p = _process_manager.launch_script(script, title=title, allow_vault=allow_vault, allow_filesystem=allow_filesystem, allow_system=allow_system, allow_network=allow_network)
+        return {"title": p.title, "pid": p.pid, "permissions": {"vault": allow_vault, "fs": allow_filesystem, "system": allow_system, "network": allow_network}}
+
+    # fallback: open an empty window
+    w = NSWindow(content_rect=NSRect(80, 80, 360, 260), title=title)
+    shell.open_window(w)
+    return {"title": title, "window_id": id(w)}
+
+
+@app.get('/kernel/demo/shell/snapshot')
+def shell_snapshot():
+    shell = _ensure_shell()
+    return shell.snapshot()
+
+
+@app.post('/kernel/demo/shell/restore')
+async def shell_restore(request: Request):
+    data = await request.json()
+    from nina.desktop_shell import DesktopShell
+    global _shell
+    _shell = DesktopShell.restore(data)
+    return {"restored": True}
+
+
+@app.get('/kernel/demo/shell/list')
+def shell_list():
+    shell = _ensure_shell()
+    return {"windows": [{"id": id(w), "title": w.title, "frame": (w.frame.x, w.frame.y, w.frame.width, w.frame.height)} for w in shell.windows]}
+
+
+@app.get('/kernel/demo/shell/processes')
+def shell_processes():
+    _ensure_shell()
+    procs = _process_manager.list_processes()
+    return {"processes": procs}
+
+
+@app.post('/kernel/demo/shell/kill')
+async def shell_kill(request: Request):
+    body = await request.json()
+    pid = int(body.get('pid'))
+    ok = _process_manager.kill(pid)
+    return {"killed": ok, "pid": pid}
+
+
+# IPC endpoints
+@app.post('/kernel/demo/shell/publish')
+async def shell_publish(request: Request):
+    body = await request.json()
+    channel = body.get('channel')
+    message = body.get('message')
+    _process_manager.publish(channel, {'message': message})
+    return {'published': True}
+
+
+@app.get('/kernel/demo/shell/fetch')
+def shell_fetch(channel: str = Query(...)):
+    data = _process_manager.fetch_channel(channel)
+    return {'messages': data}
+
+
+@app.post('/kernel/demo/shell/close')
+async def shell_close(request: Request):
+    body = await request.json()
+    win_id = body.get('id')
+    shell = _ensure_shell()
+    for w in list(shell.windows):
+        if id(w) == win_id:
+            shell.close_window(w)
+            return {"closed": win_id}
+    return {"closed": None}
+
+
+# ── Notes endpoints ─────────────────────────────────────────────────
+
+@app.get('/kernel/demo/shell/notes/script')
+def notes_script():
+    """Return the TinyTalk Notes app script."""
+    try:
+        with open('realTinyTalk/examples/notes_app.tt', 'r', encoding='utf-8') as f:
+            return {"script": f.read()}
+    except Exception as e:
+        return {"script": "shell.open_window('Notes')\nshow('Notes app')"}
+
+
+@app.get('/kernel/demo/shell/notes/list')
+def shell_notes_list(pid: int):
+    proc = _process_manager._processes.get(pid)
+    if not proc or not proc._owner_id:
+        return {"error": "process not found or no owner", "notes": []}
+    from newton_supercomputer import vault
+    entries = vault._owner_index.get(proc._owner_id, [])
+    notes = []
+    for eid in entries:
+        try:
+            data = vault.retrieve(proc._owner_id, eid)
+            title = data.get('title') if isinstance(data, dict) else str(data)[:32]
+            notes.append({"id": eid, "title": title})
+        except Exception:
+            notes.append({"id": eid, "title": "<encrypted>"})
+    return {"notes": notes}
+
+
+@app.post('/kernel/demo/shell/notes/save')
+async def shell_save_note(request: Request):
+    body = await request.json()
+    pid = int(body.get('pid'))
+    title = body.get('title')
+    content = body.get('content')
+    proc = _process_manager._processes.get(pid)
+    if not proc:
+        return {"error": "process not found"}
+    from newton_supercomputer import vault
+    owner = proc._owner_id or proc._ensure_owner()
+    entry_id = vault.store(owner, {"title": title, "content": content}, metadata={"app": proc.title})
+    return {"entry_id": entry_id}
+
+
+@app.post('/kernel/demo/shell/notes/load')
+async def shell_load_note(request: Request):
+    body = await request.json()
+    pid = int(body.get('pid'))
+    entry_id = body.get('entry_id')
+    proc = _process_manager._processes.get(pid)
+    if not proc or not proc._owner_id:
+        return {"error": "process not found or no owner"}
+    from newton_supercomputer import vault
+    try:
+        data = vault.retrieve(proc._owner_id, entry_id)
+        return {"entry": data}
+    except Exception as e:
+        return {"error": str(e)}
+
+
+@app.post('/kernel/demo/shell/notes/window/save')
+async def shell_notes_window_save(request: Request):
+    body = await request.json()
+    pid = int(body.get('pid'))
+    window_id = int(body.get('window_id'))
+    title = body.get('title')
+    content = body.get('content')
+    proc = _process_manager._processes.get(pid)
+    if not proc:
+        return {"error": "process not found"}
+    ok = False
+    # Try process-level helper first
+    for w in proc._windows:
+        if id(w) == window_id and hasattr(w.content_view, 'set_content'):
+            w.content_view.set_content(title, content)
+            ok = True
+            break
+
+    # If not found, try to call into the runtime shell API (if set)
+    if not ok and proc.runtime and proc.runtime.global_scope.get('shell'):
+        try:
+            shell_map = proc.runtime.global_scope.get('shell').data
+            val = shell_map.get('set_window_note')
+            if val and getattr(val, 'data', None) and getattr(val.data, 'native_fn', None):
+                # call the underlying native wrapper
+                val.data.native_fn([window_id, title, content])
+                ok = True
+        except Exception:
+            ok = False
+
+    return {"ok": bool(ok)}
+
+
+@app.post('/kernel/demo/shell/notes/window/get')
+async def shell_notes_window_get(request: Request):
+    body = await request.json()
+    pid = int(body.get('pid'))
+    window_id = int(body.get('window_id'))
+    proc = _process_manager._processes.get(pid)
+    if not proc:
+        return {"error": "process not found"}
+    for w in proc._windows:
+        if id(w)==window_id and hasattr(w.content_view, 'content'):
+            return {"title": getattr(w.content_view, 'title', ''), "content": getattr(w.content_view, 'content', '')}
+    return {"error": "window not found or not a notes view"}
+
 # ── landing page ──────────────────────────────────────────────────
 
 @app.get('/kernel/demo/html')
@@ -202,6 +712,7 @@ def html_demo():
            <a href="/kernel/demo/svg?shape=oval">oval</a> |
            <a href="/kernel/demo/svg?shape=arc">arc</a></p>
     <p><strong><a href="/kernel/demo/views">Interactive View Tree Demo &rarr;</a></strong></p>
+    <p><strong><a href="/kernel/demo/shell">Desktop Shell Demo &rarr;</a></strong></p>
     <img src="/kernel/demo/svg" alt="demo svg" />
   </body>
 </html>'''

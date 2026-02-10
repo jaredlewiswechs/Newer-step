@@ -43,10 +43,19 @@ class NSApplication:
             return handled
         return False
 
-    def run(self, poll_interval: float = 0.01):
+    def run(self, poll_interval: float = 0.01, max_iterations: int = None):
+        """Run the main loop.
+
+        For testing, pass `max_iterations` to limit how many iterations are performed
+        so the loop cannot hang indefinitely.
+        """
         self._running = True
+        iterations = 0
         while self._running:
             processed = self.run_once()
+            iterations += 1
+            if max_iterations is not None and iterations >= max_iterations:
+                break
             time.sleep(poll_interval)
 
     def stop(self):

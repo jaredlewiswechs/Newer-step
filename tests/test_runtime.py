@@ -65,7 +65,8 @@ def test_run_loop_stop():
         import threading
         t = threading.Thread(target=run_and_stop)
         t.start()
-        app.run(poll_interval=0.001)
+        # Run loop with a max_iterations guard to avoid hanging tests
+        app.run(poll_interval=0.001, max_iterations=1000)
     finally:
         if t:
             t.join(timeout=1)
