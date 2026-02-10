@@ -35,7 +35,7 @@ from .distortion import DistortionMetric, GeometryMismatchError, get_distortion_
 
 # Import Nina's knowledge integration (bridges to adan_portable)
 try:
-    from .knowledge import NinaKnowledge, get_nina_knowledge, NinaFact
+    from .knowledge import NinaKnowledge, get_nina_knowledge
 
     HAS_NINA_KB = True
 except ImportError:
@@ -46,8 +46,6 @@ try:
     from adan.query_parser import (
         KinematicQueryParser,
         get_query_parser,
-        QueryShape as AdanQueryShape,
-        ParsedQuery as AdanParsedQuery,
     )
 
     HAS_ADAN_PARSER = True
