@@ -522,6 +522,7 @@ async def shell_launch(request: Request):
         return {"title": p.title, "pid": p.pid, "permissions": {"vault": allow_vault, "fs": allow_filesystem, "system": allow_system, "network": allow_network}}
 
     # fallback: open an empty window
+    from ..view.nsview import NSRect
     w = NSWindow(content_rect=NSRect(80, 80, 360, 260), title=title)
     shell.open_window(w)
     return {"title": title, "window_id": id(w)}
