@@ -99,7 +99,7 @@ pytest tests/
 
 ## Archive
 
-Older projects and documentation have been moved to `_archive/`. Nothing in `_archive/` is deployed to Vercel. All git history is preserved.
+Older projects and documentation have been moved to `_archive/`. Legacy `realtinytalk` artifacts have been archived to `_archive/realtinytalk_old/`. The canonical TinyTalk runtime is `realTinyTalk/` — please use that directory for runtime development and examples. Nothing in `_archive/` is deployed to Vercel. All git history is preserved.
 
 ## License
 
