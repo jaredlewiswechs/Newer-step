@@ -60,8 +60,6 @@ try:
     from adan.query_parser import (
         KinematicQueryParser,
         get_query_parser,
-        QueryShape as AdanQueryShape,
-        ParsedQuery as AdanParsedQuery,
     )
 
     HAS_PARSER = True
@@ -70,12 +68,8 @@ except ImportError as e:
     HAS_PARSER = False
 
 try:
-    from adan.knowledge_sources import (
-        Source,
-        SourceTier,
-        SOURCES,
-    )
-
+    # knowledge sources may be present for advanced integrations; we only check availability here
+    import adan.knowledge_sources as _adan_sources
     HAS_SOURCES = True
 except ImportError as e:
     print(f"[NINA] Warning: Could not import adan.knowledge_sources: {e}")
