@@ -3,7 +3,7 @@
 from __future__ import annotations
 from typing import List, Optional, Dict, Any
 
-from Kernel.window.nswindow import NSWindow
+from Kernel.window.nswindow import NSWindow, NSWindowStyleMask
 from Kernel.view.nsview import NSRect
 
 
@@ -22,6 +22,15 @@ class DesktopShell:
         self._dock_items = list(dock_items or [])
         self._width = width
         self._height = height
+        # simple menu bar definition (label + items)
+        self._menu_bar = [
+            {"label": "Apple", "items": [{"label": "About"}, {"label": "Quit"}]},
+            {"label": "File", "items": [{"label": "New"}, {"label": "Open"}]},
+            {"label": "Edit", "items": [{"label": "Undo"}, {"label": "Redo"}]},
+            {"label": "Window", "items": [{"label": "Minimize"}, {"label": "Close"}]},
+        ]
+        # last rendered menu bboxes for hit-testing: list of (x, y, w, h)
+        self._menu_bboxes = []
 
     # window management
     def open_window(self, w: NSWindow):
@@ -108,15 +117,42 @@ class DesktopShell:
         # background
         parts.append(f'<rect x="0" y="0" width="{w}" height="{h}" fill="#111" />')
 
+        # menu bar (top)
+        menu_h = 24
+        parts.append(f'<rect x="0" y="0" width="{w}" height="{menu_h}" fill="#f0f0f0" />')
+        # render menu labels and record bboxes
+        self._menu_bboxes = []
+        start_x = 8
+        spacing = 76
+        for i, m in enumerate(self._menu_bar):
+            mx = start_x + i * spacing
+            my = 0
+            mw = 64
+            mh = menu_h
+            # text vertically centered
+            parts.append(f'<text x="{mx+mw/2}" y="{my+menu_h/2+4}" text-anchor="middle" font-size="12" font-family="sans-serif" fill="#000">{m["label"]}</text>')
+            self._menu_bboxes.append((mx, my, mw, mh))
+
         # render windows (in z-order: bottom first)
         for win in list(self._windows):
             inner = self._extract_inner_svg(win.render_to_svg(include_chrome=True))
+            # determine chrome height (title bar) to align rendering and hit-testing
+            chrome_h = 22 if (hasattr(win, "style_mask") and (win.style_mask & NSWindowStyleMask.TITLED)) else 0
+            total_h = win.frame.height + chrome_h
             # convert window-origin (assumed bottom-left) to SVG top-left translation
             tx = win.frame.x
-            ty = h - (win.frame.y + win.frame.height)
+            # account for the menu bar at top
+            ty = h - (win.frame.y + win.frame.height) - chrome_h - menu_h
             parts.append(
                 f'<g transform="translate({tx},{ty})" data-window-id="{id(win)}" data-window-title="{win.title}">'
             )
+            # if window is being dragged, render a highlight rectangle behind it
+            try:
+                is_dragging = bool(getattr(win, '_is_dragging', False))
+            except Exception:
+                is_dragging = False
+            if is_dragging:
+                parts.append(f'<rect x="-4" y="-4" width="{win.frame.width+8}" height="{total_h+8}" fill="none" stroke="#ff0" stroke-width="3" opacity="0.9" rx="8" />')
             parts.append(inner)
             parts.append("</g>")
 
@@ -149,12 +185,52 @@ class DesktopShell:
         Coordinates are in SVG space (top-left origin, y increases downward).
         """
         x, y = point
+        # check menu bar first
+        menu_h = 24
+        if y <= menu_h:
+            # find which menu label was clicked
+            for i, bbox in enumerate(self._menu_bboxes):
+                bx, by, bw, bh = bbox
+                if bx <= x <= bx + bw and by <= y <= by + bh:
+                    # return a sentinel value by raising a custom attribute? Instead, store last menu hit
+                    self._last_menu_hit = {"menu_index": i, "label": self._menu_bar[i]["label"]}
+                    return None
+            # clicked on menu bar but not on a label
+            self._last_menu_hit = {"menu_index": None, "label": None}
+            return None
         # check topmost first
         for win in reversed(self._windows):
+            chrome_h = 22 if (hasattr(win, "style_mask") and (win.style_mask & NSWindowStyleMask.TITLED)) else 0
             tx = win.frame.x
-            ty = self._height - (win.frame.y + win.frame.height)
-            if tx <= x <= tx + win.frame.width and ty <= y <= ty + win.frame.height:
+            ty = self._height - (win.frame.y + win.frame.height) - chrome_h
+            total_h = win.frame.height + chrome_h
+            if tx <= x <= tx + win.frame.width and ty <= y <= ty + total_h:
                 return win
+
+        # If no window hit, check dock icons (they map to open windows)
+        dock_h = 64
+        icon_spacing = 72
+        start_x = 16
+        y_center = self._height - dock_h / 2
+        r = 20
+        for i, win in enumerate(self._windows):
+            cx = start_x + i * icon_spacing
+            dx = x - cx
+            dy = y - y_center
+            if dx * dx + dy * dy <= r * r:
+                return win
+        return None
+
+    def menu_hit_test(self, point: tuple):
+        """Return menu hit info dict or None."""
+        x, y = point
+        menu_h = 24
+        if y <= menu_h:
+            for i, bbox in enumerate(self._menu_bboxes):
+                bx, by, bw, bh = bbox
+                if bx <= x <= bx + bw and by <= y <= by + bh:
+                    return {"menu_index": i, "label": self._menu_bar[i]["label"]}
+            return {"menu_index": None, "label": None}
         return None
 
     def __repr__(self):

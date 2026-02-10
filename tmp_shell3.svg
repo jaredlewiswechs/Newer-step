@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="600" viewBox="0 0 900 600">
+<rect x="0" y="0" width="900" height="600" fill="#111" />
+<rect x="0" y="0" width="900" height="24" fill="#f0f0f0" />
+<text x="40.0" y="16.0" text-anchor="middle" font-size="12" font-family="sans-serif" fill="#000">Apple</text>
+<text x="116.0" y="16.0" text-anchor="middle" font-size="12" font-family="sans-serif" fill="#000">File</text>
+<text x="192.0" y="16.0" text-anchor="middle" font-size="12" font-family="sans-serif" fill="#000">Edit</text>
+<text x="268.0" y="16.0" text-anchor="middle" font-size="12" font-family="sans-serif" fill="#000">Window</text>
+<g transform="translate(60,214)" data-window-id="1857455571696" data-window-title="Notes">
+
+<rect x="0" y="0" width="360" height="22" fill="#e0e0e0" rx="6" />
+<circle cx="14" cy="11" r="6" fill="#ff5f56" />
+<circle cx="34" cy="11" r="6" fill="#ffbd2e" />
+<circle cx="54" cy="11" r="6" fill="#27c93f" />
+<text x="180.0" y="15" text-anchor="middle" font-size="12" font-family="sans-serif">Notes</text>
+<g transform="translate(0,22)">
+<g transform="translate(0,0)" data-view-id="ccdb2c75">
+<rect x="0" y="0" width="360" height="260" fill="rgb(255,255,240)" />
+</g>
+</g>
+
+</g>
+<g transform="translate(440,174)" data-window-id="1857455491344" data-window-title="Inspector">
+
+<rect x="0" y="0" width="360" height="22" fill="#e0e0e0" rx="6" />
+<circle cx="14" cy="11" r="6" fill="#ff5f56" />
+<circle cx="34" cy="11" r="6" fill="#ffbd2e" />
+<circle cx="54" cy="11" r="6" fill="#27c93f" />
+<text x="180.0" y="15" text-anchor="middle" font-size="12" font-family="sans-serif">Inspector</text>
+<g transform="translate(0,22)">
+<g transform="translate(0,0)" data-view-id="d80ad9ab">
+<rect x="0" y="0" width="360" height="260" fill="rgb(240,255,255)" />
+</g>
+</g>
+
+</g>
+<rect x="0" y="536" width="900" height="64" fill="#222" opacity="0.9"/>
+<g class="dock-item" transform="translate(16,568.0)">
+<circle cx="0" cy="0" r="20" fill="#fff" opacity="0.9" />
+<text x="0" y="36" text-anchor="middle" font-size="11" fill="#fff" font-family="sans-serif">Notes</text>
+</g>
+<g class="dock-item" transform="translate(88,568.0)">
+<circle cx="0" cy="0" r="20" fill="#fff" opacity="0.9" />
+<text x="0" y="36" text-anchor="middle" font-size="11" fill="#fff" font-family="sans-serif">Inspector</text>
+</g>
+</svg>

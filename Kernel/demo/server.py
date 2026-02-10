@@ -14,6 +14,7 @@ import time
 from ..gui.nsbezier import NSBezierPath, sample_star, NSColor, NSPoint
 from ..runtime.app import NSApplication
 from ..runtime.event import NSEvent, NSEventType
+from ..window.nswindow import NSWindowStyleMask
 
 app = FastAPI()
 
@@ -80,7 +81,8 @@ _event_log = []  # last N events processed
 def _build_demo_window():
     """Build a small demo view tree and return it as SVG + the window object."""
     from ..view.nsview import NSView, NSRect
-    from ..window.nswindow import NSWindow
+    from ..window.nswindow import NSWindowStyleMask
+    from ..window.nswindow import NSWindow, NSWindowStyleMask
 
     win = NSWindow(content_rect=NSRect(0, 0, 500, 360), title="View Tree Demo")
     root = win.content_view
@@ -281,8 +283,9 @@ def shell_page():
 
     <div style="width:320px;">
       <div style="margin-bottom:6px;"><button id="launch">Launch App</button>
-      <button id="launch-notes">Open Notes App</button>
-      <button id="app-install">Install App</button></div>
+    <button id="launch-notes">Open Notes App</button>
+    <button id="launch-many">Launch 3 Apps</button>
+    <button id="app-install">Install App</button></div>
 
       <h4>Notes</h4>
       <div>
@@ -316,30 +319,67 @@ def shell_page():
       const resp = await fetch('/kernel/demo/shell');
       const svgText = await resp.text();
       document.getElementById('svg-container').innerHTML = svgText;
-      document.querySelector('#svg-container svg').addEventListener('click', async (e) => {
-        const rect = e.currentTarget.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
-        const resp = await fetch('/kernel/demo/shell/event', {
-          method: 'POST', headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({x: x, y: y})
-        });
-        const data = await resp.json();
-        const li = document.createElement('li');
-        li.textContent = data.message;
-        document.getElementById('log').prepend(li);
-        // record the selected window id for edit actions
-        if (data.window_id) {
-          selectedWindowId = data.window_id;
-          document.getElementById('svg-container').dataset.selectedWindow = data.window_id;
-        } else {
-          // clear selection
-          selectedWindowId = null;
-          delete document.getElementById('svg-container').dataset.selectedWindow;
-        }
-        // refresh SVG to update z-order
-        await refreshSVG();
-      });
+            const svgEl = document.querySelector('#svg-container svg');
+            let draggingWindowId = null;
+
+            svgEl.addEventListener('click', async (e) => {
+                const rect = e.currentTarget.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                const resp = await fetch('/kernel/demo/shell/event', {
+                    method: 'POST', headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({x: x, y: y})
+                });
+                const data = await resp.json();
+                const li = document.createElement('li');
+                li.textContent = data.message;
+                document.getElementById('log').prepend(li);
+                // record the selected window id for edit actions
+                if (data.window_id) {
+                    selectedWindowId = data.window_id;
+                    document.getElementById('svg-container').dataset.selectedWindow = data.window_id;
+                } else {
+                    // clear selection
+                    selectedWindowId = null;
+                    delete document.getElementById('svg-container').dataset.selectedWindow;
+                }
+                // refresh SVG to update z-order
+                await refreshSVG();
+            });
+
+            // Titlebar drag support: mousedown -> drag_start, mousemove -> drag_move, mouseup -> drag_end
+            svgEl.addEventListener('mousedown', async (e) => {
+                const rect = e.currentTarget.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                const resp = await fetch('/kernel/demo/shell/event', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({x: x, y: y})});
+                const data = await resp.json();
+                // start drag if clicked on titlebar
+                if (data.window_id && data.hit_area === 'title') {
+                    draggingWindowId = data.window_id;
+                    await fetch('/kernel/demo/shell/drag_start', {method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({window_id: draggingWindowId, x: x, y: y})});
+
+                    const onMove = async (me) => {
+                        const mx = me.clientX - rect.left;
+                        const my = me.clientY - rect.top;
+                        await fetch('/kernel/demo/shell/drag_move', {method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({window_id: draggingWindowId, x: mx, y: my})});
+                        await refreshSVG();
+                    };
+
+                    const onUp = async (ue) => {
+                        const ux = ue.clientX - rect.left;
+                        const uy = ue.clientY - rect.top;
+                        document.removeEventListener('mousemove', onMove);
+                        document.removeEventListener('mouseup', onUp);
+                        await fetch('/kernel/demo/shell/drag_end', {method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({window_id: draggingWindowId, x: ux, y: uy})});
+                        draggingWindowId = null;
+                        await refreshSVG();
+                    };
+
+                    document.addEventListener('mousemove', onMove);
+                    document.addEventListener('mouseup', onUp);
+                }
+            });
     }
 
     async function refreshNotes(pid) {
@@ -382,6 +422,15 @@ def shell_page():
       await refreshNotes(pid);
       await refreshSVG();
     });
+
+        document.getElementById('launch-many').addEventListener('click', async () => {
+            const r = await fetch('/kernel/demo/shell/launch_many', {method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({count: 3})});
+            const d = await r.json();
+            const li = document.createElement('li');
+            li.textContent = 'Launched windows: ' + JSON.stringify(d.launch || d.window_ids || []);
+            document.getElementById('log').prepend(li);
+            await refreshSVG();
+        });
 
     document.getElementById('app-install').addEventListener('click', async () => {
       const name = prompt('App name (id):');
@@ -433,26 +482,8 @@ def shell_page():
     document.getElementById('notes-editor-cancel').addEventListener('click', () => {
       document.getElementById('notes-editor-overlay').style.display = 'none';
     });
-
-    // initial load
-    refreshSVG();
-      // save to Vault
-      const s = await fetch('/kernel/demo/shell/notes/save', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({pid: pid, title: title, content: content})});
-      const r = await s.json();
-      // update first notes window of the process (if exists)
-      const procs = await fetch('/kernel/demo/shell/processes');
-      const pr = await procs.json();
-      const pinfo = pr.processes.find(p=>p.pid==parseInt(pid));
-      if (pinfo && pinfo.windows && pinfo.windows.length>0) {
-        const win = pinfo.windows[0];
-        await fetch('/kernel/demo/shell/notes/window/save', {method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({pid: pid, window_id: win.id, title: title, content: content})});
-      }
-      await refreshNotes(pid);
-      await refreshSVG();
-    });
-
-    // initial load
-    refreshSVG();
+        // initial load
+        refreshSVG();
   </script>
 </body>
 </html>"""
@@ -461,27 +492,66 @@ def shell_page():
 
 @app.post("/kernel/demo/shell/event")
 async def shell_event(request: Request):
-    body = await request.json()
-    x = float(body.get("x", 0))
-    y = float(body.get("y", 0))
-    shell = _ensure_shell()
+    try:
+        body = await request.json()
+        x = float(body.get("x", 0))
+        y = float(body.get("y", 0))
+        shell = _ensure_shell()
 
-    hit = shell.hit_test((x, y))
-    if hit:
-        shell.focus_window(hit)
-        msg = f"Clicked window: {hit.title} (id={id(hit)}) at ({x:.0f},{y:.0f})"
-    else:
-        msg = f"Clicked empty space at ({x:.0f},{y:.0f})"
+        # check for menu bar hits first
+        m = shell.menu_hit_test((x, y))
+        if m:
+            msg = f"Clicked menu: {m.get('label')} at ({x:.0f},{y:.0f})"
+            _event_log.append(msg)
+            if len(_event_log) > 200:
+                _event_log.pop(0)
+            return {"message": msg, "menu": m.get("label")}
 
-    _event_log.append(msg)
-    if len(_event_log) > 200:
-        _event_log.pop(0)
+        # compute hit and also whether the click was in the titlebar
+        hit = shell.hit_test((x, y))
+        # for debugging: collect window bbox translations
+        windows_debug = []
+        for w in shell.windows:
+            chrome_h_w = 22 if (hasattr(w, "style_mask") and (w.style_mask & NSWindowStyleMask.TITLED)) else 0
+            tx_w = w.frame.x
+            ty_w = shell._height - (w.frame.y + w.frame.height) - chrome_h_w - 24
+            total_h_w = w.frame.height + chrome_h_w
+            windows_debug.append({"id": id(w), "title": w.title, "tx": tx_w, "ty": ty_w, "width": w.frame.width, "total_h": total_h_w})
+        hit_area = None
+        if hit:
+            # determine chrome/titlebar height and menu offset
+            menu_h = 24
+            chrome_h = 22 if (hasattr(hit, "style_mask") and (hit.style_mask & NSWindowStyleMask.TITLED)) else 0
+            tx = hit.frame.x
+            ty = shell._height - (hit.frame.y + hit.frame.height) - chrome_h - menu_h
+            local_y = y - ty
+            if 0 <= local_y <= chrome_h:
+                hit_area = 'title'
+            else:
+                hit_area = 'content'
+            shell.focus_window(hit)
+            msg = f"Clicked window: {hit.title} (id={id(hit)}) at ({x:.0f},{y:.0f})"
+        else:
+            msg = f"Clicked empty space at ({x:.0f},{y:.0f})"
 
-    return {
-        "message": msg,
-        "window_id": id(hit) if hit else None,
-        "title": hit.title if hit else None,
-    }
+        _event_log.append(msg)
+        if len(_event_log) > 200:
+            _event_log.pop(0)
+        return {
+            "message": msg,
+            "window_id": id(hit) if hit else None,
+            "title": hit.title if hit else None,
+            "hit_area": hit_area,
+            "windows_debug": windows_debug,
+        }
+    except Exception as e:
+        import traceback
+
+        tb = traceback.format_exc()
+        _event_log.append(f"ERROR: {e}\n{tb}")
+        if len(_event_log) > 200:
+            _event_log.pop(0)
+        return {"error": str(e), "trace": tb}
 
 
 @app.get("/kernel/demo/shell/apps")
@@ -583,6 +653,24 @@ async def shell_launch(request: Request):
     return {"title": title, "window_id": id(w)}
 
 
+@app.post('/kernel/demo/shell/launch_many')
+async def shell_launch_many(request: Request):
+    body = await request.json()
+    count = int(body.get('count', 3))
+    shell = _ensure_shell()
+    from ..window.nswindow import NSWindow
+    from ..view.nsview import NSRect
+
+    ids = []
+    base_x = 80
+    base_y = 80
+    for i in range(count):
+        w = NSWindow(content_rect=NSRect(base_x + i * 40, base_y + i * 30, 360, 260), title=f'App-{i+1}')
+        shell.open_window(w)
+        ids.append(id(w))
+    return {"launch": ids}
+
+
 @app.get("/kernel/demo/shell/snapshot")
 def shell_snapshot():
     shell = _ensure_shell()
@@ -655,6 +743,89 @@ async def shell_close(request: Request):
             shell.close_window(w)
             return {"closed": win_id}
     return {"closed": None}
+
+
+_drag_state = {}
+
+
+@app.post("/kernel/demo/shell/drag_start")
+async def shell_drag_start(request: Request):
+    body = await request.json()
+    window_id = int(body.get("window_id"))
+    x = float(body.get("x", 0))
+    y = float(body.get("y", 0))
+    shell = _ensure_shell()
+    # find the window instance
+    for w in shell.windows:
+        if id(w) == window_id:
+            win = w
+            break
+    else:
+        return {"error": "window not found"}
+
+    menu_h = 24
+    chrome_h = 22 if (hasattr(win, "style_mask") and (win.style_mask & NSWindowStyleMask.TITLED)) else 0
+    tx = win.frame.x
+    ty = shell._height - (win.frame.y + win.frame.height) - chrome_h - menu_h
+    # store offsets from the group's top-left
+    _drag_state['window_id'] = window_id
+    _drag_state['offset_x'] = x - tx
+    _drag_state['offset_y'] = y - ty
+    # mark window as dragging and bring to front
+    try:
+        shell.bring_to_front(win)
+        win._is_dragging = True
+    except Exception:
+        pass
+    return {"ok": True}
+
+
+@app.post("/kernel/demo/shell/drag_move")
+async def shell_drag_move(request: Request):
+    body = await request.json()
+    window_id = int(body.get("window_id"))
+    x = float(body.get("x", 0))
+    y = float(body.get("y", 0))
+    shell = _ensure_shell()
+    if _drag_state.get('window_id') != window_id:
+        return {"error": "no drag in progress for this window"}
+    # find window
+    for w in shell.windows:
+        if id(w) == window_id:
+            win = w
+            break
+    else:
+        return {"error": "window not found"}
+
+    offset_x = _drag_state.get('offset_x', 0)
+    offset_y = _drag_state.get('offset_y', 0)
+    menu_h = 24
+    chrome_h = 22 if (hasattr(win, "style_mask") and (win.style_mask & NSWindowStyleMask.TITLED)) else 0
+    txp = x - offset_x
+    typ = y - offset_y
+    # convert top-left txp/typ back to window.frame coordinates (bottom-left origin)
+    new_x = txp
+    new_y = shell._height - (typ + chrome_h + menu_h) - win.frame.height
+    win.set_frame_origin(float(new_x), float(new_y))
+    return {"ok": True, "frame": (win.frame.x, win.frame.y, win.frame.width, win.frame.height)}
+
+
+@app.post("/kernel/demo/shell/drag_end")
+async def shell_drag_end(request: Request):
+    body = await request.json()
+    window_id = int(body.get("window_id"))
+    # clear drag state
+    if _drag_state.get('window_id') == window_id:
+        _drag_state.clear()
+    # clear dragging marker
+    for w in shell.windows:
+        if id(w) == window_id:
+            try:
+                w._is_dragging = False
+            except Exception:
+                pass
+            break
+    return {"ok": True}
 
 
 # ── Notes endpoints ─────────────────────────────────────────────────

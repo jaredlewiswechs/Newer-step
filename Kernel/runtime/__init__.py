@@ -5,4 +5,4 @@ from .event import NSEvent, NSEventType
 from .responder import NSResponder
 from .cursor import NSCursor
 
-__all__ = ["NSApplication", "NSResponder", "NSEvent", "NSEventType", "NSCursor"]
+__all__ = ["NSApplication", "NSResponder", "NSEvent", "NSEventType", "NSCursor", "NSRunningApplication", "NSWorkspace"]
