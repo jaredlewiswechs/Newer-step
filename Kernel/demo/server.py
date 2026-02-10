@@ -309,6 +309,15 @@ def shell_page():
         const li = document.createElement('li');
         li.textContent = data.message;
         document.getElementById('log').prepend(li);
+        // record the selected window id for edit actions
+        if (data.window_id) {
+          selectedWindowId = data.window_id;
+          document.getElementById('svg-container').dataset.selectedWindow = data.window_id;
+        } else {
+          // clear selection
+          selectedWindowId = null;
+          delete document.getElementById('svg-container').dataset.selectedWindow;
+        }
         // refresh SVG to update z-order
         await refreshSVG();
       });
